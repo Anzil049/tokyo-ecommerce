@@ -666,22 +666,19 @@
         /* --- MOBILE RESPONSIVE STYLES --- */
         @media (max-width: 991px) {
 
-            /* 1. Wrap Navbar Content */
+            /* 1. Navbar Adjustments */
             .navbar .container {
                 flex-wrap: wrap;
             }
 
-            /* 2. Logo stays left, pushes icons to right */
             .navbar-brand {
                 margin-right: auto;
             }
 
-            /* 3. Icons (Heart, Cart, User) order next to logo */
             .d-flex.align-items-center.order-lg-4 {
                 order: 2 !important;
             }
 
-            /* 4. Search Bar takes Full Width on New Line */
             .search-container {
                 order: 3 !important;
                 width: 100%;
@@ -701,11 +698,6 @@
                 margin-left: 10px;
             }
 
-            .navbar-toggler:focus {
-                box-shadow: none;
-            }
-
-            /* 5. Mobile Menu appears last */
             .navbar-collapse {
                 order: 4 !important;
                 background: white;
@@ -716,7 +708,7 @@
                 padding-left: 10px;
             }
 
-            /* Hero Text Adjustments */
+            /* 2. Hero Section Text */
             .hero-caption h1 {
                 font-size: 1.8rem;
             }
@@ -729,6 +721,112 @@
             .btn-hero {
                 padding: 8px 20px;
                 font-size: 0.9rem;
+            }
+
+            /* 3. Mobile Add to Cart Button (Always Visible) */
+            .product-img-container .btn-quick-add {
+                bottom: 0 !important;
+                opacity: 1 !important;
+                padding: 8px 5px;
+                font-size: 0.75rem;
+                background-color: rgba(67, 131, 255, 0.95);
+            }
+
+            /* 4. SALE BANNER - STACKED RIGHT LAYOUT */
+            #saleBannerSection {
+                min-height: auto;
+            }
+
+            .sale-slide-content {
+                display: grid !important;
+                /* Col 1: Text (auto width), Col 2: Timer/Btn (auto width) */
+                grid-template-columns: 1fr auto;
+                /* Row 1: Timer, Row 2: Button */
+                grid-template-rows: auto auto;
+                padding: 10px 15px !important;
+                gap: 2px 15px !important;
+                /* Small vertical gap between Timer & Button */
+                width: 100%;
+            }
+
+            /* Left Side: Text (Spans 2 rows to stay centered vertically) */
+            .sale-info {
+                grid-column: 1;
+                grid-row: 1 / span 2;
+                align-self: center;
+                text-align: left !important;
+                min-width: 0;
+            }
+
+            .sale-info h3 {
+                font-size: 1.0rem !important;
+                margin-bottom: 2px !important;
+                white-space: nowrap;
+            }
+
+            .sale-info p {
+                /* Font & Spacing */
+                font-size: 0.7rem !important;
+                line-height: 1.2;
+                margin: 0;
+                color: #ddd;
+
+                /* Truncation Logic (Must be kept together) */
+                display: -webkit-box !important;
+                /* Only this display works with line-clamp */
+                -webkit-line-clamp: 2;
+                /* Cut off after 2 lines */
+                -webkit-box-orient: vertical;
+                /* Required */
+                overflow: hidden;
+                /* Required */
+            }
+
+            /* Right Top: Timer */
+            .sale-timer {
+                grid-column: 2;
+                grid-row: 1;
+                justify-self: end;
+                /* Align to Right Edge */
+                align-self: end;
+                /* Sit on bottom of row */
+
+                transform: scale(0.8);
+                /* Shrink it */
+                transform-origin: bottom right;
+                /* Anchor to bottom right */
+                margin-right: -5px;
+                /* Fix visual gap from scaling */
+                margin-bottom: 4;
+                gap: 2px !important;
+            }
+
+            .timer-box {
+                min-width: 28px !important;
+                padding: 1px 2px !important;
+            }
+
+            .timer-val {
+                font-size: 0.9rem !important;
+            }
+
+            .timer-label {
+                font-size: 0.5rem !important;
+            }
+
+            /* Right Bottom: Button */
+            .btn-shop-sale {
+                grid-column: 2;
+                grid-row: 2;
+                justify-self: end;
+                /* Align to Right Edge */
+                align-self: start;
+                /* Sit on top of row */
+
+                padding: 4px 12px !important;
+                font-size: 0.65rem !important;
+                margin-top: 5px;
+                /* Space between Timer and Button */
             }
         }
     </style>
@@ -940,22 +1038,30 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', async () => {
-            // 1. Check Login Status via Server (Cookies)
-            const isLoggedIn = await checkLoginStatus();
-            window.userIsLoggedIn = isLoggedIn; // Set global flag
+        // --- 1. GLOBAL VARIABLES ---
+        let allProducts = [];
+        let allCategories = []; // Added for Search
+        let allTeams = [];      // Added for Search
+        let saleIntervals = [];
 
-            // 2. Update UI based on login status
+        // --- 2. INITIALIZATION ---
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Check Login Status
+            const isLoggedIn = await checkLoginStatus();
+            window.userIsLoggedIn = isLoggedIn;
             updateNavbar(isLoggedIn);
 
-            // 3. Fetch Data
-            fetchCategories();
-            fetchNewArrivals();
-            fetchTrending();
-            initSaleBanner(); // Call function
+            // Fetch All Data (Added Teams here)
+            await Promise.all([
+                fetchCategories(),        // Populates Grid + Stores for Search
+                fetchTeams(),             // Stores for Search
+                fetchProductsForSearch(), // Stores for Search
+                fetchNewArrivals(),
+                fetchTrending(),
+                initSaleBanner()
+            ]);
 
-
-            // 4. Reveal Animations
+            // Reveal Animations
             const observer = new IntersectionObserver((entries) => {
                 entries.forEach(entry => {
                     if (entry.isIntersecting) {
@@ -974,17 +1080,154 @@
         };
 
         // ==========================================
-        //  AUTH & NAVBAR LOGIC (Cookie Based)
+        //  DATA FETCHING (UPDATED FOR SEARCH)
+        // ==========================================
+
+        async function fetchProductsForSearch() {
+            try {
+                const res = await fetch('/api/products');
+                const json = await res.json();
+                if (json.success) allProducts = json.data.filter(p => p.status === 'Active');
+            } catch (err) { console.error(err); }
+        }
+
+        async function fetchTeams() {
+            try {
+                const res = await fetch('/api/teams');
+                const json = await res.json();
+                if (json.success) {
+                    allTeams = json.data.filter(t => t.status === 'Active');
+                }
+            } catch (err) { console.error(err); }
+        }
+
+        async function fetchCategories() {
+            try {
+                const res = await fetch('/api/categories');
+                const json = await res.json();
+                const container = document.getElementById('categoryGrid');
+                container.innerHTML = "";
+
+                if (json.success) {
+                    const cats = json.data.filter(c => c.status === 'Published');
+                    allCategories = cats; // Store for Search logic
+
+                    if (cats.length === 0) container.innerHTML = "<p>No categories found.</p>";
+
+                    cats.forEach(c => {
+                        const safeCategoryName = encodeURIComponent(c.name);
+                        container.innerHTML += `
+                        <div class="col">
+                            <div class="category-card-standard" 
+                                 onclick="window.location.href='products.html?category=${safeCategoryName}'">
+                                <h5>${c.name}</h5>
+                            </div>
+                        </div>`;
+                    });
+                }
+            } catch (err) { console.error(err); }
+        }
+
+        // ==========================================
+        //  SEARCH LOGIC (NEW: CATEGORY + TEAM + PRODUCT)
+        // ==========================================
+
+        const searchInput = document.getElementById('searchInput');
+        const suggestionsBox = document.getElementById('searchSuggestions');
+
+        searchInput.addEventListener('keyup', function (e) {
+            const query = e.target.value.toLowerCase().trim();
+            if (e.key === 'Enter') { performSearch(); return; }
+
+            if (query.length > 0) {
+                // 1. Filter Categories (Explicitly set properties)
+                const catMatches = allCategories.filter(c => c.name.toLowerCase().includes(query))
+                    .slice(0, 2)
+                    .map(c => ({ name: c.name, type: 'category' }));
+
+                // 2. Filter Teams (Explicitly set properties)
+                const teamMatches = allTeams.filter(t => t.name.toLowerCase().includes(query))
+                    .slice(0, 2)
+                    .map(t => ({ name: t.name, type: 'team' }));
+
+                // 3. Filter Products (Keep all properties for images/price)
+                const prodMatches = allProducts.filter(p => p.name.toLowerCase().includes(query))
+                    .slice(0, 5)
+                    .map(p => ({ ...p, type: 'product' }));
+
+                // Combine: Cats -> Teams -> Products
+                const combinedResults = [...catMatches, ...teamMatches, ...prodMatches];
+
+                showSuggestions(combinedResults);
+            } else {
+                suggestionsBox.style.display = 'none';
+            }
+        });
+
+        function showSuggestions(items) {
+            if (items.length === 0) { suggestionsBox.style.display = 'none'; return; }
+            suggestionsBox.innerHTML = '';
+
+            items.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'suggestion-item';
+
+                // --- CHECK: Is it a Category OR a Team? ---
+                if (item.type === 'category' || item.type === 'team') {
+
+                    // 1. Determine Icon and Label based on type
+                    const isTeam = item.type === 'team';
+                    const iconClass = isTeam ? 'fa-users' : 'fa-th-large'; // Users icon for Team, Grid for Category
+                    const labelText = isTeam ? 'Team' : 'Category';
+                    const urlParam = isTeam ? 'team' : 'category';
+
+                    // 2. Click Action
+                    div.onclick = () => { window.location.href = `products.html?${urlParam}=${encodeURIComponent(item.name)}`; };
+
+                    // 3. Render HTML (Icon + Name + Badge)
+                    div.innerHTML = `
+                        <div class="suggestion-img d-flex align-items-center justify-content-center bg-light text-secondary" style="font-size: 1rem; border: 1px solid #eee;">
+                            <i class="fas ${iconClass}"></i>
+                        </div>
+                        <div class="suggestion-info">
+                            <h6 style="margin-bottom: 2px;">${item.name}</h6>
+                            <span class="badge bg-light text-secondary border" style="font-size: 0.65rem; font-weight: 500;">${labelText}</span>
+                        </div>`;
+                }
+                else {
+                    // --- It is a Product ---
+                    const img = (item.images && item.images.length > 0) ? item.images[0] : 'https://placehold.co/50x50';
+                    div.onclick = () => { window.location.href = `product-details.html?id=${item._id}`; };
+                    div.innerHTML = `
+                        <img src="${img}" class="suggestion-img">
+                        <div class="suggestion-info">
+                            <h6>${item.name}</h6>
+                            <p class="mb-0 text-muted" style="font-size: 0.75rem;">₹${item.price}</p>
+                        </div>`;
+                }
+                suggestionsBox.appendChild(div);
+            });
+            suggestionsBox.style.display = 'block';
+        }
+
+        function performSearch() {
+            const query = document.getElementById('searchInput').value.trim();
+            if (query) window.location.href = `products.html?search=${encodeURIComponent(query)}`;
+        }
+
+        document.addEventListener('click', function (e) {
+            if (!searchInput.contains(e.target) && !suggestionsBox.contains(e.target)) suggestionsBox.style.display = 'none';
+        });
+
+        // ==========================================
+        //  AUTH, UI & HELPERS (UNCHANGED)
         // ==========================================
 
         async function checkLoginStatus() {
             try {
-                // Browser sends HttpOnly cookie automatically
                 const res = await fetch('/api/auth/verify-user');
-                return res.ok; // True if 200 OK
-            } catch (err) {
-                return false;
-            }
+                return res.ok;
+            } catch (err) { return false; }
         }
 
         function updateNavbar(isLoggedIn) {
@@ -994,10 +1237,7 @@
             let logoutBtn = document.getElementById('dynamicLogoutBtn');
 
             if (isLoggedIn) {
-                // Hide "Sign Up"
                 if (signupLi) signupLi.style.display = 'none';
-
-                // Add Logout Icon
                 if (!logoutBtn && iconContainer) {
                     logoutBtn = document.createElement('a');
                     logoutBtn.href = "#";
@@ -1006,7 +1246,6 @@
                     logoutBtn.innerHTML = '<i class="fas fa-sign-out-alt"></i>';
                     logoutBtn.title = "Logout";
                     logoutBtn.style.cursor = "pointer";
-
                     logoutBtn.addEventListener('click', (e) => {
                         e.preventDefault();
                         handleLogout();
@@ -1014,7 +1253,6 @@
                     iconContainer.appendChild(logoutBtn);
                 }
             } else {
-                // Show "Sign Up"
                 if (signupLi) signupLi.style.display = 'block';
                 if (logoutBtn) logoutBtn.remove();
             }
@@ -1023,39 +1261,23 @@
         async function handleLogout() {
             try {
                 await fetch('/api/auth/logout-user', { method: 'POST' });
-                localStorage.removeItem('user'); // Clear user info if stored
-
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Logged Out',
-                    timer: 1000,
-                    showConfirmButton: false
-                }).then(() => {
-                    window.location.href = 'index.html'; // Reload page to update UI
-                });
-            } catch (err) {
-                console.error('Logout failed', err);
-            }
+                localStorage.removeItem('user');
+                Swal.fire({ icon: 'success', title: 'Logged Out', timer: 1000, showConfirmButton: false })
+                    .then(() => window.location.href = 'index.html');
+            } catch (err) { console.error('Logout failed', err); }
         }
 
-        // Protect Links (Cart/Wishlist/Account)
         window.checkAuth = async function (targetPage) {
             if (!window.userIsLoggedIn) {
-                // Double check with server
                 const stillLoggedIn = await checkLoginStatus();
                 if (stillLoggedIn) {
                     window.userIsLoggedIn = true;
                     if (targetPage) window.location.href = targetPage;
                     return true;
                 }
-
                 Swal.fire({
-                    icon: 'info',
-                    title: 'Login Required',
-                    text: 'You need to be logged in to access this page.',
-                    showCancelButton: true,
-                    confirmButtonText: 'Go to Login',
-                    confirmButtonColor: '#DB4444'
+                    icon: 'info', title: 'Login Required', text: 'You need to be logged in.',
+                    showCancelButton: true, confirmButtonText: 'Go to Login', confirmButtonColor: '#DB4444'
                 }).then((result) => {
                     if (result.isConfirmed) window.location.href = 'signup.html';
                 });
@@ -1066,49 +1288,9 @@
             }
         }
 
-        // --- SEARCH LOGIC ---
-        const searchInput = document.getElementById('searchInput');
-        const suggestionsBox = document.getElementById('searchSuggestions');
-        let allProducts = [];
-        let saleIntervals = []; // Store intervals to clear them later
-
-        async function fetchProductsForSearch() {
-            try {
-                const res = await fetch('/api/products');
-                const json = await res.json();
-                if (json.success) allProducts = json.data.filter(p => p.status === 'Active');
-            } catch (err) { console.error(err); }
-        }
-        fetchProductsForSearch();
-
-        searchInput.addEventListener('keyup', function (e) {
-            const query = e.target.value.toLowerCase().trim();
-            if (e.key === 'Enter') { performSearch(); return; }
-            if (query.length > 0) {
-                const matches = allProducts.filter(p => p.name.toLowerCase().includes(query)).slice(0, 5);
-                showSuggestions(matches);
-            } else { suggestionsBox.style.display = 'none'; }
-        });
-
-        function showSuggestions(products) {
-            if (products.length === 0) { suggestionsBox.style.display = 'none'; return; }
-            suggestionsBox.innerHTML = '';
-            products.forEach(p => {
-                const img = (p.images && p.images.length > 0) ? p.images[0] : 'https://placehold.co/50x50';
-                const div = document.createElement('div');
-                div.className = 'suggestion-item';
-                div.onclick = () => { window.location.href = `product-details.html?id=${p._id}`; };
-                div.innerHTML = `<img src="${img}" class="suggestion-img"><div class="suggestion-info"><h6>${p.name}</h6><p>₹${p.price}</p></div>`;
-                suggestionsBox.appendChild(div);
-            });
-            suggestionsBox.style.display = 'block';
-        }
-
-        document.addEventListener('click', function (e) {
-            if (!searchInput.contains(e.target) && !suggestionsBox.contains(e.target)) suggestionsBox.style.display = 'none';
-        });
-
-        // --- SIZE MODAL LOGIC ---
+        // ==========================================
+        //  SIZE MODAL & CART (UNCHANGED)
+        // ==========================================
         const sizeModal = document.getElementById('sizeModal');
         const modalSizeOptions = document.getElementById('modalSizeOptions');
         const modalError = document.getElementById('modalError');
@@ -1122,126 +1304,72 @@
             }
         });
 
-        // ==========================================
-        //  ADD TO CART (COOKIE VERSION)
-        // ==========================================
         window.handleModalSizeSelection = async function (selectedLabel, sizeValue) {
             if (!window.userIsLoggedIn) {
                 sizeModal.style.display = 'none';
                 Swal.fire('Login Required', 'Please login to add items.', 'info');
                 return;
             }
-
             try {
-                // NO Authorization Header needed! Cookie is automatic.
                 const res = await fetch('/api/cart/add', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        productId: activeProductId,
-                        size: sizeValue,
-                        quantity: 1
-                    })
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ productId: activeProductId, size: sizeValue, quantity: 1 })
                 });
-
                 const data = await res.json();
-
                 if (!res.ok) {
                     if (res.status === 401) {
                         window.userIsLoggedIn = false;
                         updateNavbar(false);
-                        Swal.fire('Session Expired', 'Please login again.', 'error')
-                            .then(() => window.location.href = 'signup.html');
+                        window.location.href = 'signup.html';
                         return;
                     }
-
                     sizeModal.style.display = 'none';
-                    Swal.fire({
-                        icon: 'warning',
-                        title: 'Cannot Add Item',
-                        text: data.message || 'Something went wrong',
-                        confirmButtonColor: '#DB4444'
-                    });
+                    Swal.fire({ icon: 'warning', title: 'Cannot Add Item', text: data.message, confirmButtonColor: '#DB4444' });
                     return;
                 }
-
                 sizeModal.style.display = 'none';
-
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Added to Cart',
-                    text: 'Redirecting to cart...',
-                    toast: true,
-                    position: 'top-end',
-                    showConfirmButton: false,
-                    timer: 1000
-                }).then(() => {
-                    window.location.href = 'cart.html';
-                });
-
+                Swal.fire({ icon: 'success', title: 'Added to Cart', toast: true, position: 'top-end', showConfirmButton: false, timer: 1000 })
+                    .then(() => window.location.href = 'cart.html');
             } catch (err) {
-                console.error(err);
                 sizeModal.style.display = 'none';
-                Swal.fire('Error', 'Failed to connect to server.', 'error');
+                Swal.fire('Error', 'Failed to connect.', 'error');
             }
         }
 
-        // --- QUICK ADD BUTTON CLICK ---
         document.addEventListener('click', async function (e) {
             if (e.target && e.target.classList.contains('btn-quick-add')) {
-                e.preventDefault();
-                e.stopPropagation();
-
+                e.preventDefault(); e.stopPropagation();
                 if (!window.userIsLoggedIn) {
                     const status = await checkLoginStatus();
                     if (!status) {
-                        Swal.fire({
-                            icon: 'info',
-                            title: 'Login Required',
-                            text: 'Please login to add items to cart.',
-                            showCancelButton: true,
-                            confirmButtonText: 'Go to Login',
-                            confirmButtonColor: '#DB4444'
-                        }).then(result => {
-                            if (result.isConfirmed) window.location.href = 'signup.html';
-                        });
+                        Swal.fire({ icon: 'info', title: 'Login Required', showCancelButton: true, confirmButtonText: 'Go to Login', confirmButtonColor: '#DB4444' })
+                            .then(result => { if (result.isConfirmed) window.location.href = 'signup.html'; });
                         return;
                     }
-                    window.userIsLoggedIn = true;
-                    updateNavbar(true);
+                    window.userIsLoggedIn = true; updateNavbar(true);
                 }
-
                 const card = e.target.closest('.product-card');
                 activeProductId = card.getAttribute('data-product-id');
                 activeProductName = card.getAttribute('data-product-name');
                 const sizeData = JSON.parse(card.getAttribute('data-product-sizes'));
-
                 modalSizeOptions.innerHTML = '';
                 modalError.style.display = 'none';
                 sizeModal.querySelector('h5').textContent = `Select size for ${activeProductName}`;
-
                 if (sizeData && sizeData.length > 0) {
                     sizeData.forEach(s => {
                         const label = document.createElement('label');
                         label.className = `filter-checkbox-label size-style ${s.stock <= 0 ? 'disabled' : ''}`;
                         label.innerHTML = `<span>${s.size}</span>`;
-
-                        if (s.stock > 0) {
-                            label.onclick = () => handleModalSizeSelection(label, s.size);
-                        } else {
-                            label.style.opacity = '0.5';
-                            label.style.cursor = 'not-allowed';
-                        }
+                        if (s.stock > 0) label.onclick = () => handleModalSizeSelection(label, s.size);
+                        else { label.style.opacity = '0.5'; label.style.cursor = 'not-allowed'; }
                         modalSizeOptions.appendChild(label);
                     });
                 } else {
                     modalSizeOptions.innerHTML = "<p>Standard Size</p>";
                 }
                 sizeModal.style.display = 'flex';
-            }
-            else {
+            } else {
                 const card = e.target.closest('.product-card');
                 if (card && !e.target.closest('.wishlist-box') && !e.target.closest('.btn-quick-add')) {
                     const productId = card.getAttribute('data-product-id');
@@ -1250,153 +1378,40 @@
             }
         });
 
-        // --- FETCH ACTIVE SALE & TIMER ---
+        // ==========================================
+        //  UI FETCHERS (UNCHANGED)
+        // ==========================================
 
-
-
-
-        async function initSaleBanner() {
+        async function fetchNewArrivals() {
             try {
-                // Clear old intervals
-                saleIntervals.forEach(clearInterval);
-                saleIntervals = [];
-
-                const res = await fetch('/api/sales/active');
+                const res = await fetch(`/api/products?_t=${Date.now()}`, { headers: { 'Cache-Control': 'no-cache' } });
                 const json = await res.json();
-
-                if (json.success && json.data && Array.isArray(json.data) && json.data.length > 0) {
-                    const sales = json.data;
-                    const bannerSection = document.getElementById('saleBannerSection');
-                    const slidesContainer = document.getElementById('saleSlides');
-                    const indicatorsContainer = document.getElementById('saleIndicators');
-
-                    slidesContainer.innerHTML = '';
-                    indicatorsContainer.innerHTML = '';
-
-                    // Hide arrows if only 1 sale
-                    const arrows = bannerSection.querySelectorAll('.carousel-control-prev, .carousel-control-next');
-                    if (sales.length > 1) {
-                        arrows.forEach(btn => btn.style.display = 'flex');
-                    } else {
-                        arrows.forEach(btn => btn.style.display = 'none');
-                    }
-
-                    sales.forEach((sale, index) => {
-                        // --- 1. DISCOUNT TEXT ---
-                        let discountText = sale.discountUnit === 'percent'
-                            ? `${sale.offerType === 'upto' ? 'Up To' : 'Flat'} ${sale.discountValue}% OFF`
-                            : `${sale.offerType === 'upto' ? 'Up To' : 'Flat'} ₹${sale.discountValue} OFF`;
-
-                        // --- 2. TARGET TEXT (What does it apply to?) ---
-                        let targetText = "";
-
-                        if (sale.appliesTo === 'all') {
-                            targetText = "On All Items";
-                        } else if (sale.appliesTo === 'product') {
-                            targetText = "On Selected Items";
-                        } else {
-                            // For Category or Team, show the names (e.g., "On Football, Cricket")
-                            // We take the first 2 names to keep it clean
-                            const names = sale.targetIds.slice(0, 2).join(', ');
-                            const more = sale.targetIds.length > 2 ? '...' : '';
-                            targetText = `On ${names}${more}`;
-                        }
-
-                        // Combine: "Flat 50% OFF | On Football"
-                        let fullDesc = `${discountText} <span style="opacity: 0.6; font-weight:400; margin-left:5px;">| ${targetText}</span>`;
-
-                        // ----------------------------------
-
-                        // 2. Indicators
-                        if (sales.length > 1) {
-                            const indicator = document.createElement('button');
-                            indicator.type = 'button';
-                            indicator.dataset.bsTarget = '#saleCarousel';
-                            indicator.dataset.bsSlideTo = index;
-                            if (index === 0) indicator.className = 'active';
-                            indicatorsContainer.appendChild(indicator);
-                        }
-
-                        // 3. Slide HTML
-                        const slide = document.createElement('div');
-                        slide.className = `carousel-item ${index === 0 ? 'active' : ''}`;
-                        slide.innerHTML = `
-                            <div class="sale-slide-content">
-                                <div class="sale-info">
-                                    <h3>${sale.name}</h3>
-                                    <p>${fullDesc}</p>
-                                </div>
-                                
-                                <div class="sale-timer" id="timer-${index}">
-                                    <div class="timer-box"><span class="timer-val d">0</span><span class="timer-label">D</span></div>
-                                    <div class="timer-box"><span class="timer-val h">0</span><span class="timer-label">H</span></div>
-                                    <div class="timer-box"><span class="timer-val m">0</span><span class="timer-label">M</span></div>
-                                    <div class="timer-box"><span class="timer-val s">0</span><span class="timer-label">S</span></div>
-                                </div>
-
-                                <a href="products.html?sale_id=${sale._id}" class="btn-shop-sale">SHOP NOW</a>
-                            </div>
-                        `;
-                        slidesContainer.appendChild(slide);
-
-                        // 4. Timer Logic
-                        const endTime = new Date(sale.endDate).getTime();
-                        const interval = setInterval(() => {
-                            const now = new Date().getTime();
-                            const dist = endTime - now;
-                            const el = document.getElementById(`timer-${index}`);
-
-                            if (!el) return;
-
-                            if (dist < 0) {
-                                el.innerHTML = "<span class='text-danger fw-bold'>EXPIRED</span>";
-                                clearInterval(interval);
-                                return;
-                            }
-
-                            el.querySelector('.d').innerText = Math.floor(dist / (1000 * 60 * 60 * 24));
-                            el.querySelector('.h').innerText = Math.floor((dist % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-                            el.querySelector('.m').innerText = Math.floor((dist % (1000 * 60 * 60)) / (1000 * 60));
-                            el.querySelector('.s').innerText = Math.floor((dist % (1000 * 60)) / 1000);
-                        }, 1000);
-                        saleIntervals.push(interval);
-                    });
-
-                    bannerSection.style.display = 'block';
-
-                    // Force Bootstrap to recognize new slides (Fixes arrow issue)
-                    const myCarousel = document.getElementById('saleCarousel');
-                    if (window.bootstrap) {
-                        const carouselInstance = new bootstrap.Carousel(myCarousel, {
-                            interval: 5000,
-                            wrap: true
-                        });
-                    }
-                }
-            } catch (err) { console.error("Banner Error:", err); }
-        }
-
-        // --- FETCHERS ---
-        async function fetchCategories() {
-            try {
-                const res = await fetch('/api/categories');
-                const json = await res.json();
-                const container = document.getElementById('categoryGrid');
+                const container = document.getElementById('newArrivalsGrid');
                 container.innerHTML = "";
                 if (json.success) {
-                    const cats = json.data.filter(c => c.status === 'Published');
-                    if (cats.length === 0) container.innerHTML = "<p>No categories found.</p>";
-                    cats.forEach(c => {
-                        container.innerHTML += `<div class="col"><div class="category-card-standard" onclick="window.location.href='products.html?category=${encodeURIComponent(c.name)}'"><h5>${c.name}</h5></div></div>`;
-                    });
+                    let products = json.data.filter(p => p.status === 'Active').reverse().slice(0, 4);
+                    if (products.length === 0) container.innerHTML = "<p class='text-center w-100'>No products yet.</p>";
+                    products.forEach(p => container.innerHTML += createProductCard(p));
+                }
+            } catch (err) { console.error(err); }
+        }
+
+        async function fetchTrending() {
+            try {
+                const res = await fetch(`/api/products?_t=${Date.now()}`, { headers: { 'Cache-Control': 'no-cache' } });
+                const json = await res.json();
+                const container = document.getElementById('trendingGrid');
+                container.innerHTML = "";
+                if (json.success) {
+                    let products = json.data.filter(p => p.status === 'Active').sort(() => 0.5 - Math.random()).slice(0, 4);
+                    if (products.length === 0) container.innerHTML = "<p class='text-center w-100'>No trending products.</p>";
+                    products.forEach(p => container.innerHTML += createProductCard(p));
                 }
             } catch (err) { console.error(err); }
         }
 
         function createProductCard(p) {
             const img = (p.images && p.images.length > 0) ? p.images[0] : 'https://placehold.co/300x300';
-
-            // --- Price Logic ---
             let priceHTML = `₹${p.price}`;
             let badgeHTML = '';
             if (p.stockQuantity === 0) {
@@ -1406,40 +1421,26 @@
                 badgeHTML = `<span class="badge-discount">-${percent}%</span>`;
                 priceHTML = `₹${p.price} <span class="product-old-price">₹${p.basePrice}</span>`;
             }
-
-            // --- STAR RATING LOGIC (NEW) ---
             const rating = parseFloat(p.ratings) || 0;
             const count = p.numReviews || 0;
-            let starHTML = '';
+            let starHTML = count === 0
+                ? '<div class="mb-1"><span class="small text-muted" style="font-size: 0.75rem;">No reviews</span></div>'
+                : '<div class="mb-1 text-warning" style="font-size: 0.8rem;">';
 
-            if (count === 0) {
-                starHTML = '<div class="mb-1"><span class="small text-muted" style="font-size: 0.75rem;">No reviews</span></div>';
-            } else {
-                starHTML = '<div class="mb-1 text-warning" style="font-size: 0.8rem;">';
-                for (let i = 1; i <= 5; i++) {
-                    if (rating >= i) starHTML += '<i class="fas fa-star"></i>';
-                    else if (rating >= i - 0.5) starHTML += '<i class="fas fa-star-half-alt"></i>';
-                    else starHTML += '<i class="far fa-star" style="color: #ccc;"></i>';
-                }
+            if (count > 0) {
+                for (let i = 1; i <= 5; i++) starHTML += rating >= i ? '<i class="fas fa-star"></i>' : rating >= i - 0.5 ? '<i class="fas fa-star-half-alt"></i>' : '<i class="far fa-star" style="color: #ccc;"></i>';
                 starHTML += ` <span class="text-muted small" style="color: #666;">(${count})</span></div>`;
             }
 
-            // --- SIZES FOR MODAL ---
             const sizesJson = JSON.stringify(p.sizes || []).replace(/"/g, '&quot;');
-
             return `
             <div class="col-6 col-md-3">
-                <div class="product-card h-100" 
-                     data-product-id="${p._id}" 
-                     data-product-name="${p.name.replace(/"/g, '&quot;')}" 
-                     data-product-sizes="${sizesJson}">
-                    
+                <div class="product-card h-100" data-product-id="${p._id}" data-product-name="${p.name.replace(/"/g, '&quot;')}" data-product-sizes="${sizesJson}">
                     <div class="product-img-container">
                         ${badgeHTML}
                         <img src="${img}" alt="${p.name}">
                         ${p.stockQuantity > 0 ? `<button class="btn-quick-add">Add To Cart</button>` : ''}
                     </div>
-                    
                     <div class="product-details d-flex flex-column justify-content-between">
                         <div>
                             <h6 class="product-title mb-1">${p.name}</h6>
@@ -1450,62 +1451,83 @@
             </div>`;
         }
 
-
-        async function fetchNewArrivals() {
+        async function initSaleBanner() {
             try {
-                // CHANGED: Added query param and headers to force fresh data
-                const res = await fetch(`/api/products?_t=${Date.now()}`, {
-                    headers: { 'Cache-Control': 'no-cache' }
-                });
+                saleIntervals.forEach(clearInterval);
+                saleIntervals = [];
+                const res = await fetch('/api/sales/active');
                 const json = await res.json();
-                const container = document.getElementById('newArrivalsGrid');
-                container.innerHTML = "";
+                if (json.success && json.data && Array.isArray(json.data) && json.data.length > 0) {
+                    const sales = json.data;
+                    const bannerSection = document.getElementById('saleBannerSection');
+                    const slidesContainer = document.getElementById('saleSlides');
+                    const indicatorsContainer = document.getElementById('saleIndicators');
+                    slidesContainer.innerHTML = '';
+                    indicatorsContainer.innerHTML = '';
+                    const arrows = bannerSection.querySelectorAll('.carousel-control-prev, .carousel-control-next');
+                    sales.length > 1 ? arrows.forEach(btn => btn.style.display = 'flex') : arrows.forEach(btn => btn.style.display = 'none');
 
-                if (json.success) {
-                    let products = json.data.filter(p => p.status === 'Active').reverse().slice(0, 4);
+                    sales.forEach((sale, index) => {
+                        let discountText = sale.discountUnit === 'percent' ? `${sale.offerType === 'upto' ? 'Up To' : 'Flat'} ${sale.discountValue}% OFF` : `${sale.offerType === 'upto' ? 'Up To' : 'Flat'} ₹${sale.discountValue} OFF`;
+                        let targetText = "";
+                        if (sale.appliesTo === 'all') targetText = "On All Items";
+                        else if (sale.appliesTo === 'product') targetText = "On Selected Items";
+                        else {
+                            const names = sale.targetIds.slice(0, 2).join(', ');
+                            targetText = `On ${names}${sale.targetIds.length > 2 ? '...' : ''}`;
+                        }
+                        let fullDesc = `${discountText} <span style="opacity: 0.6; font-weight:400; margin-left:5px;">| ${targetText}</span>`;
 
-                    if (products.length === 0) {
-                        container.innerHTML = "<p class='text-center w-100'>No products yet.</p>";
-                    }
+                        if (sales.length > 1) {
+                            const indicator = document.createElement('button');
+                            indicator.type = 'button';
+                            indicator.dataset.bsTarget = '#saleCarousel';
+                            indicator.dataset.bsSlideTo = index;
+                            if (index === 0) indicator.className = 'active';
+                            indicatorsContainer.appendChild(indicator);
+                        }
 
-                    products.forEach(p => container.innerHTML += createProductCard(p));
+                        const slide = document.createElement('div');
+                        slide.className = `carousel-item ${index === 0 ? 'active' : ''}`;
+                        slide.innerHTML = `
+                            <div class="sale-slide-content">
+                                <div class="sale-info">
+                                    <h3>${sale.name}</h3>
+                                    <p>${fullDesc}</p>
+                                </div>
+                                <div class="sale-timer" id="timer-${index}">
+                                    <div class="timer-box"><span class="timer-val d">0</span><span class="timer-label">D</span></div>
+                                    <div class="timer-box"><span class="timer-val h">0</span><span class="timer-label">H</span></div>
+                                    <div class="timer-box"><span class="timer-val m">0</span><span class="timer-label">M</span></div>
+                                    <div class="timer-box"><span class="timer-val s">0</span><span class="timer-label">S</span></div>
+                                </div>
+                                <a href="products.html?sale_id=${sale._id}" class="btn-shop-sale">SHOP NOW</a>
+                            </div>`;
+                        slidesContainer.appendChild(slide);
+
+                        const endTime = new Date(sale.endDate).getTime();
+                        const interval = setInterval(() => {
+                            const now = new Date().getTime();
+                            const dist = endTime - now;
+                            const el = document.getElementById(`timer-${index}`);
+                            if (!el) return;
+                            if (dist < 0) {
+                                el.innerHTML = "<span class='text-danger fw-bold'>EXPIRED</span>";
+                                clearInterval(interval);
+                                return;
+                            }
+                            el.querySelector('.d').innerText = Math.floor(dist / (1000 * 60 * 60 * 24));
+                            el.querySelector('.h').innerText = Math.floor((dist % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                            el.querySelector('.m').innerText = Math.floor((dist % (1000 * 60 * 60)) / (1000 * 60));
+                            el.querySelector('.s').innerText = Math.floor((dist % (1000 * 60)) / 1000);
+                        }, 1000);
+                        saleIntervals.push(interval);
+                    });
+                    bannerSection.style.display = 'block';
+                    if (window.bootstrap) new bootstrap.Carousel(document.getElementById('saleCarousel'), { interval: 5000, wrap: true });
                 }
-            } catch (err) { console.error(err); }
+            } catch (err) { console.error("Banner Error:", err); }
         }
-
-        async function fetchTrending() {
-            try {
-                // CHANGED: Added query param and headers to force fresh data
-                const res = await fetch(`/api/products?_t=${Date.now()}`, {
-                    headers: { 'Cache-Control': 'no-cache' }
-                });
-                const json = await res.json();
-                const container = document.getElementById('trendingGrid');
-                container.innerHTML = "";
-
-                if (json.success) {
-                    let activeProducts = json.data.filter(p => p.status === 'Active');
-                    // Randomize for trending effect
-                    activeProducts = activeProducts.sort(() => 0.5 - Math.random());
-
-                    let products = activeProducts.slice(0, 4);
-
-                    if (products.length === 0) {
-                        container.innerHTML = "<p class='text-center w-100'>No trending products.</p>";
-                    }
-
-                    products.forEach(p => container.innerHTML += createProductCard(p));
-                }
-            } catch (err) { console.error(err); }
-        }
-
-
-
-        function performSearch() {
-            const query = document.getElementById('searchInput').value.trim();
-            if (query) window.location.href = `products.html?search=${encodeURIComponent(query)}`;
-        }
-
     </script>
 </body>
 

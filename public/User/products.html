@@ -1267,34 +1267,84 @@
             });
         }
         function applyFilters() {
-            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            // 1. Get Search Term
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
             const sortType = document.getElementById('sortDropdown').value;
+
             filteredProducts = allProducts.filter(p => {
+                // A. Filter by Published Categories (Backend safety check)
                 if (publishedCategoryNames.length > 0 && !publishedCategoryNames.includes(p.category)) return false;
-                const matchesSearch = p.name.toLowerCase().includes(searchTerm);
+
+                // --- NEW SEARCH LOGIC (Name OR Category OR Team) ---
+                let matchesSearch = false;
+                if (searchTerm === "") {
+                    matchesSearch = true;
+                } else {
+                    // Check Name
+                    const nameMatch = p.name.toLowerCase().includes(searchTerm);
+
+                    // Check Category (Handle string or object)
+                    let catMatch = false;
+                    if (p.category) {
+                        const catName = typeof p.category === 'object' ? p.category.name : p.category;
+                        catMatch = String(catName).toLowerCase().includes(searchTerm);
+                    }
+
+                    // Check Team (Handle string or object)
+                    let teamMatch = false;
+                    if (p.team) {
+                        const teamName = typeof p.team === 'object' ? p.team.name : p.team;
+                        teamMatch = String(teamName).toLowerCase().includes(searchTerm);
+                    }
+
+                    matchesSearch = nameMatch || catMatch || teamMatch;
+                }
+                // ---------------------------------------------------
+
+                // B. Filter by Checkboxes (Team)
                 const matchesTeam = selectedTeams.length === 0 || selectedTeams.includes(p.team);
+
+                // C. Filter by Checkboxes (Category)
                 const matchesCat = selectedCategories.length === 0 || selectedCategories.includes(p.category);
+
+                // D. Filter by Size
                 const matchesSize = selectedSizes.length === 0 || (p.sizes && p.sizes.some(s => selectedSizes.includes(s.size) && s.stock > 0));
+
+                // E. Filter by Price
                 let matchesPrice = true;
-                if (selectedPrices.length > 0) matchesPrice = selectedPrices.some(range => { const [min, max] = range.split('-').map(Number); return p.price >= min && p.price <= max; });
+                if (selectedPrices.length > 0) matchesPrice = selectedPrices.some(range => {
+                    const [min, max] = range.split('-').map(Number);
+                    return p.price >= min && p.price <= max;
+                });
+
+                // F. Filter by Stock
                 let matchesStock = true;
                 if (selectedStockStatus.length > 0) {
                     const stockQty = Number(p.stockQuantity);
                     const isOutOfStock = stockQty === 0;
                     const wantInStock = selectedStockStatus.includes('in');
                     const wantOutOfStock = selectedStockStatus.includes('out');
-                    if (wantInStock && wantOutOfStock) matchesStock = true; else if (wantInStock) matchesStock = !isOutOfStock; else if (wantOutOfStock) matchesStock = isOutOfStock;
+                    if (wantInStock && wantOutOfStock) matchesStock = true;
+                    else if (wantInStock) matchesStock = !isOutOfStock;
+                    else if (wantOutOfStock) matchesStock = isOutOfStock;
                 }
+
+                // G. Filter by Offers/Sales
                 let matchesOffer = true;
                 if (showAllOffers || selectedSaleIds.length > 0 || activeSaleFilter) {
                     matchesOffer = false;
+                    // Check generic "Show All Offers" (Base Price > Price)
                     if (showAllOffers && p.basePrice && Number(p.basePrice) > Number(p.price)) matchesOffer = true;
+
+                    // Check Sale from URL (?sale_id=...)
                     if (!matchesOffer && activeSaleFilter) {
                         if (activeSaleFilter.appliesTo === 'all') matchesOffer = true;
                         else if (activeSaleFilter.appliesTo === 'category') matchesOffer = activeSaleFilter.targetIds.includes(p.category);
                         else if (activeSaleFilter.appliesTo === 'team') matchesOffer = activeSaleFilter.targetIds.includes(p.team);
                         else if (activeSaleFilter.appliesTo === 'product') matchesOffer = activeSaleFilter.targetIds.includes(p._id);
                     }
+
+                    // Check Specific Sale Checkboxes
                     if (!matchesOffer && selectedSaleIds.length > 0) {
                         const inSelectedSale = selectedSaleIds.some(saleId => {
                             const sale = activeSalesList.find(s => s._id === saleId);
@@ -1308,14 +1358,21 @@
                         if (inSelectedSale) matchesOffer = true;
                     }
                 }
+
                 return matchesSearch && matchesTeam && matchesCat && matchesSize && matchesPrice && matchesStock && matchesOffer;
             });
+
+            // Sorting
             if (sortType === 'low-high') filteredProducts.sort((a, b) => parseFloat(a.price) - parseFloat(b.price));
             else if (sortType === 'high-low') filteredProducts.sort((a, b) => parseFloat(b.price) - parseFloat(a.price));
             else if (sortType === 'newest') filteredProducts.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
             else if (sortType === 'rating') filteredProducts.sort((a, b) => (parseFloat(b.ratings) || 0) - (parseFloat(a.ratings) || 0));
-            renderGrid(); renderPagination();
+
+            renderGrid();
+            renderPagination();
         }
+
+
         function renderPagination() {
             const pagination = document.getElementById('pagination'); pagination.innerHTML = "";
             const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
@@ -1327,10 +1384,38 @@
         }
         function initializeFiltersFromURL() {
             const params = new URLSearchParams(window.location.search);
-            if (params.get('search')) document.getElementById('searchInput').value = decodeURIComponent(params.get('search'));
-            if (params.get('filter') === 'offers') { document.getElementById('offerFilterCheckbox').checked = true; showAllOffers = true; }
-            if (params.get('sale_id')) fetchSaleDetails(params.get('sale_id'));
+
+            // 1. Handle Search Text
+            if (params.get('search')) {
+                document.getElementById('searchInput').value = decodeURIComponent(params.get('search'));
+            }
+
+            // 2. Handle Category Redirect (Fixes the index.html issue)
+            if (params.get('category')) {
+                const categoryName = decodeURIComponent(params.get('category'));
+                toggleFilter('category', categoryName);
+                // toggleFilter automatically calls applyFilters(), so we see results immediately
+            }
+
+            // 3. Handle Team Redirect
+            if (params.get('team')) {
+                const teamName = decodeURIComponent(params.get('team'));
+                toggleFilter('team', teamName);
+            }
+
+            // 4. Handle Offers
+            if (params.get('filter') === 'offers') {
+                document.getElementById('offerFilterCheckbox').checked = true;
+                showAllOffers = true;
+            }
+
+            // 5. Handle Sales
+            if (params.get('sale_id')) {
+                fetchSaleDetails(params.get('sale_id'));
+            }
         }
+
+        
         async function fetchSaleDetails(saleId) {
             const sale = activeSalesList.find(s => s._id === saleId);
             if (sale) { activeSaleFilter = sale; const cb = document.getElementById(`sale-cb-${saleId}`); if (cb) cb.checked = true; toggleFilter('sale', saleId); }
