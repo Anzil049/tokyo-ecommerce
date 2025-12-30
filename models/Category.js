@@ -8,6 +8,8 @@ const categorySchema = new mongoose.Schema({
         trim: true
     },
 
+    
+
     slug: {
         type: String,
         required: true,
