@@ -1,0 +1,1150 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tokyo Admin - Teams</title>
+    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <style>
+        /* --- CRITICAL: FORCE SWEETALERT TO TOP --- */
+        .swal2-container {
+            z-index: 10000 !important;
+        }
+
+        /* Base CSS */
+        :root {
+            --primary: #4880FF;
+            --primary-light: #E8F0FE;
+            --dark: #202224;
+            --grey: #6A7178;
+            --bg: #F5F6FA;
+            --white: #fff;
+            --danger: #EF3826;
+            --danger-light: #FEECEB;
+            --success: #00B69B;
+            --success-light: #E6F7F5;
+            --warning: #FFB536;
+            --warning-light: #FFF8E7;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background: var(--bg);
+            display: flex;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        a {
+            text-decoration: none;
+        }
+
+        /* Layout */
+        .sidebar {
+            width: 260px;
+            background: var(--white);
+            padding: 20px;
+            height: 100vh;
+            position: fixed;
+            border-right: 1px solid #e0e0e0;
+            z-index: 1000;
+            transition: 0.3s;
+            left: 0;
+            top: 0;
+            overflow-y: auto;
+        }
+
+        .logo-img {
+            max-width: 150px;
+            display: block;
+            margin: 0 auto 30px;
+        }
+
+        .menu-cat {
+            font-size: 12px;
+            color: var(--grey);
+            margin: 15px 0 10px 10px;
+            font-weight: 700;
+        }
+
+        .menu-link {
+            display: flex;
+            align-items: center;
+            color: var(--grey);
+            padding: 12px 15px;
+            border-radius: 8px;
+            margin-bottom: 5px;
+            font-size: 14px;
+            transition: 0.3s;
+            font-weight: 500;
+            cursor: pointer;
+        }
+
+        .menu-link i {
+            font-size: 20px;
+            margin-right: 10px;
+        }
+
+        .menu-link:hover,
+        .menu-link.active {
+            background: var(--primary);
+            color: var(--white);
+            box-shadow: 0 4px 10px rgba(72, 128, 255, 0.2);
+        }
+
+        .logout {
+            color: var(--danger);
+            background: var(--danger-light);
+            margin-top: 15px;
+            justify-content: center;
+            font-weight: 600;
+        }
+
+        .main-content {
+            margin-left: 260px;
+            flex: 1;
+            padding: 30px;
+            width: calc(100% - 260px);
+            transition: 0.3s;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .menu-toggle {
+            display: none;
+            font-size: 28px;
+            cursor: pointer;
+            margin-right: 15px;
+        }
+
+        /* Table */
+        .table-box {
+            background: var(--white);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+        }
+
+        .table-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .action-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .search-input {
+            padding: 10px 15px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            outline: none;
+            width: 250px;
+        }
+
+        .add-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            transition: 0.2s;
+        }
+
+        .add-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(72, 128, 255, 0.3);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+
+        th {
+            text-align: left;
+            padding: 15px;
+            color: var(--grey);
+            border-bottom: 1px solid #eee;
+        }
+
+        tbody tr {
+            transition: background 0.2s;
+            cursor: pointer;
+        }
+
+        tbody tr:hover {
+            background-color: #f8f9fa;
+        }
+
+        td {
+            padding: 15px;
+            border-bottom: 1px solid #f5f5f5;
+            vertical-align: middle;
+            color: var(--dark);
+            font-size: 14px;
+        }
+
+        /* Cell Components */
+        .team-cell {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .team-logo {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 1px solid #eee;
+            background: #f9f9f9;
+        }
+
+        .team-name {
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        .team-sub {
+            font-size: 12px;
+            color: var(--grey);
+        }
+
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            display: inline-block;
+        }
+
+        .st-active {
+            background: var(--success-light);
+            color: var(--success);
+        }
+
+        .st-inactive {
+            background: var(--danger-light);
+            color: var(--danger);
+        }
+
+        .action-btns {
+            display: flex;
+            gap: 8px;
+        }
+
+        .icon-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            transition: 0.2s;
+        }
+
+        .edit-btn {
+            background: var(--warning-light);
+            color: var(--warning);
+        }
+
+        .edit-btn:hover {
+            background: #FFB536;
+            color: white;
+        }
+
+        .del-btn {
+            background: var(--danger-light);
+            color: var(--danger);
+        }
+
+        .del-btn:hover {
+            background: #EF3826;
+            color: white;
+        }
+
+        /* Modals */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            backdrop-filter: blur(2px);
+        }
+
+        .modal {
+            background: white;
+            width: 450px;
+            max-width: 90%;
+            border-radius: 16px;
+            padding: 25px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+            animation: slideDown 0.3s ease;
+        }
+
+        @keyframes slideDown {
+            from {
+                transform: translateY(-20px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 15px;
+        }
+
+        .modal-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--dark);
+        }
+
+        .close-modal {
+            cursor: pointer;
+            font-size: 24px;
+            color: var(--grey);
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 13px;
+            color: var(--dark);
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            outline: none;
+            font-size: 14px;
+        }
+
+        .file-upload-box {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            border: 1px dashed #ccc;
+            padding: 10px;
+            border-radius: 8px;
+            background: #f9f9f9;
+        }
+
+        .preview-img-box {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            overflow: hidden;
+            background: #eee;
+            flex-shrink: 0;
+            border: 1px solid #e0e0e0;
+        }
+
+        .preview-img-box img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .modal-footer {
+            text-align: right;
+            margin-top: 20px;
+        }
+
+        .cancel-btn {
+            background: white;
+            border: 1px solid #eee;
+            color: var(--grey);
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+
+        .save-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        /* --- CROPPER MODAL STYLES --- */
+        .image-cropper-modal {
+            position: fixed;
+            inset: 0;
+            z-index: 11000;
+            /* Higher than SweetAlert */
+            display: none;
+            justify-content: center;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.85);
+        }
+
+        .cropper-content {
+            background: #ffffff;
+            padding: 20px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 500px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .crop-container {
+            height: 400px;
+            width: 100%;
+            background: #f0f0f0;
+            overflow: hidden;
+            border-radius: 8px;
+        }
+
+        .crop-container img {
+            max-width: 100%;
+        }
+
+        .cropper-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        /* CRITICAL: Make the crop box look circular */
+        .cropper-view-box,
+        .cropper-face {
+            border-radius: 50%;
+        }
+
+        /* Details Modal Specifics */
+        .team-detail-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .team-detail-img {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            border: 2px solid #eee;
+            margin-bottom: 10px;
+            object-fit: cover;
+        }
+
+        .modal-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid #f9f9f9;
+            font-size: 14px;
+        }
+
+        .modal-label {
+            color: var(--grey);
+            font-weight: 500;
+        }
+
+        .modal-val {
+            color: var(--dark);
+            font-weight: 600;
+        }
+
+        @media (max-width: 991px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+
+            .sidebar.active {
+                transform: translateX(0);
+            }
+
+            .main-content {
+                margin-left: 0;
+                width: 100%;
+                padding: 20px;
+            }
+
+            .menu-toggle {
+                display: block;
+            }
+
+            .table-head {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .action-group {
+                width: 100%;
+                flex-direction: column-reverse;
+            }
+
+            .search-input,
+            .add-btn {
+                width: 100%;
+                justify-content: center;
+            }
+
+            table,
+            thead,
+            tbody,
+            th,
+            td,
+            tr {
+                display: block;
+                width: 100%;
+            }
+
+            thead {
+                display: none;
+            }
+
+            tr {
+                background: #fff;
+                margin-bottom: 20px;
+                border: 1px solid #eee;
+                border-radius: 12px;
+                padding: 20px;
+                position: relative;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+            }
+
+            td {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                text-align: right;
+                border-bottom: 1px solid #f9f9f9;
+                padding: 12px 0;
+            }
+
+            td:last-child {
+                border-bottom: none;
+                padding-bottom: 0;
+            }
+
+            td::before {
+                content: attr(data-label);
+                font-weight: 600;
+                color: var(--grey);
+                font-size: 13px;
+                text-align: left;
+            }
+
+            td[data-label="Team"] {
+                flex-direction: column;
+                align-items: flex-start;
+                padding-top: 0;
+                padding-bottom: 15px;
+                margin-bottom: 10px;
+                border-bottom: 1px solid #eee;
+                width: 100%;
+                padding-right: 80px;
+            }
+
+            td[data-label="Team"]::before {
+                display: none;
+            }
+
+            .team-cell {
+                justify-content: flex-start;
+                text-align: left;
+                width: 100%;
+            }
+
+            .team-cell>div {
+                display: flex;
+                flex-direction: column;
+                align-items: flex-start;
+                text-align: left;
+            }
+
+            td[data-label="Action"] {
+                position: absolute;
+                top: 20px;
+                right: 20px;
+                padding: 0;
+                border: none;
+                width: auto;
+                z-index: 5;
+            }
+
+            td[data-label="Action"]::before {
+                display: none;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="modal-overlay" id="teamFormModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title" id="formTitle">Add Team</h3>
+                <i class='bx bx-x close-modal' onclick="closeModal('teamFormModal')"></i>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">Team Logo</label>
+                    <div class="file-upload-box">
+                        <div class="preview-img-box">
+                            <img id="form-preview-img" src="https://placehold.co/100x100?text=Logo" alt="Preview">
+                        </div>
+                        <input type="file" id="t-logo-file" accept="image/*" onchange="handleFileSelect(this)">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Team Name</label>
+                    <input type="text" id="t-name" class="form-input" placeholder="e.g. Real Madrid">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Type</label>
+                    <select id="t-type" class="form-input">
+                        <option value="Club">Club</option>
+                        <option value="National">National Team</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Status</label>
+                    <select id="t-status" class="form-input">
+                        <option value="Active">Active</option>
+                        <option value="Inactive">Inactive</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="cancel-btn" onclick="closeModal('teamFormModal')">Cancel</button>
+                <button class="save-btn" onclick="saveTeam()">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="cropperModal" class="image-cropper-modal">
+        <div class="cropper-content">
+            <h3 style="margin-bottom: 10px;">Crop Team Logo</h3>
+            <div class="crop-container">
+                <img id="cropImageSrc" src="">
+            </div>
+            <div class="cropper-actions">
+                <button class="cancel-btn" onclick="closeCropper()">Cancel</button>
+                <button class="save-btn" onclick="confirmCrop()">Crop & Save</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="detailsModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">Team Profile</h3>
+                <i class='bx bx-x close-modal' onclick="closeModal('detailsModal')"></i>
+            </div>
+            <div id="detailsContent"></div>
+            <div class="modal-footer">
+                <button class="save-btn" onclick="closeModal('detailsModal')">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <aside class="sidebar" id="sidebar">
+        <img src="../Images/Logo text.png" class="logo-img">
+        <p class="menu-cat">Main menu</p>
+        <a href="dashboard.html" class="menu-link"><i class='bx bxs-dashboard'></i> Dashboard</a>
+        <a href="orders.html" class="menu-link"><i class='bx bx-cart'></i> Orders</a>
+        <a href="customers.html" class="menu-link"><i class='bx bx-user'></i> Customers</a>
+        <a href="coupons.html" class="menu-link"><i class='bx bx-purchase-tag'></i> Coupons</a>
+        <a href="sales.html" class="menu-link"><i class='bx bxs-offer'></i> Sales</a>
+        <a href="categories.html" class="menu-link"><i class='bx bx-category'></i> Categories</a>
+        <a href="transactions.html" class="menu-link"><i class='bx bx-credit-card'></i> Transactions</a>
+        <a href="teams.html" class="menu-link active"><i class='bx bx-trophy'></i> Teams</a>
+        <p class="menu-cat">Product</p>
+        <a href="add-product.html" class="menu-link"><i class='bx bx-plus-circle'></i> Add Product</a>
+        <a href="product-list.html" class="menu-link"><i class='bx bx-list-ul'></i> Product List</a>
+        <a href="reviews.html" class="menu-link"><i class='bx bx-message-square-detail'></i> Reviews</a>
+        <p class="menu-cat">Admin</p>
+        <a href="admin.html" class="menu-link"><i class='bx bx-user-circle'></i> Admin Role</a>
+        <a onclick="logoutUser()" class="menu-link logout"><i class='bx bx-log-out'></i> Log Out</a>
+    </aside>
+
+    <main class="main-content">
+        <div class="header">
+            <div style="display:flex; align-items:center;">
+                <i class='bx bx-menu menu-toggle' onclick="toggleSidebar()"></i>
+                <h2>Teams</h2>
+            </div>
+        </div>
+
+        <div class="table-box">
+            <div class="table-head">
+                <h3>All Teams</h3>
+                <div class="action-group">
+                    <input type="text" id="searchInput" class="search-input" placeholder="Search team..."
+                        onkeyup="filterTeams()">
+                    <button class="add-btn" id="addTeamBtn" onclick="openFormModal()">
+                        <i class='bx bx-plus'></i> Add Team
+                    </button>
+                </div>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Team</th>
+                        <th>Type</th>
+                        <th>Products</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="teamTableBody"></tbody>
+            </table>
+        </div>
+    </main>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+    <script>
+        // --- 1. CRITICAL: PREVENT BACK BUTTON CACHING ---
+        window.onpageshow = function (event) {
+            if (event.persisted || (window.performance && window.performance.navigation.type === 2)) {
+                window.location.reload();
+            }
+        };
+
+        function toggleSidebar() { document.getElementById('sidebar').classList.toggle('active'); }
+
+        // --- GLOBAL VARS ---
+        let editingTeamId = null;
+        let currentCropper = null;
+        let croppedImageBlob = null; // Defined ONCE here
+        let currentImgSrc = "https://placehold.co/100x100?text=Logo";
+        let allTeams = [];
+        let currentUserRole = '';
+
+        // --- 2. AUTH & LOAD ---
+        document.addEventListener('DOMContentLoaded', async () => {
+            await checkAuth();
+            loadTeams();
+        });
+
+        // --- 3. AUTH CHECK LOGIC ---
+        async function checkAuth() {
+            try {
+                const res = await fetch('/api/auth/verify-admin');
+                const data = await res.json();
+
+                if (!res.ok || !data.success) {
+                    window.location.replace('admin-login.html');
+                    return;
+                }
+
+                const allowedRoles = ['superadmin', 'editor', 'viewer'];
+                if (!allowedRoles.includes(data.user.role)) {
+                    window.location.replace('index.html');
+                    return;
+                }
+
+                currentUserRole = data.user.role;
+
+                if (currentUserRole === 'viewer') {
+                    document.getElementById('addTeamBtn').style.display = 'none';
+                }
+
+            } catch (err) {
+                window.location.replace('admin-login.html');
+            }
+        }
+
+        // --- FETCH TEAMS ---
+        async function loadTeams() {
+            try {
+                const response = await fetch('/api/teams');
+                if (response.status === 401 || response.status === 403) {
+                    window.location.replace('admin-login.html');
+                    return;
+                }
+                const result = await response.json();
+                if (result.success) {
+                    allTeams = result.data;
+                    // --- ADD THIS BLOCK TO SORT A-Z ---
+                    allTeams.sort((a, b) => {
+                        // Use localeCompare for correct string sorting (handling case sensitivity)
+                        return a.name.localeCompare(b.name);
+                    });
+                    renderTeams(allTeams);
+                }
+            } catch (err) { console.error("Fetch error:", err); }
+        }
+
+        // --- RENDER TABLE ---
+        function renderTeams(teams) {
+            const tbody = document.getElementById('teamTableBody');
+            tbody.innerHTML = '';
+
+            if (teams.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">No teams found</td></tr>';
+                return;
+            }
+
+            teams.forEach(team => {
+                const tr = document.createElement('tr');
+                const statusClass = team.status === 'Active' ? 'st-active' : 'st-inactive';
+                const typeLabel = team.type === 'National' ? 'National Team' : 'Club';
+                const tName = team.name || 'Unknown';
+                const tLogo = team.logo || 'https://placehold.co/100x100?text=TM';
+
+                tr.onclick = () => openDetails(tName, typeLabel, team.totalProducts || '0', team.status, tLogo);
+
+                let actionButtons = '';
+                if (currentUserRole !== 'viewer') {
+                    actionButtons = `
+                        <button class="icon-btn edit-btn" onclick="openFormModal(event, '${team._id}', '${tName}', '${team.type}', '${team.status}', '${tLogo}')">
+                            <i class='bx bx-edit'></i>
+                        </button>
+                        <button class="icon-btn del-btn" onclick="deleteTeam(event, '${team._id}')">
+                            <i class='bx bx-trash'></i>
+                        </button>
+                    `;
+                } else {
+                    actionButtons = `<span style="font-size:12px; color:var(--grey);">View Only</span>`;
+                }
+
+                tr.innerHTML = `
+                    <td data-label="Team">
+                        <div class="team-cell">
+                            <img src="${tLogo}" class="team-logo">
+                            <div>
+                                <div class="team-name">${tName}</div>
+                                <div class="team-sub">Added recently</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td data-label="Type">${typeLabel}</td>
+                    <td data-label="Products">${team.totalProducts || 0}</td>
+                    <td data-label="Status"><span class="status-badge ${statusClass}">${team.status}</span></td>
+                    <td data-label="Action">
+                        <div class="action-btns">${actionButtons}</div>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function filterTeams() {
+            const query = document.getElementById('searchInput').value.toLowerCase();
+            const filtered = allTeams.filter(t => t.name.toLowerCase().includes(query));
+            renderTeams(filtered);
+        }
+
+        // --- SAVE TEAM ---
+        // --- SAVE TEAM ---
+        async function saveTeam() {
+            if (currentUserRole === 'viewer') return;
+
+            // 1. Get and Trim Input
+            const nameInput = document.getElementById('t-name').value.trim();
+            const typeInput = document.getElementById('t-type').value;
+            const statusInput = document.getElementById('t-status').value;
+            const fileInput = document.getElementById('t-logo-file');
+
+            // 2. Basic Validation
+            if (!nameInput) {
+                Swal.fire({ icon: 'warning', title: 'Required', text: 'Team Name is required!' });
+                return;
+            }
+
+            // 3. FRONTEND DUPLICATE CHECK (Case-Insensitive)
+            // Check if name exists in allTeams AND ensure we are not editing the same team
+            const isDuplicate = allTeams.some(team =>
+                team.name.toLowerCase() === nameInput.toLowerCase() &&
+                team._id !== editingTeamId // Ignore self if editing
+            );
+
+            if (isDuplicate) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Duplicate Team',
+                    text: `The team "${nameInput}" already exists. Please choose a different name.`
+                });
+                return; // Stop execution
+            }
+
+            const formData = new FormData();
+            formData.append('name', nameInput);
+            formData.append('type', typeInput);
+            formData.append('status', statusInput);
+
+            // Append cropped blob if it exists
+            if (croppedImageBlob) {
+                formData.append('teamLogo', croppedImageBlob, 'team_logo.png');
+            }
+
+            try {
+                let url = '/api/teams';
+                let method = 'POST';
+                if (editingTeamId) {
+                    url = `/api/teams/${editingTeamId}`;
+                    method = 'PUT';
+                }
+
+                Swal.fire({ title: 'Saving...', didOpen: () => Swal.showLoading() });
+
+                const response = await fetch(url, { method: method, body: formData });
+
+                if (response.status === 401 || response.status === 403) {
+                    window.location.replace('admin-login.html');
+                    return;
+                }
+
+                const result = await response.json();
+
+                if (result.success) {
+                    closeModal('teamFormModal');
+                    loadTeams();
+                    Swal.fire({ icon: 'success', title: 'Success', text: 'Team saved successfully!' });
+                } else {
+                    // 4. BACKEND ERROR HANDLING (Catch E11000)
+                    if (result.error && result.error.includes('E11000') || result.error.includes('duplicate')) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Duplicate Error',
+                            text: `A team with the name "${nameInput}" already exists in the database.`
+                        });
+                    } else {
+                        Swal.fire('Error', result.error || 'Unknown Error', 'error');
+                    }
+                }
+            } catch (err) { console.error(err); }
+        }
+
+        // --- CROPPER LOGIC ---
+        function handleFileSelect(input) {
+            if (input.files && input.files[0]) {
+                const file = input.files[0];
+                if (!file.type.startsWith('image/')) {
+                    Swal.fire('Error', 'Please select an image file.', 'error');
+                    return;
+                }
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    openCropper(e.target.result);
+                    input.value = '';
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function openCropper(imageSrc) {
+            const imageElement = document.getElementById('cropImageSrc');
+            imageElement.src = imageSrc;
+            document.getElementById('cropperModal').style.display = 'flex';
+
+            if (currentCropper) { currentCropper.destroy(); }
+
+            currentCropper = new Cropper(imageElement, {
+                aspectRatio: 1,
+                viewMode: 1,
+                dragMode: 'move',
+                autoCropArea: 0.8,
+                restore: false,
+                guides: false,
+                center: true,
+                highlight: false,
+                cropBoxMovable: false,
+                cropBoxResizable: true,
+                toggleDragModeOnDblclick: false,
+            });
+        }
+
+        function closeCropper() {
+            document.getElementById('cropperModal').style.display = 'none';
+            if (currentCropper) {
+                currentCropper.destroy();
+                currentCropper = null;
+            }
+        }
+
+        function confirmCrop() {
+            if (!currentCropper) return;
+
+            // 1. Get Square Canvas
+            const squareCanvas = currentCropper.getCroppedCanvas({
+                width: 300,
+                height: 300,
+                fillColor: 'transparent',
+                imageSmoothingEnabled: true,
+                imageSmoothingQuality: 'high',
+            });
+
+            // 2. Create Circle Canvas (Masking)
+            const circleCanvas = document.createElement('canvas');
+            circleCanvas.width = 300;
+            circleCanvas.height = 300;
+            const ctx = circleCanvas.getContext('2d');
+
+            ctx.beginPath();
+            ctx.arc(150, 150, 150, 0, 2 * Math.PI);
+            ctx.closePath();
+            ctx.clip(); // Clip to circle
+
+            ctx.drawImage(squareCanvas, 0, 0); // Draw image inside clip
+
+            // 3. Save as Blob
+            circleCanvas.toBlob((blob) => {
+                croppedImageBlob = blob;
+                const previewUrl = URL.createObjectURL(blob);
+                document.getElementById('form-preview-img').src = previewUrl;
+                closeCropper();
+            }, 'image/png');
+        }
+
+        // --- MODALS & DELETE ---
+        async function deleteTeam(event, id) {
+            event.stopPropagation();
+            if (currentUserRole === 'viewer') return;
+
+            const result = await Swal.fire({
+                title: 'Delete this team?',
+                text: "You won't be able to revert this!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#EF3826',
+                cancelButtonColor: '#6A7178',
+                confirmButtonText: 'Yes, delete it!'
+            });
+
+            if (result.isConfirmed) {
+                try {
+                    const response = await fetch(`/api/teams/${id}`, { method: 'DELETE' });
+                    if (response.status === 401 || response.status === 403) {
+                        window.location.replace('admin-login.html');
+                        return;
+                    }
+                    const resultData = await response.json();
+                    if (resultData.success) {
+                        Swal.fire('Deleted!', 'Team has been deleted.', 'success');
+                        loadTeams();
+                    } else {
+                        Swal.fire('Error', resultData.error, 'error');
+                    }
+                } catch (err) {
+                    Swal.fire('Error', 'Delete failed', 'error');
+                }
+            }
+        }
+
+        function openFormModal(event = null, id = null, name = '', type = 'Club', status = 'Active', logo = '') {
+            // Reset blob
+            croppedImageBlob = null;
+
+            if (event) event.stopPropagation();
+
+            const modal = document.getElementById('teamFormModal');
+            const title = document.getElementById('formTitle');
+            const fileInput = document.getElementById('t-logo-file');
+            fileInput.value = '';
+
+            if (id) {
+                editingTeamId = id;
+                title.innerText = "Edit Team";
+                document.getElementById('t-name').value = name;
+                const typeVal = (type === 'National' || type === 'National Team') ? 'National' : 'Club';
+                document.getElementById('t-type').value = typeVal;
+                document.getElementById('t-status').value = status;
+                document.getElementById('form-preview-img').src = logo || "https://placehold.co/100x100?text=Logo";
+                currentImgSrc = logo;
+            } else {
+                editingTeamId = null;
+                title.innerText = "Add Team";
+                document.getElementById('t-name').value = '';
+                document.getElementById('t-type').value = 'Club';
+                document.getElementById('t-status').value = 'Active';
+                document.getElementById('form-preview-img').src = "https://placehold.co/100x100?text=Upload";
+                currentImgSrc = "https://placehold.co/100x100?text=Upload";
+            }
+            modal.style.display = 'flex';
+        }
+
+        function openDetails(name, type, count, status, img) {
+            const content = document.getElementById('detailsContent');
+            content.innerHTML = `
+                <div class="team-detail-header">
+                    <img src="${img}" class="team-detail-img">
+                    <h3 style="color:var(--dark);">${name}</h3>
+                    <p style="color:var(--grey); font-size:13px;">${type}</p>
+                </div>
+                <div class="modal-row"><span class="modal-label">Total Products</span><span class="modal-val">${count}</span></div>
+                <div class="modal-row"><span class="modal-label">Status</span><span class="modal-val" style="color:${status === 'Active' ? '#00B69B' : '#EF3826'}">${status}</span></div>
+            `;
+            document.getElementById('detailsModal').style.display = 'flex';
+        }
+
+        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+        window.onclick = function (event) { if (event.target.classList.contains('modal-overlay')) event.target.style.display = 'none'; }
+
+        async function logoutUser() {
+            try {
+                await fetch('/api/auth/logout-admin', { method: 'POST' });
+                window.location.replace('admin-login.html');
+            } catch (err) {
+                window.location.replace('admin-login.html');
+            }
+        }
+    </script>
+</body>
+
+</html>

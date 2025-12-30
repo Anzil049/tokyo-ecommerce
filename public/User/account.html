@@ -1,0 +1,1865 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Account - Tokyo Sports</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+    <style>
+        /* --- Order Card Styles --- */
+        .order-card {
+            border: 1px solid #eee;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            background: #fff;
+            transition: all 0.2s;
+        }
+
+        .order-card:hover {
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+        }
+
+        .order-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #f5f5f5;
+            padding-bottom: 12px;
+            margin-bottom: 15px;
+            font-size: 0.85rem;
+            color: #666;
+        }
+
+        .order-item {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+            border-bottom: 1px dashed #f0f0f0;
+            padding-bottom: 15px;
+        }
+
+        .order-item:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+            margin-bottom: 0;
+        }
+
+        .order-item img {
+            width: 70px;
+            height: 70px;
+            object-fit: contain;
+            border-radius: 4px;
+            border: 1px solid #eee;
+            padding: 5px;
+        }
+
+        .order-footer {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* Status Badges */
+        .status-badge {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .st-Pending {
+            background: #FFF8E7;
+            color: #FFB536;
+        }
+
+        .st-Processing {
+            background: #E8F0FE;
+            color: #4383FF;
+        }
+
+        .st-Shipped {
+            background: #F3E5F5;
+            color: #9C27B0;
+        }
+
+        .st-Delivered {
+            background: #E6F7F5;
+            color: #00B69B;
+        }
+
+        .st-Cancelled {
+            background: #FEECEB;
+            color: #EF3826;
+        }
+
+        .st-ReturnRequested {
+            background: #E8F0FE;
+            color: #4383FF;
+        }
+
+        .st-Returned {
+            background: #E0E0E0;
+            color: #666;
+        }
+
+        :root {
+            --primary-blue: #4383FF;
+            --primary-red: #DB4444;
+            --text-dark: #000000;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            overflow-x: hidden;
+        }
+
+        input[type=number]::-webkit-outer-spin-button,
+        input[type=number]::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        /* --- Header Styling --- */
+        .top-bar {
+            background-color: black;
+            color: white;
+            font-size: 0.875rem;
+        }
+
+        .navbar-brand {
+            font-weight: 700;
+            letter-spacing: 1px;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+        }
+
+        .logo-img {
+            max-height: 40px;
+            width: auto;
+            object-fit: contain;
+        }
+
+        .nav-link {
+            color: #000 !important;
+            font-weight: 500;
+            margin: 0 10px;
+            position: relative;
+        }
+
+        .nav-link:hover,
+        .nav-link.active {
+            text-decoration: underline;
+            text-decoration-thickness: 2px;
+            text-underline-offset: 4px;
+        }
+
+        .search-container {
+            position: relative;
+            background-color: #f5f5f5;
+            border-radius: 4px;
+            padding: 5px 10px;
+            min-width: 240px;
+        }
+
+        .search-input {
+            border: none;
+            background: transparent;
+            width: 100%;
+            font-size: 0.85rem;
+            outline: none;
+        }
+
+        .search-btn {
+            background: none;
+            border: none;
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        /* --- Account Page Specific --- */
+        .breadcrumb-text {
+            color: #000;
+            opacity: 0.5;
+            font-size: 0.9rem;
+        }
+
+        .breadcrumb-text span {
+            color: #000;
+            opacity: 1;
+            font-weight: 500;
+        }
+
+        .account-nav-header {
+            font-weight: 600;
+            font-size: 1rem;
+            margin-bottom: 10px;
+            color: #000;
+        }
+
+        .account-nav-list {
+            list-style: none;
+            padding-left: 15px;
+            margin-bottom: 20px;
+        }
+
+        .account-nav-list li {
+            margin-bottom: 8px;
+        }
+
+        .account-nav-list a {
+            text-decoration: none;
+            color: #808080;
+            font-size: 0.95rem;
+            transition: color 0.3s;
+            cursor: pointer;
+        }
+
+        .account-nav-list a:hover {
+            color: var(--primary-blue);
+        }
+
+        .account-nav-list a.active-link {
+            color: var(--primary-blue);
+            font-weight: 500;
+        }
+
+        .profile-card {
+            background: #fff;
+            padding: 40px 60px;
+            box-shadow: 0 1px 10px rgba(0, 0, 0, 0.05);
+            border-radius: 4px;
+            min-height: 500px;
+        }
+
+        .form-section-title {
+            color: black;
+            font-weight: 500;
+            margin-bottom: 20px;
+            font-size: 1.1rem;
+        }
+
+        .form-label {
+            font-weight: 400;
+            font-size: 0.95rem;
+            margin-bottom: 8px;
+        }
+
+        .custom-input {
+            background-color: #f5f5f5;
+            border: none;
+            border-radius: 4px;
+            padding: 12px 15px;
+            font-size: 0.95rem;
+            color: #333;
+        }
+
+        .custom-input:focus {
+            background-color: #f5f5f5;
+            box-shadow: none;
+            outline: 1px solid #ddd;
+        }
+
+        .btn-save {
+            background-color: var(--primary-blue);
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 4px;
+            font-weight: 500;
+        }
+
+        .btn-save:hover {
+            background-color: #356ACF;
+            color: white;
+        }
+
+        .btn-cancel {
+            background: transparent;
+            border: none;
+            color: #000;
+            padding: 12px 20px;
+            font-weight: 400;
+        }
+
+        /* Table for Orders */
+        .table-custom th {
+            border: none;
+            background-color: transparent;
+            font-weight: 500;
+        }
+
+        .table-custom td {
+            padding: 15px 5px;
+            vertical-align: middle;
+        }
+
+        /* Footer */
+        footer {
+            background-color: black;
+            color: white;
+            padding-top: 4rem;
+        }
+
+        footer h5 {
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+        }
+
+        footer ul {
+            padding-left: 0;
+            list-style: none;
+        }
+
+        footer li {
+            margin-bottom: 1rem;
+        }
+
+        footer a {
+            color: #d1d1d1;
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+
+        footer a:hover {
+            color: white;
+        }
+
+        .copyright {
+            border-top: 1px solid #333;
+            color: #666;
+            font-size: 0.85rem;
+            padding: 1.5rem 0;
+            margin-top: 3rem;
+        }
+
+        /* Animation */
+        .reveal-element {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.8s cubic-bezier(0.5, 0, 0, 1);
+        }
+
+        .active {
+            opacity: 1;
+            transform: translate(0, 0);
+        }
+
+        /* --- Sidebar Navigation Adjustment --- */
+        .account-nav-list {
+            list-style: none;
+            padding-left: 0;
+            /* Remove default indentation */
+            margin-bottom: 20px;
+        }
+
+        .account-nav-list li {
+            margin-bottom: 8px;
+        }
+
+        .account-nav-list a.sidebar-link {
+            text-decoration: none;
+            color: #808080;
+            font-size: 0.95rem;
+            display: block;
+            padding: 8px 0;
+            /* Add vertical breathing room */
+            transition: color 0.3s;
+            cursor: pointer;
+        }
+
+        .account-nav-list a:hover,
+        .account-nav-list a.active-link {
+            color: var(--primary-blue);
+            font-weight: 500;
+        }
+
+        .st-OutforDelivery {
+            background: #E8F0FE;
+            color: #4383FF;
+        }
+
+        /* --- Logout Button Style (Fixed Alignment) --- */
+        .sidebar-logout-btn {
+            display: flex;
+            align-items: center;
+            /* Center the text/icon inside the button */
+            width: 75%;
+            /* Force full width */
+            padding: 12px 15px;
+            background-color: #FEECEB;
+            color: #EF3826 !important;
+            border-radius: 8px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            margin-top: 15px;
+            box-sizing: border-box;
+            /* Ensure padding doesn't break width */
+        }
+
+        .sidebar-logout-btn:hover {
+            background-color: #EF3826;
+            color: white !important;
+            box-shadow: 0 4px 10px rgba(239, 56, 38, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .sidebar-logout-btn i {
+            margin-right: 8px;
+            font-size: 1.1rem;
+        }
+
+        /* --- Sticky Sidebar for Desktop Only --- */
+        @media (min-width: 992px) {
+            .account-sidebar-wrapper {
+                position: -webkit-sticky;
+                /* For Safari */
+                position: sticky;
+                top: 110px;
+                /* Distance from top of screen (adjusts for your sticky navbar) */
+                z-index: 10;
+                height: fit-content;
+                /* Ensures it doesn't stretch weirdly */
+            }
+        }
+
+        @media (max-width: 991px) {
+            .navbar-brand {
+                margin-right: 0;
+            }
+
+            .search-container {
+                min-width: auto !important;
+                flex-grow: 1;
+                margin: 0 10px;
+                padding: 5px;
+            }
+
+            .search-input {
+                font-size: 0.8rem;
+            }
+
+            .navbar-toggler {
+                border: none;
+                padding: 0;
+                margin-left: 8px;
+            }
+
+            .navbar-toggler:focus {
+                box-shadow: none;
+            }
+
+            /* Horizontal Scroll Container */
+            .account-sidebar-wrapper {
+                display: flex;
+                overflow-x: auto;
+                white-space: nowrap;
+                gap: 10px;
+                padding-bottom: 10px;
+                margin-bottom: 20px;
+                scrollbar-width: none;
+            }
+
+            .account-sidebar-wrapper::-webkit-scrollbar {
+                display: none;
+            }
+
+            /* Flatten lists to rows */
+            .account-nav-list {
+                display: flex;
+                padding-left: 0;
+                margin-top: 3px;
+                margin-bottom: 0;
+                gap: 10px;
+            }
+
+            .account-nav-header {
+                display: none;
+            }
+
+            .account-nav-list li {
+                margin-bottom: 0;
+            }
+
+            /* --- SHARED STYLES FOR LINKS AND LOGOUT --- */
+            .sidebar-link,
+            .sidebar-logout-btn {
+                width: 150px !important;
+                /* Updated Width */
+                height: 42px;
+                display: flex !important;
+                /* Flex ensures centering */
+                align-items: center;
+                /* Vertical Center */
+                justify-content: center;
+                /* Horizontal Center */
+                padding: 0 10px;
+                /* Slight padding to prevent text touching edges */
+                border-radius: 50px;
+                font-size: 0.85rem;
+                white-space: nowrap;
+                box-sizing: border-box;
+                text-align: center;
+            }
+
+            /* Specifics for Links */
+            .sidebar-link {
+                background-color: #f5f5f5;
+                color: #555;
+            }
+
+            .sidebar-link.active-link {
+                background-color: var(--primary-blue);
+                color: white !important;
+                font-weight: 500;
+            }
+
+            /* Specifics for Logout */
+            .sidebar-logout-btn {
+                margin-top: 0 !important;
+                background-color: #FEECEB;
+                color: #EF3826 !important;
+            }
+
+            .sidebar-logout-btn i {
+                margin-right: 5px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="top-bar py-2 text-center reveal-element">
+        <div class="container">
+            <span>BUY 2 OR MORE PRODUCTS AND GET FREE SHIPPING USING COUPON CODE ' SHIPOFF '</span>
+        </div>
+    </div>
+
+    <nav class="navbar navbar-expand-lg navbar-light bg-white sticky-top border-bottom py-3 reveal-element"
+        style="transition-delay: 100ms;">
+        <div class="container d-flex align-items-center">
+            <a class="navbar-brand order-1" href="index.html">
+                <img src="../Images/Logo text.png" alt="Tokyo Sports" class="logo-img">
+            </a>
+
+            <div class="d-flex align-items-center order-3 order-lg-4 ms-auto ms-lg-0">
+                <div class="d-flex align-items-center gap-3" id="navIcons">
+                    <a href="wishlist.html" class="text-dark"><i class="fas fa-heart"></i></a>
+                    <a href="cart.html" class="text-dark"><i class="fas fa-shopping-cart"></i></a>
+                    <a href="account.html" class="text-dark active"><i class="fas fa-user"></i></a>
+                </div>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+            </div>
+
+            <div class="collapse navbar-collapse justify-content-center order-4 order-lg-2" id="navbarNav">
+                <ul class="navbar-nav mb-2 mb-lg-0">
+                    <li class="nav-item"><a class="nav-link" href="index.html">Home</a></li>
+                    <li class="nav-item"><a class="nav-link" href="products.html">Shop</a></li>
+                    <li class="nav-item"><a class="nav-link" href="contact.html">Contact</a></li>
+                    <li class="nav-item"><a class="nav-link" href="about.html">About</a></li>
+
+                    <li class="nav-item" id="signupNavItem"><a class="nav-link" href="signup.html">Sign Up</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container my-5 reveal-element" style="transition-delay: 200ms;">
+        <div class="d-flex justify-content-between align-items-center mb-5">
+            <div class="breadcrumb-text">Home / <span>My Account</span></div>
+            <div>Welcome! <span id="welcomeName" style="color: var(--primary-blue);">User</span></div>
+        </div>
+
+        <div class="row">
+            <div class="col-lg-3 mb-5">
+                <div class="account-sidebar-wrapper">
+                    <div class="mobile-group">
+                        <div class="account-nav-header">Manage My Account</div>
+                        <ul class="account-nav-list">
+                            <li><a class="sidebar-link active-link" data-section="profile">My Profile</a></li>
+                            <li><a class="sidebar-link" data-section="address">Address Book</a></li>
+                            <li><a class="sidebar-link" data-section="payment">Payment Options</a></li>
+                        </ul>
+                    </div>
+                    <div class="mobile-group">
+                        <div class="account-nav-header mt-4">Manage My Orders</div>
+                        <ul class="account-nav-list">
+                            <li><a class="sidebar-link" data-section="all-orders">My Orders</a></li>
+                            <li><a class="sidebar-link" data-section="returns">My Returns</a></li>
+                            <li><a class="sidebar-link" data-section="cancellations">Cancellations</a></li>
+                            <li>
+                                <a onclick="logoutUser()" class="sidebar-logout-btn">
+                                    <i class="fas fa-sign-out-alt"></i> Logout
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-9">
+                <div class="profile-card">
+
+                    <div id="profile" class="content-section">
+                        <h4 class="form-section-title">Edit Your Profile</h4>
+                        <form onsubmit="handleUpdateProfile(event)">
+                            <div class="row mb-4">
+                                <div class="col-md-6 mb-3 mb-md-0">
+                                    <label class="form-label">First Name</label>
+                                    <input type="text" id="profileFirstName" class="form-control custom-input">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Last Name</label>
+                                    <input type="text" id="profileLastName" class="form-control custom-input">
+                                </div>
+                            </div>
+                            <div class="row mb-4">
+                                <div class="col-12">
+                                    <label class="form-label">Email</label>
+                                    <input type="email" id="profileEmail" class="form-control custom-input" disabled
+                                        readonly style="background-color: #e9ecef;">
+                                </div>
+                            </div>
+
+                            <div class="mb-4 border p-3 rounded" style="background-color: #fafafa;">
+                                <label class="form-label fw-bold">Change Password (Optional)</label>
+                                <p class="small text-muted mb-3">To set a new password, verify via email.</p>
+                                <div class="input-group mb-3">
+                                    <input type="text" id="profileOtp" class="form-control custom-input"
+                                        placeholder="Enter Verification Code" autocomplete="off">
+                                    <button type="button" class="btn btn-dark" onclick="sendProfileOtp()"
+                                        id="sendOtpBtn">Get Code</button>
+                                </div>
+                                <input type="password" id="newPassword" class="form-control custom-input mb-2"
+                                    placeholder="New Password">
+                                <input type="password" id="confirmPassword" class="form-control custom-input"
+                                    placeholder="Confirm New Password">
+                            </div>
+
+                            <div class="d-flex justify-content-end align-items-center gap-2 mt-4">
+                                <button type="button" class="btn-cancel">Cancel</button>
+                                <button type="submit" class="btn-save">Save Changes</button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <div id="address" class="content-section d-none">
+                        <div id="address-list-view">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h4 class="form-section-title mb-0">Address Book</h4>
+                            </div>
+
+                            <div class="row g-3" id="addressContainer">
+                                <div class="col-12 text-center py-4">Loading addresses...</div>
+                            </div>
+                        </div>
+
+                        <div id="address-form-view" class="d-none">
+                            <h4 class="form-section-title" id="address-form-title">Add New Address</h4>
+                            <form onsubmit="handleAddressSubmit(event)">
+                                <input type="hidden" id="editAddressId">
+
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label">First Name <span class="text-danger">*</span></label>
+                                        <input type="text" id="addrFirstName" class="form-control custom-input"
+                                            oninput="this.value = this.value.replace(/[^a-zA-Z\s]/g, '')" required>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Last Name <span class="text-danger">*</span></label>
+                                        <input type="text" id="addrLastName" class="form-control custom-input"
+                                            oninput="this.value = this.value.replace(/[^a-zA-Z\s]/g, '')" required>
+                                    </div>
+                                </div>
+
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label">Phone Number <span
+                                                class="text-danger">*</span></label>
+                                        <input type="text" id="addrPhone" class="form-control custom-input"
+                                            inputmode="numeric" maxlength="10"
+                                            oninput="this.value = this.value.replace(/[^0-9]/g, '')"
+                                            placeholder="10 digit number" required>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Pincode (Zip) <span
+                                                class="text-danger">*</span></label>
+                                        <input type="text" id="addrZip" class="form-control custom-input"
+                                            inputmode="numeric" maxlength="6"
+                                            oninput="this.value = this.value.replace(/[^0-9]/g, '')" required>
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label">Street Address <span class="text-danger">*</span></label>
+                                    <input type="text" id="addrStreet" class="form-control custom-input"
+                                        placeholder="House No, Street, Landmark" required>
+                                </div>
+
+                                <div class="row mb-4">
+                                    <div class="col-md-6">
+                                        <label class="form-label">City / District <span
+                                                class="text-danger">*</span></label>
+                                        <input type="text" id="addrCity" class="form-control custom-input"
+                                            oninput="this.value = this.value.replace(/[^a-zA-Z\s]/g, '')" required>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">State <span class="text-danger">*</span></label>
+                                        <input type="text" id="addrState" class="form-control custom-input"
+                                            oninput="this.value = this.value.replace(/[^a-zA-Z\s]/g, '')" required>
+                                    </div>
+                                </div>
+
+                                <div class="form-check mb-4">
+                                    <input class="form-check-input" type="checkbox" id="addrIsDefault">
+                                    <label class="form-check-label text-secondary small" for="addrIsDefault">
+                                        Set as default shipping address
+                                    </label>
+                                </div>
+
+                                <div class="d-flex justify-content-end align-items-center gap-2">
+                                    <button type="button" class="btn-cancel"
+                                        onclick="toggleAddressView('list')">Cancel</button>
+                                    <button type="submit" class="btn-save" id="btnSaveAddress">Save Address</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <div id="payment" class="content-section d-none">
+                        <h4 class="form-section-title">My Wallet</h4>
+
+                        <div class="card p-4 mb-4 bg-light border-0">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h3 class="mb-0 fw-bold">₹<span id="walletBalance">0.00</span></h3>
+                                    <p class="text-muted small mb-0">Available Balance</p>
+                                </div>
+                                <i class="fas fa-wallet text-secondary fa-2x"></i>
+                            </div>
+                        </div>
+
+                        <h5 class="mb-3">Add Money</h5>
+                        <div class="input-group mb-4" style="max-width: 400px;">
+                            <span class="input-group-text bg-white">₹</span>
+                            <input type="number" id="addAmount" class="form-control"
+                                placeholder="Enter amount (e.g. 500)">
+                            <button class="btn btn-primary" onclick="initiatePayment()">Add Funds</button>
+                        </div>
+
+                        <hr class="my-4">
+
+                        <h5 class="mb-3">Transaction History</h5>
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle">
+                                <thead class="table-light small text-secondary">
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Description</th>
+                                        <th class="text-end">Amount</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="walletTransactionTable">
+                                    <tr>
+                                        <td colspan="3" class="text-center text-muted py-3">Loading transactions...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div id="all-orders" class="content-section d-none">
+                        <h4 class="form-section-title">My Orders</h4>
+                    </div>
+
+                    <div id="returns" class="content-section d-none">
+                        <h4 class="form-section-title">My Returns</h4>
+                    </div>
+
+                    <div id="cancellations" class="content-section d-none">
+                        <h4 class="form-section-title">My Cancellations</h4>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="text-center">
+        <div class="container">
+            <div class="row gy-5 justify-content-center">
+                <div class="col-6 col-lg-3">
+                    <h5 class="text-white mb-4">TOKYO</h5>
+                    <p class="small text-secondary">FOLLOW US ON INSTAGRAM</p>
+                    <div class="footer-instagram-link mt-3 mx-auto" style="max-width: 250px; text-align: center;">
+                        <a href="https://www.instagram.com/tokyo._.sports" target="_blank" class="text-white"
+                            style="text-decoration: none; font-size: 16px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                            <i class="fab fa-instagram" style="font-size: 20px;"></i>
+                            <span>tokyo._.sports</span>
+                        </a>
+                    </div>
+                </div>
+                <div class="col-6 col-lg-3">
+                    <h5 class="text-white">Support</h5>
+                    <ul class="text-secondary small mt-4">
+                        <li>Tokyo sports Tirur<br>676102,Kerala</li>
+                        <li class="mt-3">tokyo@gmail.com</li>
+                        <li class="mt-2">+91 9188223835</li>
+                    </ul>
+                </div>
+                <div class="col-6 col-lg-2">
+                    <h5 class="text-white">Account</h5>
+                    <ul class="mt-4">
+                        <li><a href="account.html">My Account</a></li>
+                        <li><a href="signup.html">Login / Register</a></li>
+                        <li><a href="cart.html">Cart</a></li>
+                        <li><a href="wishlist.html">Wishlist</a></li>
+                        <li><a href="products.html">Products</a></li>
+                    </ul>
+                </div>
+                <div class="col-6 col-lg-2">
+                    <h5 class="text-white">Quick Link</h5>
+                    <ul class="mt-4">
+                        <li><a href="privacy.html">Privacy Policy</a></li>
+                        <li><a href="terms.html">Terms Of Use</a></li>
+                        <li><a href="faq.html">FAQ</a></li>
+                        <li><a href="contact.html">Contact</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="copyright text-center">
+                &copy; Copyright Tokyo 2025. All right reserved
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        // ==========================================
+        //  1. AUTO-REFRESH & NAVIGATION LOGIC
+        // ==========================================
+
+        // A. Handle Back Button (Force Reload)
+        window.addEventListener('pageshow', function (event) {
+            var historyTraversal = event.persisted ||
+                (typeof window.performance != "undefined" &&
+                    window.performance.navigation.type === 2);
+
+            if (!historyTraversal && window.performance && window.performance.getEntriesByType) {
+                const navEntries = window.performance.getEntriesByType('navigation');
+                if (navEntries.length > 0 && navEntries[0].type === 'back_forward') {
+                    historyTraversal = true;
+                }
+            }
+
+            if (historyTraversal) {
+                window.location.reload();
+            }
+        });
+
+        // B. Handle Tab Switching (Refetch data when user comes back)
+        document.addEventListener('visibilitychange', function () {
+            if (document.visibilityState === 'visible') {
+                console.log('Tab active: Refreshing data...');
+                loadWalletBalance();
+                loadOrderData();
+                loadAddresses();
+            }
+        });
+
+        // --- GLOBAL VARIABLES ---
+        let myAddresses = [];
+
+        // --- 2. INITIALIZATION ---
+        document.addEventListener('DOMContentLoaded', async () => {
+            // A. Check Auth & Load Profile
+            await checkAuthAndLoadProfile();
+
+            // B. Load Data
+            loadAddresses();
+            loadWalletBalance();
+            loadOrderData();
+
+            // C. Setup Sidebar
+            setupSidebarNavigation();
+
+            // D. Reveal Animation
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('active');
+                        observer.unobserve(entry.target);
+                    }
+                });
+            });
+            document.querySelectorAll('.reveal-element').forEach(el => observer.observe(el));
+        });
+
+        // --- SIDEBAR NAVIGATION ---
+        function setupSidebarNavigation() {
+            const sidebarLinks = document.querySelectorAll('.sidebar-link');
+            const sections = document.querySelectorAll('.content-section');
+            const addressList = document.getElementById('address-list-view');
+            const addressForm = document.getElementById('address-form-view');
+
+            sidebarLinks.forEach(link => {
+                link.addEventListener('click', (e) => {
+                    if (link.closest('.sidebar-logout-btn')) return;
+                    e.preventDefault();
+
+                    // Update Active State
+                    sidebarLinks.forEach(l => l.classList.remove('active-link'));
+                    link.classList.add('active-link');
+
+                    // Show Target Section
+                    sections.forEach(sec => sec.classList.add('d-none'));
+                    const targetId = link.getAttribute('data-section');
+                    const targetSection = document.getElementById(targetId);
+
+                    if (targetSection) {
+                        targetSection.classList.remove('d-none');
+                        // Reset Address Tab if clicked
+                        if (targetId === 'address') {
+                            addressList.classList.remove('d-none');
+                            addressForm.classList.add('d-none');
+                        }
+                    }
+                });
+            });
+        }
+
+        // ==========================================
+        //  3. ORDER MANAGEMENT LOGIC (BATCH & DETAILS)
+        // ==========================================
+
+        async function loadOrderData() {
+            try {
+                // Added no-cache to force fresh data
+                const res = await fetch('/api/orders/my-orders', { headers: { 'Cache-Control': 'no-cache' } });
+                const json = await res.json();
+
+                if (!json.success) return;
+
+                const orders = json.data || [];
+
+                // 1. ALL ORDERS (Batch View)
+                renderBatchOrders(orders, 'all-orders', 'My Orders', 'active-only');
+                // 2. RETURNS (Filter for orders containing returns)
+                renderBatchOrders(orders, 'returns', 'My Returns', 'returned-only');
+                // 3. CANCELLATIONS (Filter for orders containing cancellations)
+                renderBatchOrders(orders, 'cancellations', 'Cancellations', 'cancelled-only');
+
+            } catch (err) {
+                console.error("Error loading orders:", err);
+            }
+        }
+
+        function renderBatchOrders(orders, containerId, title, filterMode = 'all') {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+
+            let html = `<h4 class="form-section-title">${title}</h4>`;
+            let hasOrders = false;
+
+            orders.forEach(order => {
+                // Filter Logic: Check if this order has relevant items for the current tab
+                let relevantItems = [];
+                if (filterMode === 'returned-only') {
+                    relevantItems = order.items.filter(i => ['Returned', 'Return Requested', 'Return Rejected'].includes(i.status));
+                } else if (filterMode === 'cancelled-only') {
+                    relevantItems = order.items.filter(i => i.status === 'Cancelled');
+                } else {
+                    // Active Only (Show order if it has ANY item not fully dead, or show normally)
+                    relevantItems = order.items;
+                }
+
+                if (relevantItems.length > 0) {
+                    hasOrders = true;
+
+                    // Determine Badge Color based on Global Status
+                    let badgeClass = 'bg-secondary';
+                    if (order.orderStatus === 'Delivered' || order.orderStatus === 'Completed') badgeClass = 'bg-success';
+                    else if (order.orderStatus === 'Cancelled') badgeClass = 'bg-danger';
+                    else if (order.orderStatus === 'Pending' || order.orderStatus === 'Processing') badgeClass = 'bg-primary';
+                    else if (order.orderStatus === 'Shipped') badgeClass = 'bg-info';
+
+                    // CRITICAL FIX: Properly escape JSON for onclick handler
+                    const safeOrder = JSON.stringify(order).replace(/'/g, "&#39;").replace(/"/g, "&quot;");
+
+                    html += `
+                    <div class="card mb-3 shadow-sm border-0">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <div>
+                                    <h6 class="fw-bold mb-0">Order #${order._id.slice(-6).toUpperCase()}</h6>
+                                    <small class="text-muted">${new Date(order.createdAt).toLocaleDateString()}</small>
+                                </div>
+                                <span class="badge ${badgeClass}">${order.orderStatus}</span>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <span class="fw-bold">₹${order.totalAmount}</span>
+                                    <small class="text-muted d-block">${order.items.length} Items</small>
+                                </div>
+                                <button class="btn btn-outline-primary btn-sm" onclick='showOrderDetails(${safeOrder})'>
+                                    View Details
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                }
+            });
+
+            if (!hasOrders) {
+                html += `<div class="p-4 text-center text-muted bg-light rounded border border-dashed">No orders found in this category.</div>`;
+            }
+            container.innerHTML = html;
+        }
+
+        // --- DETAILS MODAL (Individual Items) ---
+        // Make function globally available
+        window.showOrderDetails = function (order) {
+            let itemsHtml = '';
+
+            // Safe copy of order for the invoice function
+            const safeOrder = JSON.stringify(order).replace(/'/g, "&#39;").replace(/"/g, "&quot;");
+
+            order.items.forEach(item => {
+                let statusClass = 'st-' + item.status.replace(/\s/g, '');
+                if (item.status === 'Return Requested') statusClass = 'st-ReturnRequested';
+
+                const img = item.image || 'https://placehold.co/70';
+                const productId = (typeof item.product === 'object' && item.product !== null) ? item.product._id : item.product;
+                const itemSize = item.size || '';
+
+                // --- 1. ACTION BUTTONS LOGIC ---
+                let actionButtons = '';
+                let invoiceBtn = '';
+
+                // Invoice Button: Only if Delivered or Completed, and NOT Cancelled/Returned
+                if (['Delivered', 'Completed'].includes(item.status)) {
+                    invoiceBtn = `
+                        <button class="btn btn-sm btn-outline-dark flex-fill" 
+                                onclick='downloadItemInvoice(${safeOrder}, "${item._id}")'>
+                            <i class="fas fa-file-download"></i> Invoice
+                        </button>`;
+                }
+
+                if (['Pending', 'Processing'].includes(item.status)) {
+                    actionButtons = `
+                        <button class="btn btn-sm btn-outline-danger w-100 mt-2" 
+                            onclick="cancelUserItem('${order._id}', '${item._id}')">
+                            Cancel Item
+                        </button>`;
+                }
+                else if (item.status === 'Delivered') {
+                    const deliveryDate = new Date(order.deliveredAt || order.updatedAt);
+                    const diffDays = Math.ceil(Math.abs(new Date() - deliveryDate) / (1000 * 60 * 60 * 24));
+
+                    let returnBtn = '';
+                    if (diffDays <= 7) {
+                        returnBtn = `<button class="btn btn-sm btn-outline-secondary flex-fill" onclick="returnUserItem('${order._id}', '${item._id}')">Return</button>`;
+                    }
+
+                    actionButtons = `
+                        <div class="d-flex gap-2 mt-2">
+                            ${invoiceBtn} ${returnBtn}
+                            <button class="btn btn-sm btn-primary flex-fill" 
+                                onclick="openReviewModal('${productId}', '${item.name}', '${order._id}', '${itemSize}')">Review</button>
+                        </div>`;
+                }
+                else if (['Completed'].includes(item.status)) {
+                    // For generic completed status (older orders)
+                    actionButtons = `
+                        <div class="d-flex gap-2 mt-2">
+                            ${invoiceBtn}
+                            <button class="btn btn-sm btn-primary flex-fill" 
+                                onclick="openReviewModal('${productId}', '${item.name}', '${order._id}', '${itemSize}')">Review</button>
+                        </div>`;
+                }
+                else if (['Cancelled', 'Returned', 'Return Requested'].includes(item.status)) {
+                    // No invoice for cancelled items usually
+                    actionButtons = `<div class="mt-2 text-muted small text-center"><i class="fas fa-info-circle"></i> ${item.status}</div>`;
+                }
+
+                // --- 2. HTML GENERATION ---
+                itemsHtml += `
+                <div class="d-flex align-items-start gap-3 border-bottom pb-3 mb-3">
+                    <img src="${img}" style="width:60px; height:60px; object-fit:contain; border:1px solid #eee; border-radius:4px;">
+                    <div class="flex-grow-1">
+                        <h6 class="mb-1" style="font-size: 0.95rem;">${item.name}</h6>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small class="text-muted">Qty: ${item.quantity} | Size: ${item.size || 'N/A'}</small>
+                            <span class="fw-bold">₹${item.price}</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mt-2">
+                            <span class="status-badge ${statusClass}" style="font-size:0.7rem;">${item.status}</span>
+                        </div>
+                        ${actionButtons}
+                    </div>
+                </div>`;
+            });
+
+            // Address & Payment HTML (Kept Same)
+            const addr = order.shippingAddress;
+            const addressHtml = `
+            <div class="bg-light p-3 rounded mb-3">
+                <h6 class="fw-bold small text-uppercase mb-2 text-muted">Shipping Address</h6>
+                <p class="mb-0 small fw-bold">${addr.fullName}</p>
+                <p class="mb-0 small text-muted">${addr.addressLine}, ${addr.city}</p>
+                <p class="mb-0 small text-muted">${addr.state} - ${addr.zipCode}</p>
+                <p class="mb-0 small text-muted">Phone: ${addr.phone}</p>
+            </div>`;
+
+            const paymentHtml = `
+             <div class="d-flex justify-content-between align-items-center bg-light p-3 rounded mb-3">
+                <div>
+                    <h6 class="fw-bold small text-uppercase mb-1 text-muted">Payment</h6>
+                    <span class="badge bg-dark">${order.paymentMethod}</span>
+                </div>
+                <div class="text-end">
+                    <h6 class="fw-bold small text-uppercase mb-1 text-muted">Total</h6>
+                    <span class="fw-bold text-primary">₹${order.totalAmount}</span>
+                </div>
+            </div>`;
+
+            Swal.fire({
+                title: `<strong>Order #${order._id.slice(-6).toUpperCase()}</strong>`,
+                html: `<div style="text-align: left; max-height: 60vh; overflow-y: auto;">
+                        ${addressHtml} ${paymentHtml}
+                        <h6 class="fw-bold small text-uppercase mb-3 text-muted">Items</h6>
+                        ${itemsHtml}
+                       </div>`,
+                width: '600px',
+                showCloseButton: true,
+                showConfirmButton: false
+            });
+        }
+
+        // --- CANCEL SINGLE ITEM ---
+        window.cancelUserItem = async function (orderId, itemId) {
+            // CLOSE EXISTING MODAL FIRST
+            Swal.close();
+
+            // Wait a tiny bit to ensure modal is gone before showing new one
+            setTimeout(async () => {
+                const result = await Swal.fire({
+                    title: 'Cancel Item?',
+                    text: "If Paid, Refund will be added to your wallet.",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#DB4444',
+                    confirmButtonText: 'Yes, Cancel'
+                });
+
+                if (result.isConfirmed) {
+                    try {
+                        const res = await fetch(`/api/orders/cancel-item/${orderId}/${itemId}`, { method: 'PUT' });
+                        const json = await res.json();
+
+                        if (json.success) {
+                            Swal.fire('Success', 'Item Cancelled', 'success');
+                            loadOrderData();
+                            loadWalletBalance();
+                        } else {
+                            Swal.fire('Error', json.message, 'error');
+                        }
+                    } catch (err) { Swal.fire('Error', 'Connection failed', 'error'); }
+                }
+            }, 200);
+        }
+
+        // --- RETURN SINGLE ITEM ---
+        window.returnUserItem = async function (orderId, itemId) {
+            Swal.close(); // Close Details Modal
+
+            setTimeout(async () => {
+                const { value: reason } = await Swal.fire({
+                    title: 'Return Item',
+                    input: 'select',
+                    inputOptions: {
+                        'defective': 'Defective Product',
+                        'wrong_item': 'Received Wrong Item',
+                        'size_issue': 'Size Issue',
+                        'changed_mind': 'Changed Mind'
+                    },
+                    inputPlaceholder: 'Select a reason',
+                    showCancelButton: true,
+                    confirmButtonText: 'Submit Request',
+                    inputValidator: (value) => {
+                        if (!value) return 'You need to select a reason!';
+                    }
+                });
+
+                if (reason) {
+                    try {
+                        const res = await fetch(`/api/orders/return-item/${orderId}/${itemId}`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ reason })
+                        });
+                        const json = await res.json();
+
+                        if (json.success) {
+                            Swal.fire('Submitted', 'Return request sent.', 'success');
+                            loadOrderData();
+                        } else {
+                            Swal.fire('Error', json.message, 'error');
+                        }
+                    } catch (err) { Swal.fire('Error', 'Connection failed', 'error'); }
+                }
+            }, 200);
+        }
+
+        // --- REVIEW MODAL ---
+        window.openReviewModal = function (productId, productName, orderId, size) {
+            Swal.close(); // Close Details Modal
+
+            setTimeout(() => {
+                const sizeLabel = size ? `(Size: ${size})` : '';
+                Swal.fire({
+                    title: `<span style="font-size: 1.2rem">Review: ${productName} <br><small class="text-muted" style="font-size: 0.9rem">${sizeLabel}</small></span>`,
+                    html: `
+                    <div class="text-start">
+                        <label class="form-label fw-bold small text-secondary">Rating</label>
+                        <select id="swal-rating" class="form-select mb-3">
+                            <option value="5">⭐⭐⭐⭐⭐ (Excellent)</option>
+                            <option value="4">⭐⭐⭐⭐ (Good)</option>
+                            <option value="3">⭐⭐⭐ (Average)</option>
+                            <option value="2">⭐⭐ (Poor)</option>
+                            <option value="1">⭐ (Terrible)</option>
+                        </select>
+                        <label class="form-label fw-bold small text-secondary">Your Comment</label>
+                        <textarea id="swal-comment" class="form-control" rows="4" 
+                            placeholder="Share your details about quality, size, delivery..."></textarea>
+                    </div>
+                `,
+                    showCancelButton: true,
+                    confirmButtonText: 'Submit Review',
+                    confirmButtonColor: '#4880FF',
+                    cancelButtonColor: '#6c757d',
+                    focusConfirm: false,
+                    preConfirm: () => {
+                        const rating = document.getElementById('swal-rating').value;
+                        const comment = document.getElementById('swal-comment').value;
+                        if (!comment.trim()) Swal.showValidationMessage('Please write a comment!');
+                        return { rating, comment };
+                    }
+                }).then(async (result) => {
+                    if (result.isConfirmed) {
+                        Swal.fire({ title: 'Submitting...', didOpen: () => Swal.showLoading() });
+                        try {
+                            const response = await fetch('/api/reviews/submit', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    productId: productId,
+                                    orderId: orderId,
+                                    size: size,
+                                    rating: result.value.rating,
+                                    comment: result.value.comment
+                                })
+                            });
+                            const data = await response.json();
+                            if (data.success) {
+                                Swal.fire({ icon: 'success', title: 'Submitted!', text: 'Your review has been sent for approval.', confirmButtonColor: '#4880FF' });
+                            } else {
+                                Swal.fire({ icon: 'error', title: 'Oops...', text: data.message || 'Failed to submit review.', confirmButtonColor: '#EF3826' });
+                            }
+                        } catch (err) {
+                            Swal.fire({ icon: 'error', title: 'Connection Error', text: 'Could not connect to the server.', confirmButtonColor: '#EF3826' });
+                        }
+                    }
+                });
+            }, 200);
+        }
+
+        // ==========================================
+        //  4. WALLET & PAYMENT
+        // ==========================================
+
+        async function loadWalletBalance() {
+            try {
+                // Add no-cache header
+                const res = await fetch('/api/payment/balance', { headers: { 'Cache-Control': 'no-cache' } });
+                const data = await res.json();
+
+                if (data.success) {
+                    document.getElementById('walletBalance').innerText = (data.balance || 0).toFixed(2);
+                    const tbody = document.getElementById('walletTransactionTable');
+                    tbody.innerHTML = '';
+
+                    const transactions = data.transactions || [];
+                    if (transactions.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted py-3">No transactions yet.</td></tr>';
+                        return;
+                    }
+
+                    transactions.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+                    transactions.forEach(t => {
+                        const date = new Date(t.date).toLocaleDateString();
+                        const isCredit = t.type === 'credit' || t.type === 'Credit';
+                        const colorClass = isCredit ? 'text-success' : 'text-danger';
+                        const sign = isCredit ? '+' : '-';
+                        const icon = isCredit ? '<i class="fas fa-arrow-down small me-1"></i>' : '<i class="fas fa-arrow-up small me-1"></i>';
+
+                        const row = `
+                        <tr>
+                            <td class="small text-muted">${date}</td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="me-2">${icon}</div>
+                                    <span>${t.description}</span>
+                                </div>
+                            </td>
+                            <td class="text-end fw-bold ${colorClass}">
+                                ${sign}₹${t.amount.toFixed(2)}
+                            </td>
+                        </tr>
+                    `;
+                        tbody.innerHTML += row;
+                    });
+                }
+            } catch (err) { console.error("Failed to load wallet data", err); }
+        }
+
+        async function initiatePayment() {
+            const amount = document.getElementById('addAmount').value;
+            if (!amount || amount < 1) return Swal.fire("Error", "Enter a valid amount", "error");
+
+            try {
+                const orderRes = await fetch('/api/payment/create-order', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ amount })
+                });
+                const orderData = await orderRes.json();
+                if (!orderData.success) throw new Error("Order creation failed");
+
+                const options = {
+                    "key": "rzp_test_Rsz9T8IMKN2nHV",
+                    "amount": orderData.order.amount,
+                    "currency": "INR",
+                    "name": "Tokyo Sports",
+                    "description": "Wallet Recharge",
+                    "order_id": orderData.order.id,
+                    "handler": async function (response) { await verifyPaymentOnBackend(response, amount); },
+                    "prefill": {
+                        "name": document.getElementById('welcomeName').innerText,
+                        "email": document.getElementById('profileEmail').value
+                    },
+                    "theme": { "color": "#4383FF" }
+                };
+                const rzp1 = new Razorpay(options);
+                rzp1.open();
+            } catch (err) { Swal.fire("Error", "Payment Init Failed", "error"); }
+        }
+
+        async function verifyPaymentOnBackend(response, amount) {
+            try {
+                const verifyRes = await fetch('/api/payment/verify', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        razorpay_order_id: response.razorpay_order_id,
+                        razorpay_payment_id: response.razorpay_payment_id,
+                        razorpay_signature: response.razorpay_signature,
+                        amount: amount
+                    })
+                });
+                const verifyData = await verifyRes.json();
+                if (verifyData.success) {
+                    Swal.fire({ icon: 'success', title: 'Success!', text: 'Money added to wallet.', showConfirmButton: false, timer: 1500 });
+                    document.getElementById('addAmount').value = '';
+                    loadWalletBalance();
+                } else { Swal.fire("Failed", "Verification Failed", "error"); }
+            } catch (err) { Swal.fire("Error", "Server Error", "error"); }
+        }
+
+        // ==========================================
+        //  5. ADDRESS MANAGEMENT
+        // ==========================================
+
+        async function loadAddresses() {
+            try {
+                // Added no-cache header
+                const res = await fetch('/api/addresses', { headers: { 'Cache-Control': 'no-cache' } });
+                const json = await res.json();
+                const container = document.getElementById('addressContainer');
+                container.innerHTML = '';
+
+                container.innerHTML = `
+                <div class="col-md-6">
+                    <div id="add-new-address-card" class="p-3 border border-dashed rounded d-flex align-items-center justify-content-center h-100 text-muted"
+                        style="border-style: dashed !important; cursor: pointer; min-height:180px;"
+                        onclick="toggleAddressView('form')">
+                        <div><i class="fas fa-plus me-2"></i> Add New Address</div>
+                    </div>
+                </div>`;
+
+                if (json.success && json.data.length > 0) {
+                    myAddresses = json.data;
+                    json.data.forEach(addr => {
+                        let statusHTML = addr.isDefault
+                            ? '<span class="badge bg-success mb-2">Default Address</span>'
+                            : `<button onclick="setAsDefault('${addr._id}')" class="btn btn-sm btn-outline-dark mb-2" style="font-size: 0.75rem;">Set as Default</button>`;
+
+                        let deleteLinkHTML = addr.isDefault ? '' : `<a href="#" class="text-danger small" onclick="deleteAddress('${addr._id}')">Delete</a>`;
+                        let bg = addr.isDefault ? '#f9fffa' : '#fff';
+                        let border = addr.isDefault ? 'border-success' : 'border';
+
+                        container.innerHTML += `
+                    <div class="col-md-6">
+                        <div class="p-3 ${border} rounded h-100 position-relative" style="background-color: ${bg}">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div>${statusHTML}</div>
+                                <div>
+                                    <a href="#" class="text-primary small me-2" onclick="editAddress('${addr._id}')">Edit</a>
+                                    ${deleteLinkHTML}
+                                </div>
+                            </div>
+                            <h6 class="mb-1 fw-bold">${addr.firstName} ${addr.lastName}</h6>
+                            <p class="small text-muted mb-1">${addr.streetAddress}</p>
+                            <p class="small text-muted mb-1">${addr.city}, ${addr.state} - ${addr.zipCode}</p>
+                            <p class="small text-muted mb-0 fw-medium">Phone: ${addr.phone}</p>
+                        </div>
+                    </div>`;
+                    });
+                }
+            } catch (err) { console.error(err); }
+        }
+
+        async function setAsDefault(id) {
+            try {
+                const res = await fetch(`/api/addresses/${id}/default`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                if (res.ok) {
+                    const Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 2000, timerProgressBar: true });
+                    Toast.fire({ icon: 'success', title: 'Default Updated' });
+                    loadAddresses();
+                } else { Swal.fire('Error', 'Failed to update', 'error'); }
+            } catch (err) { console.error(err); }
+        }
+
+        function toggleAddressView(view) {
+            const list = document.getElementById('address-list-view');
+            const form = document.getElementById('address-form-view');
+            if (view === 'form') {
+                list.classList.add('d-none');
+                form.classList.remove('d-none');
+                resetAddressForm();
+            } else {
+                form.classList.add('d-none');
+                list.classList.remove('d-none');
+            }
+        }
+
+        function resetAddressForm() {
+            document.getElementById('address-form-title').innerText = 'Add New Address';
+            document.getElementById('editAddressId').value = '';
+            document.getElementById('addrFirstName').value = '';
+            document.getElementById('addrLastName').value = '';
+            document.getElementById('addrPhone').value = '';
+            document.getElementById('addrZip').value = '';
+            document.getElementById('addrStreet').value = '';
+            document.getElementById('addrCity').value = '';
+            document.getElementById('addrState').value = '';
+            document.getElementById('addrIsDefault').checked = false;
+        }
+
+        async function handleAddressSubmit(e) {
+            e.preventDefault();
+
+            // 1. Get Values & Trim Whitespace
+            const fName = document.getElementById('addrFirstName').value.trim();
+            const lName = document.getElementById('addrLastName').value.trim();
+            const phone = document.getElementById('addrPhone').value.trim();
+            const zip = document.getElementById('addrZip').value.trim();
+            const street = document.getElementById('addrStreet').value.trim();
+            const city = document.getElementById('addrCity').value.trim();
+            const state = document.getElementById('addrState').value.trim();
+
+            // --- STRICT VALIDATION RULES ---
+
+            // A. Name Validation (Letters only, min 2 chars)
+            const nameRegex = /^[a-zA-Z\s]+$/;
+            if (fName.length < 2 || !nameRegex.test(fName)) {
+                return Swal.fire({ icon: 'warning', title: 'Invalid First Name', text: 'Must be at least 2 letters (no numbers).', confirmButtonColor: '#DB4444' });
+            }
+            if (lName.length < 1 || !nameRegex.test(lName)) {
+                return Swal.fire({ icon: 'warning', title: 'Invalid Last Name', text: 'Must contain letters only.', confirmButtonColor: '#DB4444' });
+            }
+
+            // B. Phone Validation (Strict 10 digits, starts with 6-9 usually implies mobile)
+            // Simple 10 digit check:
+            const phoneRegex = /^[0-9]{10}$/;
+            if (!phoneRegex.test(phone)) {
+                return Swal.fire({ icon: 'warning', title: 'Invalid Phone', text: 'Please enter a valid 10-digit phone number.', confirmButtonColor: '#DB4444' });
+            }
+
+            // C. Pincode Validation (Strict 6 digits)
+            const zipRegex = /^[0-9]{6}$/;
+            if (!zipRegex.test(zip)) {
+                return Swal.fire({ icon: 'warning', title: 'Invalid Pincode', text: 'Pincode must be exactly 6 digits.', confirmButtonColor: '#DB4444' });
+            }
+
+            // D. Street Address Validation (Min 5 chars to avoid "A", ".." etc)
+            if (street.length < 5) {
+                return Swal.fire({ icon: 'warning', title: 'Incomplete Address', text: 'Please enter a valid street address (House No, Area etc).', confirmButtonColor: '#DB4444' });
+            }
+
+            // E. City & State Validation (Letters only)
+            if (city.length < 2 || !nameRegex.test(city)) {
+                return Swal.fire({ icon: 'warning', title: 'Invalid City', text: 'City name should contain only letters.', confirmButtonColor: '#DB4444' });
+            }
+            if (state.length < 2 || !nameRegex.test(state)) {
+                return Swal.fire({ icon: 'warning', title: 'Invalid State', text: 'State name should contain only letters.', confirmButtonColor: '#DB4444' });
+            }
+
+            // --- PROCEED IF VALID ---
+
+            const btn = document.getElementById('btnSaveAddress');
+            btn.disabled = true;
+            btn.innerText = "Saving...";
+
+            const id = document.getElementById('editAddressId').value;
+
+            const payload = {
+                firstName: fName,
+                lastName: lName,
+                phone: phone,
+                zipCode: zip,
+                streetAddress: street,
+                city: city,
+                state: state,
+                isDefault: document.getElementById('addrIsDefault').checked
+            };
+
+            try {
+                let url = '/api/addresses';
+                let method = 'POST';
+                if (id) { url = `/api/addresses/${id}`; method = 'PUT'; }
+
+                const res = await fetch(url, {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await res.json();
+
+                if (res.ok) {
+                    Swal.fire({ icon: 'success', title: 'Saved!', showConfirmButton: false, timer: 1000 });
+                    loadAddresses();
+                    toggleAddressView('list');
+                } else {
+                    Swal.fire('Error', data.message || 'Save failed', 'error');
+                }
+            } catch (err) {
+                Swal.fire('Error', 'Connection failed', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "Save Address";
+            }
+        }
+
+        function editAddress(id) {
+            const addr = myAddresses.find(a => a._id === id);
+            if (!addr) return;
+            document.getElementById('address-form-title').innerText = 'Edit Address';
+            document.getElementById('editAddressId').value = addr._id;
+            document.getElementById('addrFirstName').value = addr.firstName;
+            document.getElementById('addrLastName').value = addr.lastName;
+            document.getElementById('addrPhone').value = addr.phone;
+            document.getElementById('addrZip').value = addr.zipCode;
+            document.getElementById('addrStreet').value = addr.streetAddress;
+            document.getElementById('addrCity').value = addr.city;
+            document.getElementById('addrState').value = addr.state;
+            document.getElementById('addrIsDefault').checked = addr.isDefault;
+            document.getElementById('address-list-view').classList.add('d-none');
+            document.getElementById('address-form-view').classList.remove('d-none');
+        }
+
+        async function deleteAddress(id) {
+            const result = await Swal.fire({ title: 'Delete?', icon: 'warning', showCancelButton: true, confirmButtonColor: '#DB4444' });
+            if (result.isConfirmed) {
+                try {
+                    const res = await fetch(`/api/addresses/${id}`, { method: 'DELETE' });
+                    if (res.ok) { loadAddresses(); Swal.fire('Deleted', '', 'success'); }
+                } catch (e) { }
+            }
+        }
+
+        // ==========================================
+        //  6. PROFILE & AUTH
+        // ==========================================
+
+        async function checkAuthAndLoadProfile() {
+            try {
+                const res = await fetch('/api/auth/verify-user', { headers: { 'Cache-Control': 'no-cache' } });
+                const data = await res.json();
+                if (!res.ok || !data.success) { window.location.href = 'signup.html'; return; }
+
+                const user = data.user;
+                document.getElementById('signupNavItem').style.display = 'none';
+
+                if (!document.getElementById('navLogoutBtn')) {
+                    const navIcons = document.getElementById('navIcons');
+                    if (navIcons) {
+                        const logoutBtn = document.createElement('a');
+                        logoutBtn.id = 'navLogoutBtn';
+                        logoutBtn.className = "text-danger";
+                        logoutBtn.innerHTML = '<i class="fas fa-sign-out-alt"></i>';
+                        logoutBtn.style.cursor = "pointer";
+                        logoutBtn.onclick = (e) => { e.preventDefault(); logoutUser(); };
+                        navIcons.appendChild(logoutBtn);
+                    }
+                }
+                document.getElementById('welcomeName').innerText = user.name;
+                const nameParts = user.name.split(' ');
+                document.getElementById('profileFirstName').value = nameParts[0] || '';
+                document.getElementById('profileLastName').value = nameParts.slice(1).join(' ') || '';
+                document.getElementById('profileEmail').value = user.email;
+            } catch (err) { window.location.href = 'signup.html'; }
+        }
+
+        async function sendProfileOtp() {
+            const btn = document.getElementById('sendOtpBtn');
+            btn.disabled = true;
+            try {
+                const res = await fetch('/api/auth/profile/otp', { method: 'POST' });
+                if (res.ok) { Swal.fire('OTP Sent', '', 'success'); btn.innerText = "Sent!"; }
+                else { btn.disabled = false; Swal.fire('Error', 'Failed', 'error'); }
+            } catch (e) { btn.disabled = false; }
+        }
+
+        async function handleUpdateProfile(e) {
+            e.preventDefault();
+            const fullName = `${document.getElementById('profileFirstName').value} ${document.getElementById('profileLastName').value}`.trim();
+            const newPassword = document.getElementById('newPassword').value;
+            const otp = document.getElementById('profileOtp').value;
+
+            const payload = { name: fullName };
+            if (newPassword) {
+                if (!otp) return Swal.fire('OTP Required', '', 'warning');
+                payload.newPassword = newPassword;
+                payload.otp = otp;
+            }
+
+            try {
+                const res = await fetch('/api/auth/profile', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (res.ok) {
+                    Swal.fire('Success', 'Profile Updated', 'success');
+                    document.getElementById('welcomeName').innerText = fullName;
+                    document.getElementById('newPassword').value = '';
+                    document.getElementById('confirmPassword').value = '';
+                    document.getElementById('profileOtp').value = '';
+                } else Swal.fire('Error', 'Update failed', 'error');
+            } catch (e) { Swal.fire('Error', 'Connection failed', 'error'); }
+        }
+
+        async function logoutUser() {
+            try {
+                await fetch('/api/auth/logout-user', { method: 'POST' });
+                localStorage.removeItem('user');
+                window.location.replace('signup.html');
+            } catch (err) { window.location.replace('signup.html'); }
+        }
+
+        // --- 1. ROBUST IMAGE LOADER (Prevents hanging) ---
+        function getBase64ImageFromURL(url) {
+            return new Promise((resolve) => {
+                var img = new Image();
+                img.setAttribute("crossOrigin", "anonymous");
+
+                img.onload = () => {
+                    try {
+                        var canvas = document.createElement("canvas");
+                        canvas.width = img.width;
+                        canvas.height = img.height;
+                        var ctx = canvas.getContext("2d");
+                        ctx.drawImage(img, 0, 0);
+                        var dataURL = canvas.toDataURL("image/png");
+                        resolve(dataURL);
+                    } catch (e) {
+                        console.warn("Logo processing failed:", e);
+                        resolve(null); // Return null so PDF continues without logo
+                    }
+                };
+
+                // If image fails (404), resolve null immediately so code doesn't hang
+                img.onerror = () => {
+                    console.warn("Logo not found at:", url);
+                    resolve(null);
+                };
+
+                img.src = url;
+            });
+        }
+
+        // --- 2. DOWNLOAD ITEM INVOICE ---
+        window.downloadItemInvoice = async function (orderData, itemId) {
+            // Show "Generating" toast
+            const Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 3000 });
+            Toast.fire({ icon: 'info', title: 'Generating Invoice...' });
+
+            try {
+                // Find specific item
+                const item = orderData.items.find(i => i._id === itemId);
+                if (!item) {
+                    Swal.fire("Error", "Item details not found.", "error");
+                    return;
+                }
+
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+                const pageWidth = doc.internal.pageSize.getWidth();
+
+                // --- HEADER & LOGO ---
+                try {
+                    // Try to load logo, but continue if it fails
+                    const logoData = await getBase64ImageFromURL('../Images/Logo white.png');
+                    if (logoData) {
+                    doc.addImage(logoData, 'PNG', 15, 13, 37, 28); // x, y, width, height
+                    } else {
+                        // Fallback text if logo fails
+                        doc.setFontSize(18);
+                        doc.setTextColor(0);
+                        doc.text("TOKYO SPORTS", 15, 20);
+                    }
+                } catch (e) {
+                    console.log("Skipping logo");
+                }
+
+                // Invoice Title
+                doc.setFont("helvetica", "bold");
+                doc.setFontSize(22);
+                doc.setTextColor(67, 131, 255); // Blue
+                doc.text("INVOICE", pageWidth - 15, 20, { align: "right" });
+
+                // Invoice Details
+                doc.setTextColor(0);
+                doc.setFontSize(10);
+                // Use Item ID as Receipt Number
+                doc.text(`Receipt #: ${item._id.slice(-6).toUpperCase()}`, pageWidth - 15, 30, { align: "right" });
+                doc.setFont("helvetica", "normal");
+                doc.text(`Order #: ${orderData._id.slice(-6).toUpperCase()}`, pageWidth - 15, 35, { align: "right" });
+                // Use Delivered Date if available, else current date
+                const dateStr = orderData.deliveredAt ? new Date(orderData.deliveredAt).toLocaleDateString() : new Date().toLocaleDateString();
+                doc.text(`Date: ${dateStr}`, pageWidth - 15, 40, { align: "right" });
+
+                doc.setDrawColor(200);
+                doc.line(15, 45, pageWidth - 15, 45); // Line
+
+                // --- ADDRESSES ---
+                let y = 55;
+                doc.setFontSize(10);
+
+                // Seller
+                doc.setFont("helvetica", "bold");
+                doc.text("Sold By:", 15, y);
+                doc.setFont("helvetica", "normal");
+                doc.text("Tokyo Sports", 15, y + 5);
+                doc.text("Kerala, India", 15, y + 10);
+                doc.text("support@tokyosports.com", 15, y + 15);
+
+                // Buyer
+                doc.setFont("helvetica", "bold");
+                doc.text("Bill To:", 110, y);
+                doc.setFont("helvetica", "normal");
+                const addr = orderData.shippingAddress;
+                doc.text(addr.fullName, 110, y + 5);
+                doc.text(`${addr.addressLine}, ${addr.city}`, 110, y + 10);
+                doc.text(`${addr.state} - ${addr.zipCode}`, 110, y + 15);
+                doc.text(`Phone: ${addr.phone}`, 110, y + 20);
+
+                // --- TABLE HEADER ---
+                y = 90;
+                doc.setFillColor(245, 245, 245);
+                doc.rect(15, y - 5, pageWidth - 30, 8, 'F');
+                doc.setFont("helvetica", "bold");
+                doc.text("Item Details", 20, y);
+                doc.text("Qty", 130, y);
+                doc.text("Price", 155, y, { align: "right" });
+                doc.text("Total", pageWidth - 20, y, { align: "right" });
+
+                // --- TABLE CONTENT (Single Item) ---
+                y += 10;
+                doc.setFont("helvetica", "normal");
+
+                let itemName = item.name;
+                if (item.size) itemName += ` (Size: ${item.size})`;
+
+                const itemTotal = item.price * item.quantity;
+
+                doc.text(itemName, 20, y);
+                doc.text(String(item.quantity), 130, y);
+                doc.text(String(item.price.toFixed(2)), 155, y, { align: "right" });
+                doc.text(String(itemTotal.toFixed(2)), pageWidth - 20, y, { align: "right" });
+
+                // --- TOTALS ---
+                y += 10;
+                doc.line(15, y, pageWidth - 15, y); // Line
+                y += 10;
+
+                doc.setFont("helvetica", "bold");
+                doc.setFontSize(12);
+                doc.text("Total Paid:", 150, y, { align: "right" });
+                doc.text(`Rs. ${itemTotal.toFixed(2)}`, pageWidth - 20, y, { align: "right" });
+
+                // Footer
+                y += 20;
+                doc.setFontSize(10);
+                doc.setFont("helvetica", "italic");
+                doc.setTextColor(100);
+                doc.text("Thank you for shopping with Tokyo Sports!", pageWidth / 2, y, { align: "center" });
+
+                // --- SAVE PDF ---
+                doc.save(`Invoice_${item._id}.pdf`);
+
+                // Success Toast
+                Toast.fire({ icon: 'success', title: 'Downloaded Successfully' });
+
+            } catch (err) {
+                console.error("PDF Generation Error:", err);
+                Swal.fire("Error", "Could not generate PDF. Please try again.", "error");
+            }
+        }
+    </script>
+
+</body>
+
+</html>

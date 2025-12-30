@@ -1,0 +1,1266 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tokyo Admin - Coupons</title>
+    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        .swal2-container {
+            z-index: 10000 !important;
+        }
+
+        :root {
+            --primary: #4880FF;
+            --primary-light: #E8F0FE;
+            --dark: #202224;
+            --grey: #6A7178;
+            --bg: #F5F6FA;
+            --white: #fff;
+            --danger: #EF3826;
+            --danger-light: #FEECEB;
+            --success: #00B69B;
+            --success-light: #E6F7F5;
+            --warning: #FFB536;
+            --warning-light: #FFF8E7;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background: var(--bg);
+            display: flex;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        a {
+            text-decoration: none;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 260px;
+            background: var(--white);
+            padding: 20px;
+            height: 100vh;
+            position: fixed;
+            border-right: 1px solid #e0e0e0;
+            z-index: 1000;
+            transition: 0.3s;
+            left: 0;
+            top: 0;
+            overflow-y: auto;
+        }
+
+        .logo-img {
+            max-width: 150px;
+            display: block;
+            margin: 0 auto 30px;
+        }
+
+        .menu-cat {
+            font-size: 12px;
+            color: var(--grey);
+            margin: 15px 0 10px 10px;
+            font-weight: 700;
+        }
+
+        .menu-link {
+            display: flex;
+            align-items: center;
+            color: var(--grey);
+            padding: 12px 15px;
+            border-radius: 8px;
+            margin-bottom: 5px;
+            font-size: 14px;
+            transition: 0.3s;
+            font-weight: 500;
+            cursor: pointer;
+        }
+
+        .menu-link i {
+            font-size: 20px;
+            margin-right: 10px;
+        }
+
+        .menu-link:hover,
+        .menu-link.active {
+            background: var(--primary);
+            color: var(--white);
+            box-shadow: 0 4px 10px rgba(72, 128, 255, 0.2);
+        }
+
+        .logout {
+            color: var(--danger);
+            background: var(--danger-light);
+            margin-top: 15px;
+            justify-content: center;
+            font-weight: 600;
+        }
+
+        .logout:hover {
+            background: var(--danger);
+            color: var(--white);
+        }
+
+        /* Main Content */
+        .main-content {
+            margin-left: 260px;
+            flex: 1;
+            padding: 30px;
+            width: calc(100% - 260px);
+            transition: 0.3s;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .menu-toggle {
+            display: none;
+            font-size: 28px;
+            cursor: pointer;
+            margin-right: 15px;
+        }
+
+        /* Table Box */
+        .table-box {
+            background: var(--white);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+        }
+
+        .table-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .action-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .search-input {
+            padding: 10px 15px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            outline: none;
+            width: 250px;
+        }
+
+        .add-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            transition: 0.2s;
+        }
+
+        .add-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(72, 128, 255, 0.3);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+
+        th {
+            text-align: left;
+            padding: 15px;
+            color: var(--grey);
+            border-bottom: 1px solid #eee;
+        }
+
+        td {
+            padding: 15px;
+            border-bottom: 1px solid #f5f5f5;
+            vertical-align: middle;
+            color: var(--dark);
+            font-size: 14px;
+        }
+
+        tbody tr {
+            transition: background 0.2s;
+            cursor: pointer;
+        }
+
+        tbody tr:hover {
+            background-color: #f8f9fa;
+        }
+
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            display: inline-block;
+        }
+
+        .st-active {
+            background: var(--success-light);
+            color: var(--success);
+        }
+
+        .st-inactive {
+            background: var(--danger-light);
+            color: var(--danger);
+        }
+
+        .action-btns {
+            display: flex;
+            gap: 8px;
+        }
+
+        .icon-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            transition: 0.2s;
+        }
+
+        .edit-btn {
+            background: var(--warning-light);
+            color: var(--warning);
+        }
+
+        .del-btn {
+            background: var(--danger-light);
+            color: var(--danger);
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            backdrop-filter: blur(2px);
+        }
+
+        .modal {
+            background: white;
+            width: 600px;
+            max-width: 90%;
+            border-radius: 16px;
+            padding: 25px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+            animation: slideDown 0.3s ease;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        @keyframes slideDown {
+            from {
+                transform: translateY(-20px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 15px;
+        }
+
+        .modal-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--dark);
+        }
+
+        .close-modal {
+            cursor: pointer;
+            font-size: 24px;
+            color: var(--grey);
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 13px;
+            color: var(--dark);
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            outline: none;
+            font-size: 14px;
+        }
+
+        /* NEW SECTION TITLE FOR NEAT MODAL */
+        .form-section-title {
+            font-size: 12px;
+            text-transform: uppercase;
+            color: var(--primary);
+            font-weight: 700;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid #f0f0f0;
+            padding-bottom: 5px;
+        }
+
+        .form-section-title:first-of-type {
+            margin-top: 0;
+        }
+
+        .modal-footer {
+            text-align: right;
+            margin-top: 20px;
+        }
+
+        .cancel-btn {
+            background: white;
+            border: 1px solid #eee;
+            color: var(--grey);
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+
+        .save-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .coupon-header {
+            text-align: center;
+            margin-bottom: 25px;
+            background: var(--primary-light);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px dashed var(--primary);
+        }
+
+        .coupon-code-display {
+            font-size: 24px;
+            font-weight: 800;
+            color: var(--primary);
+            letter-spacing: 2px;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .coupon-type-display {
+            font-size: 13px;
+            color: var(--grey);
+        }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid #f9f9f9;
+            font-size: 14px;
+        }
+
+        .detail-label {
+            color: var(--grey);
+            font-weight: 500;
+        }
+
+        .detail-val {
+            color: var(--dark);
+            font-weight: 600;
+        }
+
+        @media (max-width: 991px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+
+            .sidebar.active {
+                transform: translateX(0);
+            }
+
+            .main-content {
+                margin-left: 0;
+                width: 100%;
+                padding: 20px;
+            }
+
+            .menu-toggle {
+                display: block;
+            }
+
+            table,
+            thead,
+            tbody,
+            th,
+            td,
+            tr {
+                display: block;
+                width: 100%;
+            }
+
+            thead {
+                display: none;
+            }
+
+            tr {
+                background: #fff;
+                margin-bottom: 20px;
+                border: 1px solid #eee;
+                border-radius: 12px;
+                padding: 20px;
+                position: relative;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+            }
+
+            td {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                text-align: right;
+                border-bottom: 1px solid #f9f9f9;
+                padding: 12px 0;
+            }
+
+            td:last-child {
+                border-bottom: none;
+                padding-bottom: 0;
+            }
+
+            td::before {
+                content: attr(data-label);
+                font-weight: 600;
+                color: var(--grey);
+                font-size: 13px;
+                text-align: left;
+            }
+
+            td[data-label="Code"] {
+                font-weight: 700;
+                color: var(--primary);
+                font-size: 16px;
+                justify-content: flex-start;
+            }
+
+            td[data-label="Code"]::before {
+                display: none;
+            }
+
+            td[data-label="Action"] {
+                position: absolute;
+                top: 15px;
+                right: 15px;
+                padding: 0;
+                border: none;
+                width: auto;
+                z-index: 5;
+            }
+
+            td[data-label="Action"]::before {
+                display: none;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="modal-overlay" id="detailsModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">Coupon Details</h3>
+                <i class='bx bx-x close-modal' onclick="closeModal('detailsModal')"></i>
+            </div>
+            <div id="detailsContent"></div>
+            <div class="modal-footer">
+                <button class="save-btn" onclick="closeModal('detailsModal')">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="couponFormModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title" id="formTitle">Add Coupon</h3>
+                <i class='bx bx-x close-modal' onclick="closeModal('couponFormModal')"></i>
+            </div>
+            <div class="modal-body">
+
+                <div class="form-section-title">General Info</div>
+                <div class="form-grid">
+                    <div>
+                        <label class="form-label">Coupon Code <span style="color:red">*</span></label>
+                        <input type="text" id="cp-code" class="form-input" placeholder="e.g. SALE123"
+                            style="text-transform: uppercase;"
+                            oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '')">
+                        <small style="font-size:11px; color:var(--grey);">Min 4 chars. Must contain at least one
+                            letter.</small>
+                    </div>
+                    <div>
+                        <label class="form-label">Description</label>
+                        <input type="text" id="cp-desc" class="form-input" placeholder="Short description">
+                    </div>
+                </div>
+
+                <div class="form-section-title">Discount Details</div>
+                <div class="form-grid">
+                    <div>
+                        <label class="form-label">Type</label>
+                        <select id="cp-type" class="form-input" onchange="toggleDiscountFields()">
+                            <option value="percentage">Percentage (%)</option>
+                            <option value="fixed">Fixed Amount (₹)</option>
+                            <option value="free_shipping">Free Shipping</option>
+                        </select>
+                    </div>
+                    <div id="cp-value-group">
+                        <label class="form-label">Value</label>
+                        <input type="number" id="cp-value" class="form-input" placeholder="e.g. 20">
+                    </div>
+                </div>
+
+                <div class="form-section-title">Targeting</div>
+                <div class="form-group">
+                    <label class="form-label">Applies To</label>
+                    <select id="cp-scope" class="form-input" onchange="toggleScopeUI()">
+                        <option value="all">All Products (Global)</option>
+                        <option value="category">Specific Category</option>
+                        <option value="team">Specific Team</option>
+                        <option value="product">Specific Product</option>
+                    </select>
+                </div>
+                <div class="form-group hidden" id="target-wrapper">
+                    <label class="form-label" id="target-label">Select Items</label>
+                    <select id="cp-targets" class="form-input" multiple style="height: 100px; padding: 5px;"></select>
+                    <small style="font-size: 11px; color: var(--grey)">Hold Ctrl/Cmd to select multiple.</small>
+                </div>
+
+                <div class="form-section-title">Restrictions</div>
+                <div class="form-grid">
+                    <div>
+                        <label class="form-label">Usage Limit (Total)</label>
+                        <input type="number" id="cp-usage-limit" class="form-input" placeholder="Empty = Unlimited">
+                    </div>
+                    <div>
+                        <label class="form-label">Min. Order Value (₹)</label>
+                        <input type="number" id="cp-min-val" class="form-input" value="0">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Min. Item Quantity</label>
+                    <input type="number" id="cp-min-qty" class="form-input" value="0">
+                </div>
+
+                <div class="form-section-title">Validity & Status</div>
+                <div class="form-grid">
+                    <div>
+                        <label class="form-label">Start Date <span style="color:red">*</span></label>
+                        <input type="date" id="cp-start" class="form-input">
+                    </div>
+                    <div>
+                        <label class="form-label">End Date</label>
+                        <input type="date" id="cp-end" class="form-input">
+                        <div class="form-check mt-1" style="display:flex; gap:5px; align-items:center;">
+                            <input type="checkbox" id="cp-no-expiry" onchange="toggleExpiryDate()">
+                            <label style="font-size: 12px; cursor:pointer;" for="cp-no-expiry">Never Expires</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Status</label>
+                    <select id="cp-status" class="form-input">
+                        <option value="true">Active</option>
+                        <option value="false">Inactive</option>
+                    </select>
+                </div>
+
+            </div>
+            <div class="modal-footer">
+                <button class="cancel-btn" onclick="closeModal('couponFormModal')">Cancel</button>
+                <button class="save-btn" onclick="saveCoupon()">Save Coupon</button>
+            </div>
+        </div>
+    </div>
+
+    <aside class="sidebar" id="sidebar">
+        <img src="../Images/Logo text.png" class="logo-img" alt="Logo">
+        <p class="menu-cat">Main menu</p>
+        <a href="dashboard.html" class="menu-link"><i class='bx bxs-dashboard'></i> Dashboard</a>
+        <a href="orders.html" class="menu-link"><i class='bx bx-cart'></i> Orders</a>
+        <a href="customers.html" class="menu-link"><i class='bx bx-user'></i> Customers</a>
+        <a href="coupons.html" class="menu-link active"><i class='bx bx-purchase-tag'></i> Coupons</a>
+        <a href="sales.html" class="menu-link"><i class='bx bxs-offer'></i> Sales</a>
+        <a href="categories.html" class="menu-link"><i class='bx bx-category'></i> Categories</a>
+        <a href="transactions.html" class="menu-link"><i class='bx bx-credit-card'></i> Transactions</a>
+        <a href="teams.html" class="menu-link"><i class='bx bx-trophy'></i> Teams</a>
+        <p class="menu-cat">Product</p>
+        <a href="add-product.html" class="menu-link"><i class='bx bx-plus-circle'></i> Add Product</a>
+        <a href="product-list.html" class="menu-link"><i class='bx bx-list-ul'></i> Product List</a>
+        <a href="reviews.html" class="menu-link"><i class='bx bx-message-square-detail'></i> Reviews</a>
+        <p class="menu-cat">Admin</p>
+        <a href="admin.html" class="menu-link"><i class='bx bx-user-circle'></i> Admin Role</a>
+        <a onclick="logoutUser()" class="menu-link logout"><i class='bx bx-log-out'></i> Log Out</a>
+    </aside>
+
+    <main class="main-content">
+        <div class="header">
+            <div style="display:flex; align-items:center;">
+                <i class='bx bx-menu menu-toggle' onclick="toggleSidebar()"></i>
+                <h2>Coupons</h2>
+            </div>
+        </div>
+
+        <div class="table-box">
+            <div class="table-head">
+                <h3>All Coupons</h3>
+                <div class="action-group">
+                    <input type="text" class="search-input" placeholder="Search code..."
+                        onkeyup="filterTable(this.value)">
+                    <button class="add-btn" onclick="openFormModal()" id="addCouponBtn">
+                        <i class='bx bx-plus'></i> Add Coupon
+                    </button>
+                </div>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Code</th>
+                        <th>Type</th>
+                        <th>Value</th>
+                        <th>Applies To</th>
+                        <th>Used</th>
+                        <th>Expiry</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="couponTableBody">
+                    <tr>
+                        <td colspan="8" style="text-align:center; padding:30px;">Loading data...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+    <script>
+        // --- 1. CRITICAL: PREVENT BACK BUTTON CACHING ---
+        window.onpageshow = function (event) {
+            if (event.persisted || (window.performance && window.performance.navigation.type === 2)) {
+                window.location.reload();
+            }
+        };
+
+        let allCoupons = [];
+        let isEditing = false;
+        let editingId = null;
+        let currentUserRole = '';
+
+        // --- 2. INITIALIZATION SEQUENCE ---
+        document.addEventListener('DOMContentLoaded', async () => {
+            await checkAuth();
+            loadCoupons();
+            setupDateLogic();
+        });
+
+        // --- 3. AUTH CHECK & RBAC ---
+        async function checkAuth() {
+            try {
+                const res = await fetch('/api/auth/verify-admin');
+                const data = await res.json();
+
+                if (!res.ok || !data.success) {
+                    window.location.replace('admin-login.html');
+                    return;
+                }
+
+                const allowedRoles = ['superadmin', 'editor', 'viewer'];
+                if (!allowedRoles.includes(data.user.role)) {
+                    window.location.replace('index.html');
+                    return;
+                }
+
+                currentUserRole = data.user.role;
+
+                if (currentUserRole === 'viewer') {
+                    const addBtn = document.getElementById('addCouponBtn');
+                    if (addBtn) addBtn.style.display = 'none';
+                }
+
+            } catch (err) {
+                window.location.replace('admin-login.html');
+            }
+        }
+
+        function toggleSidebar() { document.getElementById('sidebar').classList.toggle('active'); }
+
+        // --- DATE LOGIC (Updated) ---
+        function setupDateLogic() {
+            const startInput = document.getElementById('cp-start');
+            const endInput = document.getElementById('cp-end');
+
+            startInput.addEventListener('change', function () {
+                // 1. Ensure End Date cannot be before Start Date
+                endInput.min = this.value;
+
+                // 2. If existing End Date is invalid relative to new Start Date, clear it
+                if (endInput.value && endInput.value < this.value) {
+                    endInput.value = '';
+                }
+            });
+        }
+
+        function resetForm() {
+            // ... [Keep your existing reset fields] ...
+            document.getElementById('cp-code').value = '';
+            document.getElementById('cp-desc').value = '';
+            document.getElementById('cp-type').value = 'percentage';
+            document.getElementById('cp-value').value = '';
+            document.getElementById('cp-scope').value = 'all';
+            document.getElementById('cp-usage-limit').value = '';
+            document.getElementById('cp-min-qty').value = 0;
+            document.getElementById('cp-min-val').value = 0;
+
+            // --- DATE FIX START ---
+            const today = new Date().toISOString().split('T')[0];
+
+            const startInput = document.getElementById('cp-start');
+            const endInput = document.getElementById('cp-end');
+
+            // Set Min Date to Today
+            startInput.setAttribute('min', today);
+            endInput.setAttribute('min', today);
+
+            // Default Start Date to Today
+            startInput.value = today;
+            endInput.value = '';
+            // --- DATE FIX END ---
+
+            document.getElementById('cp-status').value = 'true';
+            document.getElementById('cp-no-expiry').checked = false;
+            document.getElementById('cp-end').disabled = false;
+
+            toggleDiscountFields();
+            toggleScopeUI();
+        }
+
+
+        function toggleExpiryDate() {
+            const isChecked = document.getElementById('cp-no-expiry').checked;
+            const dateInput = document.getElementById('cp-end');
+
+            if (isChecked) {
+                dateInput.disabled = true;
+                dateInput.value = '';
+            } else {
+                dateInput.disabled = false;
+            }
+        }
+
+        // --- LOAD DATA ---
+        async function loadCoupons() {
+            try {
+                const res = await fetch('/api/coupons');
+
+                if (res.status === 401 || res.status === 403) {
+                    window.location.replace('admin-login.html');
+                    return;
+                }
+
+                if (!res.ok) throw new Error("Failed to load");
+                allCoupons = await res.json();
+                renderTable(allCoupons);
+            } catch (err) {
+                console.error(err);
+                document.getElementById('couponTableBody').innerHTML = '<tr><td colspan="8" style="text-align:center; color:red;">Failed to load coupons</td></tr>';
+            }
+        }
+
+        function renderTable(coupons) {
+            const tbody = document.getElementById('couponTableBody');
+            tbody.innerHTML = '';
+
+            if (!coupons || coupons.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding:20px;">No coupons found.</td></tr>';
+                return;
+            }
+
+            coupons.forEach(cp => {
+                const isForever = !cp.expirationDate;
+                const isExpired = !isForever && new Date(cp.expirationDate) < new Date();
+                const isActive = cp.isActive && !isExpired;
+
+                const statusClass = isActive ? 'st-active' : 'st-inactive';
+                const statusText = isActive ? 'Active' : (isExpired ? 'Expired' : 'Inactive');
+
+                let valDisplay = cp.discountType === 'percentage' ? `${cp.discountValue}%`
+                    : cp.discountType === 'fixed' ? `₹${cp.discountValue}`
+                        : 'Free Ship';
+
+                let expiryDisplay = isForever ? 'No Expiry' : new Date(cp.expirationDate).toLocaleDateString();
+
+                const dataStr = encodeURIComponent(JSON.stringify(cp));
+
+                let actionButtons = '';
+                if (currentUserRole !== 'viewer') {
+                    actionButtons = `
+                        <button class="icon-btn edit-btn" onclick="openEditModal('${dataStr}', event)"><i class='bx bx-edit'></i></button>
+                        <button class="icon-btn del-btn" onclick="deleteCoupon('${cp._id}', event)"><i class='bx bx-trash'></i></button>
+                    `;
+                } else {
+                    actionButtons = `<span style="font-size:12px; color:var(--grey);">View Only</span>`;
+                }
+
+                const tr = document.createElement('tr');
+                tr.onclick = () => openDetails(dataStr);
+
+                // Added Used Count Column
+                tr.innerHTML = `
+                    <td data-label="Code">${cp.code}</td>
+                    <td data-label="Type">${formatType(cp.discountType)}</td>
+                    <td data-label="Value">${valDisplay}</td>
+                    <td data-label="Applies To" style="text-transform: capitalize;">${cp.appliesTo}</td>
+                    <td data-label="Used" style="font-weight:600; color:var(--primary);">${cp.usedCount || 0}</td>
+                    <td data-label="Expiry">${expiryDisplay}</td>
+                    <td data-label="Status"><span class="status-badge ${statusClass}">${statusText}</span></td>
+                    <td data-label="Action">
+                        <div class="action-btns">
+                            ${actionButtons}
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function filterTable(query) {
+            const lowerQ = query.toLowerCase();
+            const filtered = allCoupons.filter(c => c.code.toLowerCase().includes(lowerQ));
+            renderTable(filtered);
+        }
+
+        // --- MODAL LOGIC ---
+
+        function openFormModal() {
+            resetForm();
+            isEditing = false;
+            editingId = null;
+            document.getElementById('formTitle').innerText = "Add Coupon";
+            document.getElementById('couponFormModal').style.display = 'flex';
+        }
+
+        async function openEditModal(dataStr, event) {
+            event.stopPropagation();
+
+            const cp = JSON.parse(decodeURIComponent(dataStr));
+
+            // 1. Reset form first
+            resetForm();
+
+            isEditing = true;
+            editingId = cp._id;
+
+            document.getElementById('formTitle').innerText = "Edit Coupon";
+
+            document.getElementById('cp-code').value = cp.code;
+            document.getElementById('cp-desc').value = cp.description || '';
+            document.getElementById('cp-type').value = cp.discountType;
+            document.getElementById('cp-value').value = cp.discountValue;
+            document.getElementById('cp-scope').value = cp.appliesTo;
+            document.getElementById('cp-usage-limit').value = cp.usageLimit || '';
+            document.getElementById('cp-min-qty').value = cp.minQuantity || 0;
+            document.getElementById('cp-min-val').value = cp.minOrderValue || 0;
+            document.getElementById('cp-status').value = cp.isActive ? 'true' : 'false';
+
+            // --- DATE FIX FOR EDITING ---
+            if (cp.startDate) {
+                const startDateStr = new Date(cp.startDate).toISOString().split('T')[0];
+                const startInput = document.getElementById('cp-start');
+
+                startInput.value = startDateStr;
+
+                // CRITICAL FIX: Set min to the CURRENT existing start date.
+                // This prevents the user from selecting any date BEFORE the original start date.
+                startInput.setAttribute('min', startDateStr);
+            }
+
+            if (cp.expirationDate) {
+                const endDateStr = new Date(cp.expirationDate).toISOString().split('T')[0];
+                const endInput = document.getElementById('cp-end');
+
+                endInput.value = endDateStr;
+                // Ensure End Date min respects the Start Date
+                endInput.setAttribute('min', document.getElementById('cp-start').value);
+
+                document.getElementById('cp-no-expiry').checked = false;
+                document.getElementById('cp-end').disabled = false;
+            } else {
+                document.getElementById('cp-end').value = '';
+                document.getElementById('cp-no-expiry').checked = true;
+                document.getElementById('cp-end').disabled = true;
+            }
+            // -----------------------------
+
+            toggleDiscountFields();
+            await toggleScopeUI();
+
+            if (cp.appliesTo !== 'all') {
+                let targets = [];
+                if (cp.appliesTo === 'category') targets = cp.targetCategories;
+                if (cp.appliesTo === 'team') targets = cp.targetTeams;
+                if (cp.appliesTo === 'product') targets = cp.targetProducts;
+
+                const select = document.getElementById('cp-targets');
+                Array.from(select.options).forEach(opt => {
+                    if (targets.includes(opt.value)) opt.selected = true;
+                });
+            }
+
+            document.getElementById('couponFormModal').style.display = 'flex';
+        }
+
+
+        function resetForm() {
+            document.getElementById('cp-code').value = '';
+            document.getElementById('cp-desc').value = '';
+            document.getElementById('cp-type').value = 'percentage';
+            document.getElementById('cp-value').value = '';
+            document.getElementById('cp-scope').value = 'all';
+
+            // Reset Usage Limit
+            document.getElementById('cp-usage-limit').value = '';
+
+            document.getElementById('cp-min-qty').value = 0;
+            document.getElementById('cp-min-val').value = 0;
+            document.getElementById('cp-status').value = 'true';
+
+            // --- DATE FIX START ---
+            const today = new Date().toISOString().split('T')[0];
+            const startInput = document.getElementById('cp-start');
+            const endInput = document.getElementById('cp-end');
+
+            // Set Min Date to Today (Prevent past dates)
+            startInput.setAttribute('min', today);
+            endInput.setAttribute('min', today);
+
+            // Default Start Date to Today
+            startInput.value = today;
+            endInput.value = ''; // Clear End Date
+            // --- DATE FIX END ---
+
+            document.getElementById('cp-no-expiry').checked = false;
+            document.getElementById('cp-end').disabled = false;
+
+            toggleDiscountFields();
+            toggleScopeUI();
+        }
+
+        function toggleDiscountFields() {
+            const type = document.getElementById('cp-type').value;
+            const valGroup = document.getElementById('cp-value-group');
+            if (type === 'free_shipping') {
+                valGroup.style.display = 'none';
+                document.getElementById('cp-value').value = 0;
+            } else {
+                valGroup.style.display = 'block';
+            }
+        }
+
+        async function toggleScopeUI() {
+            const scope = document.getElementById('cp-scope').value;
+            const targetWrapper = document.getElementById('target-wrapper');
+            const targetSelect = document.getElementById('cp-targets');
+            const label = document.getElementById('target-label');
+
+            targetSelect.innerHTML = '';
+
+            if (scope === 'all') {
+                targetWrapper.classList.add('hidden');
+                return;
+            }
+
+            targetWrapper.classList.remove('hidden');
+            label.innerText = `Select ${scope.charAt(0).toUpperCase() + scope.slice(1)}s`;
+            targetSelect.innerHTML = '<option>Loading...</option>';
+
+            let url = '';
+            if (scope === 'category') url = '/api/categories';
+            if (scope === 'team') url = '/api/teams';
+            if (scope === 'product') url = '/api/products';
+
+            try {
+                const res = await fetch(url);
+                if (!res.ok) throw new Error(`API Error`);
+                let data = await res.json();
+
+                if (!Array.isArray(data)) {
+                    if (data.products) data = data.products;
+                    else if (data.categories) data = data.categories;
+                    else if (data.teams) data = data.teams;
+                    else if (data.data) data = data.data;
+                    else data = [];
+                }
+
+                targetSelect.innerHTML = '';
+                if (data.length === 0) targetSelect.innerHTML = '<option disabled>No items found</option>';
+
+                data.forEach(item => {
+                    const option = document.createElement('option');
+                    if (scope === 'product') {
+                        option.value = item._id;
+                    } else {
+                        option.value = item.name || item.teamName || item.categoryName || item.title;
+                    }
+                    option.text = item.name || item.teamName || item.categoryName || item.title || "Unknown";
+                    targetSelect.appendChild(option);
+                });
+            } catch (err) {
+                console.error(err);
+                targetSelect.innerHTML = '<option disabled>Error loading data</option>';
+            }
+        }
+
+        async function saveCoupon() {
+            // 1. Get Values
+            // Clean input: Force Uppercase, allow A-Z and 0-9
+            let code = document.getElementById('cp-code').value.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+
+            const start = document.getElementById('cp-start').value;
+            let end = document.getElementById('cp-end').value;
+            const noExpiry = document.getElementById('cp-no-expiry').checked;
+            const usageLimitVal = document.getElementById('cp-usage-limit').value;
+            const discountValue = document.getElementById('cp-value').value;
+            const discountType = document.getElementById('cp-type').value;
+
+            // --- VALIDATION START ---
+
+            // A. CODE VALIDATION
+            if (!code) {
+                return Swal.fire('Error', 'Coupon Code is required', 'error');
+            }
+
+            if (code.length < 4) {
+                return Swal.fire('Invalid Code', 'Code must be at least 4 characters long.', 'warning');
+            }
+
+            // CRITICAL CHECK: Must contain at least one letter (A-Z)
+            // This allows "SALE123" and "SHIPOFF", but blocks "12345"
+            const hasLetter = /[A-Z]/.test(code);
+
+            if (!hasLetter) {
+                return Swal.fire('Invalid Code', 'Coupon code must contain at least one letter. (Cannot be numbers only)', 'warning');
+            }
+
+            // B. VALUE VALIDATION
+            if (discountType !== 'free_shipping') {
+                if (!discountValue || parseFloat(discountValue) <= 0) {
+                    return Swal.fire('Invalid Value', 'Please enter a valid discount value greater than 0.', 'warning');
+                }
+                if (discountType === 'percentage' && parseFloat(discountValue) > 100) {
+                    return Swal.fire('Invalid Percentage', 'Percentage discount cannot exceed 100%.', 'warning');
+                }
+            }
+
+            // C. DATE VALIDATION
+            if (!start) {
+                return Swal.fire('Error', 'Start Date is required', 'warning');
+            }
+
+            if (noExpiry) {
+                end = null;
+            } else {
+                if (!end) {
+                    return Swal.fire('Error', 'Please select End Date or check "No Expiration"', 'warning');
+                }
+                if (new Date(start) > new Date(end)) {
+                    return Swal.fire('Invalid Date', 'Start Date cannot be after End Date', 'warning');
+                }
+            }
+            // --- VALIDATION END ---
+
+            const payload = {
+                code,
+                description: document.getElementById('cp-desc').value.trim(),
+                discountType: discountType,
+                discountValue: discountValue,
+                appliesTo: document.getElementById('cp-scope').value,
+                targetIds: Array.from(document.getElementById('cp-targets').selectedOptions).map(opt => opt.value),
+                minQuantity: document.getElementById('cp-min-qty').value,
+                minOrderValue: document.getElementById('cp-min-val').value,
+                usageLimit: usageLimitVal ? parseInt(usageLimitVal) : null,
+                startDate: start,
+                expirationDate: end,
+                isActive: document.getElementById('cp-status').value === 'true'
+            };
+
+            const url = isEditing ? `/api/coupons/${editingId}` : '/api/coupons/create';
+            const method = isEditing ? 'PUT' : 'POST';
+
+            try {
+                const btn = document.querySelector('.save-btn');
+                btn.innerText = 'Saving...';
+                btn.disabled = true;
+
+                const res = await fetch(url, {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await res.json();
+
+                if (res.ok) {
+                    Swal.fire('Success', isEditing ? 'Coupon Updated' : 'Coupon Created', 'success');
+                    closeModal('couponFormModal');
+                    loadCoupons();
+                } else {
+                    Swal.fire('Error', data.error || data.message || 'Failed', 'error');
+                }
+            } catch (err) {
+                Swal.fire('Error', 'Server Connection Failed', 'error');
+            } finally {
+                const btn = document.querySelector('.save-btn');
+                if (btn) {
+                    btn.innerText = 'Save Coupon';
+                    btn.disabled = false;
+                }
+            }
+        }
+
+        async function deleteCoupon(id, event) {
+            event.stopPropagation();
+            if (currentUserRole === 'viewer') return;
+
+            const result = await Swal.fire({
+                title: 'Delete Coupon?',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#EF3826',
+                confirmButtonText: 'Yes'
+            });
+
+            if (!result.isConfirmed) return;
+
+            try {
+                const res = await fetch(`/api/coupons/${id}`, { method: 'DELETE' });
+                if (res.ok) {
+                    Swal.fire('Deleted!', 'Coupon deleted.', 'success');
+                    loadCoupons();
+                } else {
+                    Swal.fire('Error', 'Could not delete.', 'error');
+                }
+            } catch (err) { console.error(err); }
+        }
+
+        function openDetails(dataStr) {
+            const cp = JSON.parse(decodeURIComponent(dataStr));
+            const content = document.getElementById('detailsContent');
+
+            const expiryDisplay = cp.expirationDate ? new Date(cp.expirationDate).toDateString() : 'No Expiry (Forever)';
+
+            // Logic for Usage Display
+            const limitDisplay = cp.usageLimit ? cp.usageLimit : '∞';
+            const usageText = `${cp.usedCount || 0} / ${limitDisplay}`;
+
+            content.innerHTML = `
+                <div class="coupon-header">
+                    <span class="coupon-code-display">${cp.code}</span>
+                    <span class="coupon-type-display">${formatType(cp.discountType)}</span>
+                </div>
+                <div class="detail-row"><span class="detail-label">Value</span><span class="detail-val" style="color:var(--primary);">${cp.discountValue}</span></div>
+                
+                <div class="detail-row">
+                    <span class="detail-label">Usage (Used / Limit)</span>
+                    <span class="detail-val">${usageText}</span>
+                </div>
+
+                <div class="detail-row"><span class="detail-label">Applies To</span><span class="detail-val" style="text-transform:capitalize">${cp.appliesTo}</span></div>
+                <div class="detail-row"><span class="detail-label">Start</span><span class="detail-val">${new Date(cp.startDate).toDateString()}</span></div>
+                <div class="detail-row"><span class="detail-label">End</span><span class="detail-val">${expiryDisplay}</span></div>
+            `;
+            document.getElementById('detailsModal').style.display = 'flex';
+        }
+
+        function formatType(t) { return t.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()); }
+        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+        window.onclick = function (e) { if (e.target.classList.contains('modal-overlay')) e.target.style.display = "none"; }
+
+        async function logoutUser() {
+            try {
+                await fetch('/api/auth/logout-admin', { method: 'POST' });
+                window.location.replace('admin-login.html');
+            } catch (err) {
+                console.error("Logout error", err);
+                window.location.replace('admin-login.html');
+            }
+        }
+    </script>
+</body>
+
+</html>

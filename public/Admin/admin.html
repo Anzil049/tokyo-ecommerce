@@ -1,0 +1,994 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tokyo Admin - Admin Roles</title>
+    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <style>
+        /* Base CSS */
+        :root {
+            --primary: #4880FF;
+            --primary-light: #E8F0FE;
+            --dark: #202224;
+            --grey: #6A7178;
+            --bg: #F5F6FA;
+            --white: #fff;
+            --danger: #EF3826;
+            --danger-light: #FEECEB;
+            --success: #00B69B;
+            --success-light: #E6F7F5;
+            --warning: #FFB536;
+            --warning-light: #FFF8E7;
+        }
+
+        .swal2-container {
+            z-index: 10000 !important;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background: var(--bg);
+            display: flex;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        a {
+            text-decoration: none;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 260px;
+            background: var(--white);
+            padding: 20px;
+            height: 100vh;
+            position: fixed;
+            border-right: 1px solid #e0e0e0;
+            z-index: 1000;
+            transition: 0.3s;
+            left: 0;
+            top: 0;
+            overflow-y: auto;
+        }
+
+        .logo-img {
+            max-width: 150px;
+            display: block;
+            margin: 0 auto 30px;
+        }
+
+        .menu-cat {
+            font-size: 12px;
+            color: var(--grey);
+            margin: 15px 0 10px 10px;
+            font-weight: 700;
+        }
+
+        .menu-link {
+            display: flex;
+            align-items: center;
+            color: var(--grey);
+            padding: 12px 15px;
+            border-radius: 8px;
+            margin-bottom: 5px;
+            font-size: 14px;
+            transition: 0.3s;
+            font-weight: 500;
+            cursor: pointer;
+        }
+
+        .menu-link i {
+            font-size: 20px;
+            margin-right: 10px;
+        }
+
+        .menu-link:hover,
+        .menu-link.active {
+            background: var(--primary);
+            color: var(--white);
+            box-shadow: 0 4px 10px rgba(72, 128, 255, 0.2);
+        }
+
+        .logout {
+            color: var(--danger);
+            background: var(--danger-light);
+            margin-top: 15px;
+            justify-content: center;
+            font-weight: 600;
+        }
+
+        .logout:hover {
+            background: var(--danger);
+            color: var(--white);
+        }
+
+        /* Main Content */
+        .main-content {
+            margin-left: 260px;
+            flex: 1;
+            padding: 30px;
+            width: calc(100% - 260px);
+            transition: 0.3s;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .menu-toggle {
+            display: none;
+            font-size: 28px;
+            cursor: pointer;
+            margin-right: 15px;
+        }
+
+        /* Table Box */
+        .table-box {
+            background: var(--white);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+        }
+
+        .table-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .action-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .search-input {
+            padding: 10px 15px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            outline: none;
+            width: 250px;
+            font-size: 13px;
+        }
+
+        .add-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            transition: 0.2s;
+        }
+
+        .add-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(72, 128, 255, 0.3);
+        }
+
+        /* Table Styles */
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+
+        th {
+            text-align: left;
+            padding: 15px;
+            color: var(--grey);
+            border-bottom: 1px solid #eee;
+        }
+
+        td {
+            padding: 15px;
+            border-bottom: 1px solid #f5f5f5;
+            vertical-align: middle;
+            color: var(--dark);
+            font-size: 14px;
+        }
+
+        tbody tr {
+            transition: background 0.2s;
+            cursor: pointer;
+        }
+
+        tbody tr:hover {
+            background-color: #f8f9fa;
+        }
+
+        /* Admin Profile Cell */
+        .admin-cell {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .admin-img {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .admin-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .admin-name {
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        /* Badges */
+        .role-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            display: inline-block;
+            text-transform: capitalize;
+        }
+
+        .role-superadmin {
+            background: #E8F0FE;
+            color: #4880FF;
+        }
+
+        .role-editor {
+            background: #FFF8E7;
+            color: #FFB536;
+        }
+
+        .role-viewer {
+            background: #F5F6FA;
+            color: #6A7178;
+        }
+
+        /* Action Buttons */
+        .action-btns {
+            display: flex;
+            gap: 8px;
+        }
+
+        .icon-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            transition: 0.2s;
+        }
+
+        .edit-btn {
+            background: var(--primary-light);
+            color: var(--primary);
+        }
+
+        .edit-btn:hover {
+            background: var(--primary);
+            color: white;
+        }
+
+        .del-btn {
+            background: var(--danger-light);
+            color: var(--danger);
+        }
+
+        .del-btn:hover {
+            background: #EF3826;
+            color: white;
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            backdrop-filter: blur(2px);
+        }
+
+        .modal {
+            background: white;
+            width: 450px;
+            max-width: 90%;
+            border-radius: 16px;
+            padding: 25px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+            animation: slideDown 0.3s ease;
+        }
+
+        @keyframes slideDown {
+            from {
+                transform: translateY(-20px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 15px;
+        }
+
+        .modal-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--dark);
+        }
+
+        .close-modal {
+            cursor: pointer;
+            font-size: 24px;
+            color: var(--grey);
+        }
+
+        .modal-profile {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .modal-profile img {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            margin-bottom: 10px;
+            border: 2px solid #eee;
+        }
+
+        .modal-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid #f9f9f9;
+            font-size: 14px;
+        }
+
+        .modal-label {
+            color: var(--grey);
+            font-weight: 500;
+        }
+
+        .modal-val {
+            color: var(--dark);
+            font-weight: 600;
+            text-transform: capitalize;
+        }
+
+        .role-desc-box {
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            font-size: 13px;
+            color: var(--grey);
+            line-height: 1.5;
+            font-style: italic;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 13px;
+            color: var(--dark);
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            outline: none;
+            font-size: 14px;
+        }
+
+        .modal-footer {
+            text-align: right;
+            margin-top: 20px;
+        }
+
+        .cancel-btn {
+            background: white;
+            border: 1px solid #eee;
+            color: var(--grey);
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+
+        .save-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        /* Mobile */
+        @media (max-width: 991px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+
+            .sidebar.active {
+                transform: translateX(0);
+            }
+
+            .main-content {
+                margin-left: 0;
+                width: 100%;
+                padding: 20px;
+            }
+
+            .menu-toggle {
+                display: block;
+            }
+
+            .table-head {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .action-group {
+                width: 100%;
+                flex-direction: column-reverse;
+                align-items: stretch;
+            }
+
+            .search-input {
+                width: 100%;
+            }
+
+            .add-btn {
+                width: 100%;
+                justify-content: center;
+                margin-bottom: 10px;
+            }
+
+            table,
+            thead,
+            tbody,
+            th,
+            td,
+            tr {
+                display: block;
+                width: 100%;
+            }
+
+            thead {
+                display: none;
+            }
+
+            tr {
+                background: #fff;
+                margin-bottom: 20px;
+                border: 1px solid #eee;
+                border-radius: 12px;
+                padding: 20px;
+                position: relative;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+            }
+
+            td {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                text-align: right;
+                border-bottom: 1px solid #f9f9f9;
+                padding: 12px 0;
+            }
+
+            td:last-child {
+                border-bottom: none;
+                padding-bottom: 0;
+            }
+
+            td::before {
+                content: attr(data-label);
+                font-weight: 600;
+                color: var(--grey);
+                font-size: 13px;
+                text-align: left;
+            }
+
+            td[data-label="Name"] {
+                font-weight: 700;
+                color: var(--primary);
+                font-size: 16px;
+                border-bottom: 1px solid #eee;
+                margin-bottom: 10px;
+                padding-bottom: 15px;
+                padding-right: 90px;
+                justify-content: flex-start;
+            }
+
+            td[data-label="Name"]::before {
+                display: none;
+            }
+
+            td[data-label="Action"] {
+                position: absolute;
+                top: 20px;
+                right: 20px;
+                padding: 0;
+                border: none;
+                width: auto;
+                z-index: 5;
+            }
+
+            td[data-label="Action"]::before {
+                display: none;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="modal-overlay" id="detailsModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">Admin Profile</h3>
+                <i class='bx bx-x close-modal' onclick="closeModal('detailsModal')"></i>
+            </div>
+            <div id="detailsContent"></div>
+            <div class="modal-footer">
+                <button class="save-btn" onclick="closeModal('detailsModal')">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="adminFormModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title" id="formTitle">Add Admin</h3>
+                <i class='bx bx-x close-modal' onclick="closeModal('adminFormModal')"></i>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="adm-id">
+
+                <div class="form-group">
+                    <label class="form-label">Full Name</label>
+                    <input type="text" id="adm-name" class="form-input" placeholder="e.g. Sarah Connor">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Email Address</label>
+                    <input type="email" id="adm-email" class="form-input" placeholder="sarah@admin.com">
+                </div>
+
+                <div class="form-group" id="pass-group">
+                    <label class="form-label">Password</label>
+                    <input type="password" id="adm-password" class="form-input" placeholder="Strong Password">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Role</label>
+                    <select id="adm-role" class="form-input">
+                        <option value="superadmin">Super Admin</option>
+                        <option value="editor">Editor</option>
+                        <option value="viewer">Viewer</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="cancel-btn" onclick="closeModal('adminFormModal')">Cancel</button>
+                <button class="save-btn" onclick="saveAdmin()">Save Admin</button>
+            </div>
+        </div>
+    </div>
+
+    <aside class="sidebar" id="sidebar">
+        <img src="../Images/Logo text.png" class="logo-img">
+        <p class="menu-cat">Main menu</p>
+        <a href="dashboard.html" class="menu-link"><i class='bx bxs-dashboard'></i> Dashboard</a>
+        <a href="orders.html" class="menu-link"><i class='bx bx-cart'></i> Orders</a>
+        <a href="customers.html" class="menu-link"><i class='bx bx-user'></i> Customers</a>
+        <a href="coupons.html" class="menu-link"><i class='bx bx-purchase-tag'></i> Coupons</a>
+        <a href="sales.html" class="menu-link"><i class='bx bxs-offer'></i> Sales</a>
+        <a href="categories.html" class="menu-link"><i class='bx bx-category'></i> Categories</a>
+        <a href="transactions.html" class="menu-link"><i class='bx bx-credit-card'></i> Transactions</a>
+        <a href="teams.html" class="menu-link"><i class='bx bx-trophy'></i> Teams</a>
+        <p class="menu-cat">Product</p>
+        <a href="add-product.html" class="menu-link"><i class='bx bx-plus-circle'></i> Add Product</a>
+        <a href="product-list.html" class="menu-link"><i class='bx bx-list-ul'></i> Product List</a>
+        <a href="reviews.html" class="menu-link"><i class='bx bx-message-square-detail'></i> Reviews</a>
+        <p class="menu-cat">Admin</p>
+        <a href="admin.html" class="menu-link active"><i class='bx bx-user-circle'></i> Admin Role</a>
+        <a onclick="logoutUser()" class="menu-link logout"><i class='bx bx-log-out'></i> Log Out</a>
+    </aside>
+
+    <main class="main-content">
+        <div class="header">
+            <div style="display:flex; align-items:center;">
+                <i class='bx bx-menu menu-toggle' onclick="toggleSidebar()"></i>
+                <h2>Admin Roles</h2>
+            </div>
+        </div>
+
+        <div class="table-box">
+            <div class="table-head">
+                <h3>Admin & Staff</h3>
+                <div class="action-group">
+                    <input type="text" class="search-input" placeholder="Search admin..." id="searchInput"
+                        onkeyup="filterTable()">
+                    <button class="add-btn" onclick="openFormModal()">
+                        <i class='bx bx-plus'></i> Add New Admin
+                    </button>
+                </div>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Role</th>
+                        <th>Email</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="adminTableBody">
+                    <tr>
+                        <td colspan="5" style="text-align:center;">Loading admins...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+    <script>
+        // --- 1. PREVENT BACK BUTTON CACHING ---
+        
+        // Force reload if page is loaded from cache (Back button fix)
+        window.onpageshow = function (event) {
+            if (event.persisted || (window.performance && window.performance.navigation.type === 2)) {
+                window.location.reload();
+            }
+        };
+
+        const API_URL = '/api/admin';
+        let allUsers = [];
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            await checkAuthAndLoad();
+        });
+
+        function toggleSidebar() { document.getElementById('sidebar').classList.toggle('active'); }
+
+        // --- 2. AUTH & LOAD LOGIC COMBINED ---
+        async function checkAuthAndLoad() {
+            try {
+                // A. Check Authentication
+                const authRes = await fetch('/api/auth/verify-admin');
+                const authData = await authRes.json();
+
+                // 1. Not Logged In -> Go to Login
+                if (!authRes.ok || !authData.success) {
+                    window.location.replace('admin-login.html');
+                    return;
+                }
+
+                // 2. Logged In BUT Not Super Admin -> Show Alert & Go to Dashboard
+                if (authData.user.role !== 'superadmin') {
+                    await Swal.fire({
+                        icon: 'error',
+                        title: 'Restricted Access',
+                        text: 'Only Super Admins can manage roles.',
+                        confirmButtonText: 'Go to Dashboard',
+                        confirmButtonColor: '#4880FF',
+                        allowOutsideClick: false,
+                        allowEscapeKey: false
+                    });
+                    window.location.replace('dashboard.html'); // Redirect to safe zone
+                    return;
+                }
+
+                // 3. If Super Admin -> Load Data
+                loadUsers();
+
+            } catch (err) {
+                window.location.replace('admin-login.html');
+            }
+        }
+
+        async function loadUsers() {
+            try {
+                const res = await fetch(`${API_URL}/users`);
+
+                // Double Check Security (Backend should also block this)
+                if (res.status === 403) {
+                    Swal.fire('Error', 'Permission Denied', 'error');
+                    return;
+                }
+
+                const data = await res.json();
+
+                if (res.ok) {
+                    allUsers = data.filter(u => u.role !== 'user');
+                    renderTable(allUsers);
+                }
+            } catch (err) {
+                console.error("Error loading users", err);
+            }
+        }
+
+        // ... (Keep renderTable, openFormModal, openEditModal, saveAdmin, deleteUser, openDetails, closeModal, filterTable as they were) ...
+
+        function renderTable(users) {
+            const tbody = document.getElementById('adminTableBody');
+            tbody.innerHTML = '';
+
+            if (users.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">No admins found.</td></tr>';
+                return;
+            }
+
+            users.forEach(user => {
+                const roleClass = `role-${user.role}`;
+                const statusColor = user.isVerified ? '#00B69B' : '#EF3826';
+                const statusText = user.isVerified ? 'Verified' : 'Pending';
+
+                const tr = document.createElement('tr');
+                tr.onclick = (e) => {
+                    if (e.target.closest('.action-btns')) return;
+                    openDetails(user);
+                };
+
+                tr.innerHTML = `
+                <td data-label="Name">
+                    <div class="admin-cell">
+                        <img src="https://ui-avatars.com/api/?name=${user.name}&background=random" class="admin-img">
+                        <div class="admin-info"><span class="admin-name">${user.name}</span></div>
+                    </div>
+                </td>
+                <td data-label="Role"><span class="role-badge ${roleClass}">${user.role}</span></td>
+                <td data-label="Email">${user.email}</td>
+                <td data-label="Status"><span style="color:${statusColor}; font-weight:600;">${statusText}</span></td>
+                <td data-label="Action">
+                    <div class="action-btns">
+                        <button class="icon-btn edit-btn" onclick="openEditModal('${user._id}')"><i class='bx bx-edit'></i></button>
+                        <button class="icon-btn del-btn" onclick="deleteUser('${user._id}')"><i class='bx bx-trash'></i></button>
+                    </div>
+                </td>
+            `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function openFormModal() {
+            document.getElementById('formTitle').innerText = "Add New Admin";
+            document.getElementById('adm-id').value = '';
+            document.getElementById('adm-name').value = '';
+            document.getElementById('adm-email').value = '';
+            document.getElementById('adm-password').value = '';
+            document.getElementById('adm-role').value = 'viewer';
+
+            document.getElementById('adm-name').disabled = false;
+            document.getElementById('adm-email').disabled = false;
+            document.getElementById('pass-group').style.display = 'block';
+
+            document.getElementById('adminFormModal').style.display = 'flex';
+        }
+
+        function openEditModal(userId) {
+            const user = allUsers.find(u => u._id === userId);
+            if (!user) return;
+
+            document.getElementById('formTitle').innerText = "Update Role";
+            document.getElementById('adm-id').value = userId;
+
+            document.getElementById('adm-name').value = user.name;
+            document.getElementById('adm-name').disabled = true;
+
+            document.getElementById('adm-email').value = user.email;
+            document.getElementById('adm-email').disabled = true;
+
+            document.getElementById('adm-role').value = user.role;
+
+            document.getElementById('pass-group').style.display = 'none';
+
+            document.getElementById('adminFormModal').style.display = 'flex';
+        }
+
+        async function saveAdmin() {
+            const id = document.getElementById('adm-id').value;
+            const role = document.getElementById('adm-role').value;
+            const btn = document.querySelector('.save-btn');
+
+            btn.innerText = "Saving...";
+            btn.disabled = true;
+
+            try {
+                if (id) {
+                    const res = await fetch(`${API_URL}/user/${id}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ role })
+                    });
+
+                    if (res.status === 401) { window.location.replace('admin-login.html'); return; }
+                    if (res.status === 403) { Swal.fire('Error', 'Permission Denied', 'error'); return; }
+
+                    const data = await res.json();
+
+                    if (res.ok) {
+                        Swal.fire('Updated', data.message, 'success');
+                        closeModal('adminFormModal');
+                        loadUsers();
+                    } else {
+                        throw new Error(data.message);
+                    }
+
+                } else {
+                    const name = document.getElementById('adm-name').value;
+                    const email = document.getElementById('adm-email').value;
+                    const password = document.getElementById('adm-password').value;
+
+                    const res = await fetch(`${API_URL}/create-admin`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ name, email, password, role })
+                    });
+
+                    if (res.status === 401) { window.location.replace('admin-login.html'); return; }
+                    if (res.status === 403) { Swal.fire('Error', 'Permission Denied', 'error'); return; }
+
+                    const data = await res.json();
+
+                    if (res.ok) {
+                        Swal.fire('Created', data.message, 'success');
+                        closeModal('adminFormModal');
+                        loadUsers();
+                    } else {
+                        throw new Error(data.message);
+                    }
+                }
+            } catch (err) {
+                Swal.fire('Error', err.message, 'error');
+            } finally {
+                btn.innerText = "Save Admin";
+                btn.disabled = false;
+            }
+        }
+
+        async function deleteUser(id) {
+            const confirm = await Swal.fire({
+                title: 'Are you sure?',
+                text: "This admin will be permanently deleted!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#EF3826',
+                confirmButtonText: 'Yes, delete it!'
+            });
+
+            if (confirm.isConfirmed) {
+                try {
+                    const res = await fetch(`${API_URL}/user/${id}`, { method: 'DELETE' });
+
+                    if (res.status === 401) { window.location.replace('admin-login.html'); return; }
+                    if (res.status === 403) { Swal.fire('Error', 'Permission Denied', 'error'); return; }
+
+                    const data = await res.json();
+
+                    if (res.ok) {
+                        Swal.fire('Deleted!', 'Admin has been removed.', 'success');
+                        loadUsers();
+                    } else {
+                        Swal.fire('Error', data.message, 'error');
+                    }
+                } catch (err) {
+                    Swal.fire('Error', 'Delete failed', 'error');
+                }
+            }
+        }
+
+        function openDetails(user) {
+            const content = document.getElementById('detailsContent');
+            const avatarUrl = `https://ui-avatars.com/api/?name=${user.name}&background=random&size=128`;
+            const statusColor = user.isVerified ? '#00B69B' : '#EF3826';
+            const statusText = user.isVerified ? 'Verified' : 'Pending';
+
+            let roleDesc = "Read-only access.";
+            if (user.role === 'superadmin') roleDesc = "Full access to settings, users, and destructive actions.";
+            if (user.role === 'editor') roleDesc = "Can manage content (products, orders) but cannot manage users.";
+
+            content.innerHTML = `
+            <div class="modal-profile">
+                <img src="${avatarUrl}">
+                <h3 style="color:var(--dark);">${user.name}</h3>
+                <p style="color:var(--grey); font-size:13px;">${user.email}</p>
+            </div>
+            <div class="modal-row"><span class="modal-label">User ID</span><span class="modal-val" style="font-weight:400; font-size:12px;">${user._id}</span></div>
+            <div class="modal-row"><span class="modal-label">Role</span><span class="modal-val role-badge role-${user.role}">${user.role}</span></div>
+            <div class="modal-row"><span class="modal-label">Status</span><span class="modal-val" style="color:${statusColor}">${statusText}</span></div>
+            
+            <div class="role-desc-box">
+                <strong>Permissions:</strong><br>
+                ${roleDesc}
+            </div>
+        `;
+            document.getElementById('detailsModal').style.display = 'flex';
+        }
+
+        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+
+        window.onclick = function (event) {
+            if (event.target.classList.contains('modal-overlay')) {
+                event.target.style.display = 'none';
+            }
+        }
+
+        function filterTable() {
+            const input = document.getElementById("searchInput").value.toLowerCase();
+            const rows = document.querySelectorAll("#adminTableBody tr");
+            rows.forEach(row => {
+                const name = row.querySelector(".admin-name")?.innerText.toLowerCase() || "";
+                row.style.display = name.includes(input) ? "" : "none";
+            });
+        }
+
+        async function logoutUser() {
+            try {
+                // CHANGED: Use '/api/auth/logout-admin'
+                await fetch('/api/auth/logout-admin', { method: 'POST' }); 
+                
+                // Use REPLACE to kill history
+                window.location.replace('admin-login.html');
+            } catch (err) {
+                console.error("Logout failed", err);
+                window.location.replace('admin-login.html');
+            }
+        }
+    </script>
+</body>
+
+</html>

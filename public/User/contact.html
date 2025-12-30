@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contact - Tokyo Sports</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <style>
+        .swal2-container {
+            z-index: 10000 !important;
+        }
+
+        :root {
+            --primary-blue: #4383FF;
+            --primary-red: #DB4444;
+            --text-dark: #000000;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            overflow-x: hidden;
+        }
+
+        /* --- Header Styling (Synced with Cart Page) --- */
+        .top-bar {
+            background-color: black;
+            color: white;
+            font-size: 0.875rem;
+        }
+
+        .navbar-brand {
+            font-weight: 700;
+            letter-spacing: 1px;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            margin-right: 0;
+        }
+
+        .logo-img {
+            max-height: 40px;
+            width: auto;
+            object-fit: contain;
+        }
+
+        .nav-link {
+            color: #000 !important;
+            font-weight: 500;
+            margin: 0 10px;
+            position: relative;
+        }
+
+        .nav-link:hover,
+        .nav-link.active {
+            text-decoration: underline;
+            text-decoration-thickness: 2px;
+            text-underline-offset: 4px;
+        }
+
+        /* --- General Page Styling --- */
+        .breadcrumb-text {
+            color: #000;
+            opacity: 0.5;
+            font-size: 0.9rem;
+            margin-bottom: 40px;
+        }
+
+        .breadcrumb-text span {
+            color: #000;
+            opacity: 1;
+            font-weight: 500;
+        }
+
+        /* --- CONTACT PAGE SPECIFIC STYLING --- */
+
+        /* Left Side: Info Box */
+        .contact-info-box {
+            background: #fff;
+            padding: 40px 35px;
+            box-shadow: 0px 1px 13px 0px rgba(0, 0, 0, 0.05);
+            border-radius: 4px;
+            height: 100%;
+        }
+
+        .info-item {
+            margin-bottom: 30px;
+        }
+
+        .icon-circle {
+            width: 40px;
+            height: 40px;
+            background-color: var(--primary-blue);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            margin-right: 15px;
+            font-size: 1.1rem;
+        }
+
+        .info-title {
+            font-weight: 600;
+            font-size: 1rem;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+        }
+
+        .info-text {
+            font-size: 0.9rem;
+            line-height: 1.6;
+            margin-bottom: 10px;
+            color: #000;
+        }
+
+        /* Right Side: Form Box */
+        .contact-form-box {
+            background: #fff;
+            padding: 40px 35px;
+            box-shadow: 0px 1px 13px 0px rgba(0, 0, 0, 0.05);
+            border-radius: 4px;
+        }
+
+        .contact-input {
+            background-color: #f5f5f5;
+            border: none;
+            border-radius: 4px;
+            height: 50px;
+            padding: 0 15px;
+            width: 100%;
+            outline: none;
+            transition: all 0.3s;
+            margin-bottom: 0;
+        }
+
+        .contact-textarea {
+            background-color: #f5f5f5;
+            border: none;
+            border-radius: 4px;
+            padding: 15px;
+            width: 100%;
+            outline: none;
+            min-height: 200px;
+            resize: none;
+        }
+
+        .contact-input:focus,
+        .contact-textarea:focus {
+            background-color: #eaeaec;
+        }
+
+        /* Updated Button to Blue Theme */
+        .btn-send-msg {
+            background-color: var(--primary-blue);
+            color: white;
+            border: none;
+            padding: 12px 35px;
+            border-radius: 4px;
+            font-weight: 500;
+            transition: background 0.3s;
+            float: right;
+        }
+
+        .btn-send-msg:hover {
+            background-color: #356ACF;
+            color: white;
+        }
+
+        /* --- Footer Styling --- */
+        footer {
+            background-color: black;
+            color: white;
+            padding-top: 4rem;
+            margin-top: 80px;
+        }
+
+        footer h5 {
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+        }
+
+        footer ul {
+            padding-left: 0;
+            list-style: none;
+        }
+
+        footer li {
+            margin-bottom: 1rem;
+        }
+
+        footer a {
+            color: #d1d1d1;
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+
+        footer a:hover {
+            color: white;
+        }
+
+        .footer-input-group {
+            border: 1px solid white;
+            border-radius: 4px;
+            overflow: hidden;
+            display: flex;
+        }
+
+        .footer-input {
+            background: black;
+            border: none;
+            color: white;
+            padding: 10px;
+            width: 100%;
+            font-size: 0.9rem;
+        }
+
+        .footer-input:focus {
+            outline: none;
+        }
+
+        .copyright {
+            border-top: 1px solid #333;
+            color: #666;
+            font-size: 0.85rem;
+            padding: 1.5rem 0;
+            margin-top: 3rem;
+        }
+
+        /* --- Animations --- */
+        .reveal-element {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.8s cubic-bezier(0.5, 0, 0, 1);
+        }
+
+        .active {
+            opacity: 1;
+            transform: translate(0, 0);
+        }
+
+        /* Mobile specific */
+        @media (max-width: 991px) {
+            .navbar-brand {
+                margin-right: 0;
+            }
+
+            .navbar-toggler {
+                border: none;
+                padding: 0;
+                margin-left: 10px;
+            }
+
+            .navbar-toggler:focus {
+                box-shadow: none;
+            }
+
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="top-bar py-2 text-center reveal-element">
+        <div class="container">
+            <span>BUY 2 OR MORE PRODUCTS AND GET FREE SHIPPING USING COUPON CODE ' SHIPOFF '</span>
+        </div>
+    </div>
+
+    <nav class="navbar navbar-expand-lg navbar-light bg-white sticky-top border-bottom py-3 reveal-element"
+        style="transition-delay: 100ms;">
+        <div class="container d-flex align-items-center">
+
+            <a class="navbar-brand order-1" href="index.html">
+                <img src="../Images/Logo text.png" alt="Tokyo Sports" class="logo-img">
+            </a>
+
+            <div class="d-flex align-items-center order-3 order-lg-4 ms-auto ms-lg-0">
+                <div class="d-flex align-items-center gap-3">
+                    <a href="javascript:void(0)" onclick="checkAuth('wishlist.html')" class="text-dark"><i
+                            class="fas fa-heart"></i></a>
+                    <a href="javascript:void(0)" onclick="checkAuth('cart.html')" class="text-dark"><i
+                            class="fas fa-shopping-cart"></i></a>
+                    <a href="javascript:void(0)" onclick="checkAuth('account.html')" class="text-dark"><i
+                            class="fas fa-user"></i></a>
+                </div>
+
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+            </div>
+
+            <div class="collapse navbar-collapse justify-content-center order-4 order-lg-2" id="navbarNav">
+                <ul class="navbar-nav mb-2 mb-lg-0">
+                    <li class="nav-item"><a class="nav-link" href="index.html">Home</a></li>
+                    <li class="nav-item"><a class="nav-link" href="products.html">Shop</a></li>
+                    <li class="nav-item"><a class="nav-link active" href="contact.html">Contact</a></li>
+                    <li class="nav-item"><a class="nav-link" href="about.html">About</a></li>
+                    <li class="nav-item" id="signupNavItem"><a class="nav-link" href="signup.html">Sign Up</a></li>
+                </ul>
+            </div>
+
+        </div>
+    </nav>
+
+    <div class="container my-5 reveal-element" style="transition-delay: 200ms;">
+
+        <div class="breadcrumb-text">
+            Home / <span>Contact</span>
+        </div>
+
+        <div class="row g-4">
+
+            <div class="col-lg-4">
+                <div class="contact-info-box">
+
+                    <div class="info-item">
+                        <div class="info-title">
+                            <div class="icon-circle">
+                                <i class="fas fa-phone-alt" style="transform: rotate(90deg);"></i>
+                            </div>
+                            <span>Call To Us</span>
+                        </div>
+                        <p class="info-text">We are available 24/7, 7 days a week.</p>
+                        <p class="info-text">Phone: +91 9188223835</p>
+                    </div>
+
+                    <hr class="my-4" style="border-top: 1px solid #000;">
+
+                    <div class="info-item mb-0">
+                        <div class="info-title">
+                            <div class="icon-circle">
+                                <i class="far fa-envelope"></i>
+                            </div>
+                            <span>Write To US</span>
+                        </div>
+                        <p class="info-text">Fill out our form and we will contact you within 24 hours.</p>
+                        <p class="info-text mb-0">Emails: customer@tokyo.com</p>
+                        <p class="info-text">Emails: support@tokyo.com</p>
+                    </div>
+
+                </div>
+            </div>
+
+            <div class="col-lg-8">
+                <div class="contact-form-box">
+                    <form id="contactForm" onsubmit="handleContactSubmit(event)">
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-4">
+                                <input type="text" id="name" class="contact-input" placeholder="Your Name *" required>
+                            </div>
+                            <div class="col-md-4">
+                                <input type="email" id="email" class="contact-input" placeholder="Your Email *"
+                                    required>
+                            </div>
+                            <div class="col-md-4">
+                                <input type="tel" id="phone" class="contact-input" placeholder="Your Phone *" required>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <textarea id="message" class="contact-textarea" placeholder="Your Message"
+                                required></textarea>
+                        </div>
+
+                        <div class="d-flex justify-content-end">
+                            <button type="submit" class="btn-send-msg">Send Message</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <footer class="text-center reveal-element" style="transition-delay: 300ms;">
+        <div class="container">
+            <div class="row gy-5 justify-content-center">
+                <div class="col-6 col-lg-3">
+                    <h5 class="text-white mb-4">TOKYO</h5>
+                    <p class="small text-secondary">FOLLOW US ON INSTAGRAM</p>
+                    <div class="footer-instagram-link mt-3 mx-auto" style="max-width: 250px; text-align: center;">
+                        <a href="https://www.instagram.com/tokyo._.sports" target="_blank" class="text-white"
+                            style="text-decoration: none; font-size: 16px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                            <i class="fab fa-instagram" style="font-size: 20px;"></i>
+                            <span>tokyo._.sports</span>
+                        </a>
+                    </div>
+                </div>
+                <div class="col-6 col-lg-3">
+                    <h5 class="text-white">Support</h5>
+                    <ul class="text-secondary small mt-4">
+                        <li>Tokyo sports Tirur<br>676102,Kerala</li>
+                        <li class="mt-3">tokyo@gmail.com</li>
+                        <li class="mt-2">+91 9188223835</li>
+                    </ul>
+                </div>
+                <div class="col-6 col-lg-2">
+                    <h5 class="text-white">Account</h5>
+                    <ul class="mt-4">
+                        <li><a href="javascript:void(0)" onclick="checkAuth('account.html')">My Account</a></li>
+                        <li><a href="signup.html">Login / Register</a></li>
+                        <li><a href="javascript:void(0)" onclick="checkAuth('cart.html')">Cart</a></li>
+                        <li><a href="javascript:void(0)" onclick="checkAuth('wishlist.html')">Wishlist</a></li>
+                        <li><a href="products.html">Products</a></li>
+                    </ul>
+                </div>
+                <div class="col-6 col-lg-2">
+                    <h5 class="text-white">Quick Link</h5>
+                    <ul class="mt-4">
+                        <li><a href="privacy.html">Privacy Policy</a></li>
+                        <li><a href="terms.html">Terms Of Use</a></li>
+                        <li><a href="faq.html">FAQ</a></li>
+                        <li><a href="contact.html">Contact</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="copyright text-center">
+                &copy; Copyright Tokyo 2025. All right reserved
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // --- 1. PREVENT BACK BUTTON CACHING ---
+        window.onpageshow = function (event) {
+            if (event.persisted || (window.performance && window.performance.navigation.type === 2)) {
+                window.location.reload();
+            }
+        };
+
+        let userIsLoggedIn = false;
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            // 1. Check Login Status
+            userIsLoggedIn = await checkLoginStatus();
+
+            // 2. Update Navbar
+            updateNavbar(userIsLoggedIn);
+
+            // 3. Reveal Animations
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('active');
+                        observer.unobserve(entry.target);
+                    }
+                });
+            }, { threshold: 0.1 });
+
+            document.querySelectorAll('.reveal-element').forEach(el => {
+                observer.observe(el);
+            });
+        });
+
+        // --- AUTH LOGIC ---
+        async function checkLoginStatus() {
+            try {
+                const res = await fetch('/api/auth/verify-user');
+                return res.ok;
+            } catch (err) { return false; }
+        }
+
+        function updateNavbar(isLoggedIn) {
+            const signupNavItem = document.getElementById('signupNavItem');
+            const iconContainer = document.querySelector('.d-flex.align-items-center.gap-3');
+            let logoutBtn = document.getElementById('dynamicLogoutBtn');
+
+            if (isLoggedIn) {
+                if (signupNavItem) signupNavItem.style.display = 'none';
+
+                if (!logoutBtn && iconContainer) {
+                    logoutBtn = document.createElement('a');
+                    logoutBtn.href = "#";
+                    logoutBtn.id = "dynamicLogoutBtn";
+                    logoutBtn.className = "text-danger";
+                    logoutBtn.innerHTML = '<i class="fas fa-sign-out-alt"></i>';
+                    logoutBtn.title = "Logout";
+                    logoutBtn.style.cursor = "pointer";
+                    logoutBtn.onclick = (e) => { e.preventDefault(); handleLogout(); };
+                    iconContainer.appendChild(logoutBtn);
+                }
+            } else {
+                if (signupNavItem) signupNavItem.style.display = 'block';
+                if (logoutBtn) logoutBtn.remove();
+            }
+        }
+
+        async function handleLogout() {
+            try {
+                await fetch('/api/auth/logout-user', { method: 'POST' });
+                localStorage.removeItem('user');
+
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Logged Out',
+                    timer: 1000,
+                    showConfirmButton: false
+                }).then(() => {
+                    window.location.href = 'index.html';
+                });
+            } catch (err) { console.error('Logout failed', err); }
+        }
+
+        window.checkAuth = function (targetPage) {
+            if (userIsLoggedIn) {
+                window.location.href = targetPage;
+            } else {
+                Swal.fire({
+                    icon: 'info',
+                    title: 'Login Required',
+                    text: 'Please login to access this page.',
+                    confirmButtonText: 'Go to Login',
+                    confirmButtonColor: '#DB4444',
+                    showCancelButton: true
+                }).then((result) => {
+                    if (result.isConfirmed) window.location.href = 'signup.html';
+                });
+            }
+        }
+
+        // --- STRICT VALIDATION LOGIC ---
+        function validateInputs(name, email, phone) {
+            // 1. Name: Alphabets & spaces only, min 2 chars
+            const nameRegex = /^[a-zA-Z\s]{2,}$/;
+            if (!nameRegex.test(name)) {
+                return "Name must contain only letters and be at least 2 characters long.";
+            }
+
+            // 2. Email: Standard strict email format
+            const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+            if (!emailRegex.test(email)) {
+                return "Please enter a valid email address.";
+            }
+
+            // 3. Phone: Strictly 10 digits (Standard Mobile Number)
+            // Allows optional +91 at start, but validates the core 10 digits
+            const phoneRegex = /^(\+91|91)?[6-9][0-9]{9}$/;
+            if (!phoneRegex.test(phone)) {
+                return "Please enter a valid 10-digit mobile number.";
+            }
+
+            return null; // No errors
+        }
+
+        // --- FORM SUBMISSION ---
+        async function handleContactSubmit(e) {
+            e.preventDefault();
+
+            const name = document.getElementById('name').value.trim();
+            const email = document.getElementById('email').value.trim();
+            const phone = document.getElementById('phone').value.trim();
+            const message = document.getElementById('message').value.trim();
+
+            // --- RUN VALIDATION ---
+            const errorMsg = validateInputs(name, email, phone);
+            if (errorMsg) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Invalid Input',
+                    text: errorMsg,
+                    confirmButtonColor: '#DB4444'
+                });
+                return; // Stop execution if validation fails
+            }
+
+            if (!message) {
+                Swal.fire('Warning', 'Message cannot be empty', 'warning');
+                return;
+            }
+
+            const btn = document.querySelector('.btn-send-msg');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+            btn.disabled = true;
+
+            const payload = { name, email, phone, message };
+
+            try {
+                const res = await fetch('/api/contact/submit', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await res.json();
+
+                if (res.ok) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Message Sent!',
+                        text: 'We will get back to you shortly.',
+                        confirmButtonColor: '#4383FF'
+                    });
+                    document.getElementById('contactForm').reset();
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Oops...',
+                        text: data.message || 'Something went wrong.',
+                        confirmButtonColor: '#DB4444'
+                    });
+                }
+
+            } catch (err) {
+                console.error(err);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Connection Error',
+                    text: 'Please check your internet connection.',
+                    confirmButtonColor: '#DB4444'
+                });
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        }
+    </script>
+</body>
+
+</html>

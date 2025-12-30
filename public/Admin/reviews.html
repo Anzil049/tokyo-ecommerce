@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tokyo Admin - Product Reviews</title>
+    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <style>
+        /* Force SweetAlert to top */
+        .swal2-container {
+            z-index: 10000 !important;
+        }
+
+        /* Base CSS */
+        :root {
+            --primary: #4880FF;
+            --primary-light: #E8F0FE;
+            --dark: #202224;
+            --grey: #6A7178;
+            --bg: #F5F6FA;
+            --white: #fff;
+            --danger: #EF3826;
+            --danger-light: #FEECEB;
+            --success: #00B69B;
+            --success-light: #E6F7F5;
+            --warning: #FFB536;
+            --warning-light: #FFF8E7;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background: var(--bg);
+            display: flex;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        a {
+            text-decoration: none;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 260px;
+            background: var(--white);
+            padding: 20px;
+            height: 100vh;
+            position: fixed;
+            border-right: 1px solid #e0e0e0;
+            z-index: 1000;
+            transition: 0.3s;
+            left: 0;
+            top: 0;
+            overflow-y: auto;
+        }
+
+        .logo-img {
+            max-width: 150px;
+            display: block;
+            margin: 0 auto 30px;
+        }
+
+        .menu-cat {
+            font-size: 12px;
+            color: var(--grey);
+            margin: 15px 0 10px 10px;
+            font-weight: 700;
+        }
+
+        .menu-link {
+            display: flex;
+            align-items: center;
+            color: var(--grey);
+            padding: 12px 15px;
+            border-radius: 8px;
+            margin-bottom: 5px;
+            font-size: 14px;
+            transition: 0.3s;
+            font-weight: 500;
+            cursor: pointer;
+        }
+
+        .menu-link i {
+            font-size: 20px;
+            margin-right: 10px;
+        }
+
+        .menu-link:hover,
+        .menu-link.active {
+            background: var(--primary);
+            color: var(--white);
+            box-shadow: 0 4px 10px rgba(72, 128, 255, 0.2);
+        }
+
+        .logout {
+            color: var(--danger);
+            background: var(--danger-light);
+            margin-top: 15px;
+            justify-content: center;
+            font-weight: 600;
+        }
+
+        .logout:hover {
+            background: var(--danger);
+            color: var(--white);
+        }
+
+        /* Main Content */
+        .main-content {
+            margin-left: 260px;
+            flex: 1;
+            padding: 30px;
+            width: calc(100% - 260px);
+            transition: 0.3s;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .menu-toggle {
+            display: none;
+            font-size: 28px;
+            cursor: pointer;
+            margin-right: 15px;
+        }
+
+        /* Table Box */
+        .table-box {
+            background: var(--white);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+        }
+
+        .table-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .action-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .search-input {
+            padding: 10px 15px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            outline: none;
+            width: 250px;
+            font-size: 13px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+
+        th {
+            text-align: left;
+            padding: 15px;
+            color: var(--grey);
+            border-bottom: 1px solid #eee;
+        }
+
+        /* Table Row Click Effect */
+        tbody tr {
+            transition: background 0.2s;
+            cursor: pointer;
+        }
+
+        tbody tr:hover {
+            background-color: #f8f9fa;
+        }
+
+        td {
+            padding: 15px;
+            border-bottom: 1px solid #f5f5f5;
+            vertical-align: middle;
+            color: var(--dark);
+            font-size: 14px;
+        }
+
+        /* Rating Wrapper */
+        .rating-wrap {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        /* Status Badges */
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            display: inline-block;
+        }
+
+        .st-approved {
+            background: var(--success-light);
+            color: var(--success);
+        }
+
+        .st-pending {
+            background: var(--warning-light);
+            color: var(--warning);
+        }
+
+        .st-rejected {
+            background: var(--danger-light);
+            color: var(--danger);
+        }
+
+        /* Action Buttons */
+        .action-btns {
+            display: flex;
+            gap: 8px;
+        }
+
+        .icon-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            transition: 0.2s;
+        }
+
+        .app-btn {
+            background: var(--success-light);
+            color: var(--success);
+        }
+
+        .app-btn:hover {
+            background: var(--success);
+            color: white;
+        }
+
+        .rej-btn {
+            background: var(--warning-light);
+            color: var(--warning);
+        }
+
+        .rej-btn:hover {
+            background: var(--warning);
+            color: white;
+        }
+
+        .del-btn {
+            background: var(--danger-light);
+            color: var(--danger);
+        }
+
+        .del-btn:hover {
+            background: var(--danger);
+            color: white;
+        }
+
+        /* --- MODAL STYLES --- */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            backdrop-filter: blur(2px);
+        }
+
+        .modal {
+            background: white;
+            width: 450px;
+            max-width: 90%;
+            border-radius: 16px;
+            padding: 25px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+            animation: slideDown 0.3s ease;
+        }
+
+        @keyframes slideDown {
+            from {
+                transform: translateY(-20px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 15px;
+        }
+
+        .modal-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--dark);
+        }
+
+        .close-modal {
+            cursor: pointer;
+            font-size: 24px;
+            color: var(--grey);
+        }
+
+        .close-modal:hover {
+            color: var(--danger);
+            transform: rotate(90deg);
+            transition: 0.2s;
+        }
+
+        .review-header {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .review-user-img {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+        }
+
+        .review-rating {
+            color: var(--warning);
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+
+        .review-text {
+            color: var(--dark);
+            font-size: 14px;
+            line-height: 1.6;
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 8px;
+            font-style: italic;
+        }
+
+        .modal-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid #f9f9f9;
+            font-size: 14px;
+        }
+
+        .modal-label {
+            color: var(--grey);
+            font-weight: 500;
+        }
+
+        .modal-val {
+            color: var(--dark);
+            font-weight: 600;
+        }
+
+        /* --- MOBILE RESPONSIVE --- */
+        @media (max-width: 991px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+
+            .sidebar.active {
+                transform: translateX(0);
+            }
+
+            .main-content {
+                margin-left: 0;
+                width: 100%;
+                padding: 20px;
+            }
+
+            .menu-toggle {
+                display: block;
+            }
+
+            .table-head {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .action-group,
+            .search-input {
+                width: 100%;
+            }
+
+            /* Mobile Table to Card */
+            table,
+            thead,
+            tbody,
+            th,
+            td,
+            tr {
+                display: block;
+                width: 100%;
+            }
+
+            thead {
+                display: none;
+            }
+
+            tr {
+                background: #fff;
+                margin-bottom: 20px;
+                border: 1px solid #eee;
+                border-radius: 12px;
+                padding: 20px;
+                position: relative;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+            }
+
+            td {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                text-align: right;
+                border-bottom: 1px solid #f9f9f9;
+                padding: 12px 0;
+            }
+
+            td:last-child {
+                border-bottom: none;
+                padding-bottom: 0;
+            }
+
+            td::before {
+                content: attr(data-label);
+                font-weight: 600;
+                color: var(--grey);
+                font-size: 13px;
+                text-align: left;
+            }
+
+            td[data-label="Product"] {
+                font-weight: 700;
+                color: var(--primary);
+                font-size: 16px;
+                border-bottom: 1px solid #eee;
+                margin-bottom: 10px;
+                padding-bottom: 15px;
+                padding-right: 120px;
+                justify-content: flex-start;
+            }
+
+            td[data-label="Product"]::before {
+                display: none;
+            }
+
+            .rating-wrap {
+                justify-content: flex-end;
+            }
+
+            td[data-label="Action"] {
+                position: absolute;
+                top: 15px;
+                right: 15px;
+                padding: 0;
+                border: none;
+                width: auto;
+                z-index: 5;
+            }
+
+            td[data-label="Action"]::before {
+                display: none;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="modal-overlay" id="reviewModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">Review Details</h3>
+                <i class='bx bx-x close-modal' onclick="closeModal()"></i>
+            </div>
+            <div id="modalContent"></div>
+            <div style="margin-top: 20px; text-align: right;">
+                <button onclick="closeModal()"
+                    style="background: var(--primary); color: white; border: none; padding: 10px 25px; border-radius: 8px; cursor: pointer; font-weight: 600;">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <aside class="sidebar" id="sidebar">
+        <img src="../Images/Logo text.png" class="logo-img">
+        <p class="menu-cat">Main menu</p>
+        <a href="dashboard.html" class="menu-link"><i class='bx bxs-dashboard'></i> Dashboard</a>
+        <a href="orders.html" class="menu-link"><i class='bx bx-cart'></i> Orders</a>
+        <a href="customers.html" class="menu-link"><i class='bx bx-user'></i> Customers</a>
+        <a href="coupons.html" class="menu-link"><i class='bx bx-purchase-tag'></i> Coupons</a>
+        <a href="sales.html" class="menu-link"><i class='bx bxs-offer'></i> Sales</a>
+        <a href="categories.html" class="menu-link"><i class='bx bx-category'></i> Categories</a>
+        <a href="transactions.html" class="menu-link"><i class='bx bx-credit-card'></i> Transactions</a>
+        <a href="teams.html" class="menu-link"><i class='bx bx-trophy'></i> Teams</a>
+        <p class="menu-cat">Product</p>
+        <a href="add-product.html" class="menu-link"><i class='bx bx-plus-circle'></i> Add Product</a>
+        <a href="product-list.html" class="menu-link"><i class='bx bx-list-ul'></i> Product List</a>
+        <a href="reviews.html" class="menu-link active"><i class='bx bx-message-square-detail'></i> Reviews</a>
+        <p class="menu-cat">Admin</p>
+        <a href="admin.html" class="menu-link"><i class='bx bx-user-circle'></i> Admin Role</a>
+        <a onclick="logoutUser()" class="menu-link logout" style="cursor: pointer;"><i class='bx bx-log-out'></i> Log
+            Out</a>
+    </aside>
+
+    <main class="main-content">
+        <div class="header">
+            <div style="display:flex; align-items:center;">
+                <i class='bx bx-menu menu-toggle' onclick="toggleSidebar()"></i>
+                <h2>Product Reviews</h2>
+            </div>
+        </div>
+
+        <div class="table-box">
+            <div class="table-head">
+                <h3>Latest Reviews</h3>
+                <div class="action-group">
+                    <input type="text" class="search-input" placeholder="Search reviews...">
+                </div>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Product</th>
+                        <th>Reviewer</th>
+                        <th>Rating</th>
+                        <th>Comment</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="reviewsTableBody">
+                    <tr>
+                        <td colspan="6" style="text-align:center; padding:30px;">Loading reviews...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+    <script>
+        // --- 1. PREVENT BACK BUTTON CACHING ---
+        window.onpageshow = function (event) {
+            if (event.persisted || (window.performance && window.performance.navigation.type === 2)) {
+                window.location.reload();
+            }
+        };
+
+        let allReviews = [];
+        let currentUserRole = '';
+
+        // --- 2. INITIALIZATION ---
+        document.addEventListener('DOMContentLoaded', async () => {
+            await checkAuth(); // First verify admin access
+            loadReviews();     // Then load data
+        });
+
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('active');
+        }
+
+        // --- 3. AUTH & RBAC CHECK ---
+        async function checkAuth() {
+            try {
+                const res = await fetch('/api/auth/verify-admin');
+                const data = await res.json();
+
+                if (!res.ok || !data.success || !['superadmin', 'editor', 'viewer'].includes(data.user.role)) {
+                    window.location.replace('admin-login.html');
+                    return;
+                }
+                currentUserRole = data.user.role;
+            } catch (err) {
+                window.location.replace('admin-login.html');
+            }
+        }
+
+        // --- 4. LOGOUT ---
+        async function logoutUser() {
+            try {
+                await fetch('/api/auth/logout-admin', { method: 'POST' });
+                window.location.replace('admin-login.html');
+            } catch (err) {
+                window.location.replace('admin-login.html');
+            }
+        }
+
+        // --- 5. FETCH ALL REVIEWS ---
+        async function loadReviews() {
+            try {
+                const res = await fetch('/api/reviews/admin/all');
+                const json = await res.json();
+
+                if (json.success) {
+                    allReviews = json.data;
+                    renderReviewTable(allReviews);
+                } else {
+                    document.getElementById('reviewsTableBody').innerHTML = '<tr><td colspan="6" style="text-align:center;">Failed to load reviews.</td></tr>';
+                }
+            } catch (err) {
+                console.error("Failed to load reviews:", err);
+            }
+        }
+
+        // --- 6. RENDER DATA (WITH RBAC) ---
+        function renderReviewTable(reviews) {
+            const tbody = document.getElementById('reviewsTableBody');
+            tbody.innerHTML = '';
+
+            if (reviews.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px;">No reviews found.</td></tr>';
+                return;
+            }
+
+            reviews.forEach(rev => {
+                const tr = document.createElement('tr');
+
+                // Safe values handling for function arguments
+                const safeComment = rev.comment.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                const productName = rev.product ? rev.product.name : '<span style="color:#EF3826;">Deleted Product</span>';
+
+                tr.onclick = () => openDetails(productName, rev.userName, rev.rating, safeComment, rev.status);
+
+                // RBAC Logic: Only Editors and Superadmins see action buttons
+                let actionButtonsHtml = '';
+                if (currentUserRole !== 'viewer') {
+                    actionButtonsHtml = `
+                        <div class="action-btns">
+                            <button class="icon-btn app-btn" onclick="updateReviewStatus(event, '${rev._id}', 'Approved')" title="Approve"><i class='bx bx-check'></i></button>
+                            <button class="icon-btn rej-btn" onclick="updateReviewStatus(event, '${rev._id}', 'Rejected')" title="Reject"><i class='bx bx-x'></i></button>
+                            <button class="icon-btn del-btn" onclick="deleteReview(event, '${rev._id}')" title="Delete"><i class='bx bx-trash'></i></button>
+                        </div>
+                    `;
+                } else {
+                    actionButtonsHtml= `<span style="font-size:12px; color:var(--grey);">View Only</span>`;
+                }
+
+                tr.innerHTML = `
+                    <td data-label="Product">${productName}</td>
+                    <td data-label="Reviewer">${rev.userName}</td>
+                    <td data-label="Rating">
+                        <div class="rating-wrap">
+                            <i class='bx bxs-star' style="color:#FFB536"></i> ${rev.rating}.0
+                        </div>
+                    </td>
+                    <td data-label="Comment">"${rev.comment.substring(0, 25)}${rev.comment.length > 25 ? '...' : ''}"</td>
+                    <td data-label="Status">
+                        <span class="status-badge st-${rev.status.toLowerCase()}">${rev.status}</span>
+                    </td>
+                    <td data-label="Action">
+                        ${actionButtonsHtml}
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // --- 7. APPROVE / REJECT (Requires RBAC) ---
+        async function updateReviewStatus(event, id, newStatus) {
+            event.stopPropagation();
+            if (currentUserRole === 'viewer') return; // Double check
+
+            try {
+                const res = await fetch(`/api/reviews/admin/status/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: newStatus })
+                });
+                const json = await res.json();
+                if (json.success) {
+                    const Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 1500 });
+                    Toast.fire({ icon: 'success', title: `Review ${newStatus}` });
+                    loadReviews();
+                } else {
+                    Swal.fire('Error', json.message, 'error');
+                }
+            } catch (err) { console.error(err); }
+        }
+
+        // --- 8. DELETE (Requires RBAC) ---
+        async function deleteReview(event, id) {
+            event.stopPropagation();
+            if (currentUserRole === 'viewer') return;
+
+            const result = await Swal.fire({
+                title: 'Delete Review?',
+                text: "This action cannot be undone!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#EF3826',
+                confirmButtonText: 'Yes, delete it!'
+            });
+
+            if (result.isConfirmed) {
+                try {
+                    const res = await fetch(`/api/reviews/admin/${id}`, { method: 'DELETE' });
+                    if (res.ok) {
+                        Swal.fire('Deleted!', 'Review has been removed.', 'success');
+                        loadReviews();
+                    }
+                } catch (err) { console.error(err); }
+            }
+        }
+
+        // --- 9. SEARCH FILTER ---
+        document.querySelector('.search-input').addEventListener('keyup', (e) => {
+            const term = e.target.value.toLowerCase();
+            const filtered = allReviews.filter(rev =>
+                (rev.product?.name || '').toLowerCase().includes(term) ||
+                rev.userName.toLowerCase().includes(term) ||
+                rev.comment.toLowerCase().includes(term)
+            );
+            renderReviewTable(filtered);
+        });
+
+        // --- 10. MODAL UI ---
+        function openDetails(product, reviewer, rating, comment, status) {
+            const content = document.getElementById('modalContent');
+            const userImg = `https://ui-avatars.com/api/?name=${reviewer}&background=random`;
+
+            let statusColor = '#FFB536';
+            if (status === 'Approved') statusColor = '#00B69B';
+            if (status === 'Rejected') statusColor = '#EF3826';
+
+            let starsHtml = '';
+            for (let i = 0; i < 5; i++) {
+                starsHtml += i < rating ? "<i class='bx bxs-star' style='color:#FFB536'></i>" : "<i class='bx bx-star' style='color:#e0e0e0'></i>";
+            }
+
+            content.innerHTML = `
+                <div class="review-header">
+                    <img src="${userImg}" class="review-user-img">
+                    <div>
+                        <h3 style="color:var(--dark); font-size:16px;">${reviewer}</h3>
+                        <p style="color:var(--grey); font-size:12px;">Verified Buyer</p>
+                    </div>
+                </div>
+                <div class="modal-row"><span class="modal-label">Product</span><span class="modal-val" style="color:var(--primary)">${product}</span></div>
+                <div class="review-rating">${starsHtml} <span style="color:var(--dark); font-weight:600; margin-left:5px;">${rating}.0</span></div>
+                <p class="review-text">"${comment}"</p>
+                <div class="modal-row" style="margin-top:15px;"><span class="modal-label">Status</span><span class="modal-val" style="color:${statusColor}">${status}</span></div>
+            `;
+            document.getElementById('reviewModal').style.display = 'flex';
+        }
+
+        function closeModal() { document.getElementById('reviewModal').style.display = 'none'; }
+        window.onclick = (e) => { if (e.target == document.getElementById('reviewModal')) closeModal(); }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FAQ - Tokyo Sports</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <style>
+        .swal2-container {
+            z-index: 10000 !important;
+        }
+
+        :root {
+            --primary-blue: #4383FF;
+            --primary-red: #DB4444;
+            --text-dark: #000000;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            overflow-x: hidden;
+        }
+
+        /* --- Header Styling (Synced) --- */
+        .top-bar {
+            background-color: black;
+            color: white;
+            font-size: 0.875rem;
+        }
+
+        .navbar-brand {
+            font-weight: 700;
+            letter-spacing: 1px;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            margin-right: 0;
+        }
+
+        .logo-img {
+            max-height: 40px;
+            width: auto;
+            object-fit: contain;
+        }
+
+        .nav-link {
+            color: #000 !important;
+            font-weight: 500;
+            margin: 0 10px;
+            position: relative;
+        }
+
+        .nav-link:hover,
+        .nav-link.active {
+            text-decoration: underline;
+            text-decoration-thickness: 2px;
+            text-underline-offset: 4px;
+        }
+
+
+        /* --- Page Specific Styles --- */
+        .breadcrumb-text {
+            color: #000;
+            opacity: 0.5;
+            font-size: 0.9rem;
+            margin-bottom: 40px;
+        }
+
+        .breadcrumb-text span {
+            color: #000;
+            opacity: 1;
+            font-weight: 500;
+        }
+
+        /* FAQ Accordion Styling */
+        .page-content-wrapper {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .page-content-wrapper h1 {
+            font-weight: 700;
+            margin-bottom: 30px;
+        }
+
+        .accordion-button:not(.collapsed) {
+            background-color: white;
+            color: var(--primary-blue);
+            box-shadow: none;
+            border-bottom: 2px solid var(--primary-blue);
+        }
+
+        .accordion-button:focus {
+            box-shadow: none;
+            border-color: rgba(0, 0, 0, 0.1);
+        }
+
+        .accordion-item {
+            border: none;
+            border-bottom: 1px solid #ddd;
+            margin-bottom: 10px;
+        }
+
+        /* --- Footer Styling (Synced) --- */
+        footer {
+            background-color: black;
+            color: white;
+            padding-top: 4rem;
+            margin-top: 80px;
+        }
+
+        footer h5 {
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+        }
+
+        footer ul {
+            padding-left: 0;
+            list-style: none;
+        }
+
+        footer li {
+            margin-bottom: 1rem;
+        }
+
+        footer a {
+            color: #d1d1d1;
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+
+        footer a:hover {
+            color: white;
+        }
+
+        .footer-input-group {
+            border: 1px solid white;
+            border-radius: 4px;
+            overflow: hidden;
+            display: flex;
+        }
+
+        .footer-input {
+            background: black;
+            border: none;
+            color: white;
+            padding: 10px;
+            width: 100%;
+            font-size: 0.9rem;
+        }
+
+        .footer-input:focus {
+            outline: none;
+        }
+
+        .copyright {
+            border-top: 1px solid #333;
+            color: #666;
+            font-size: 0.85rem;
+            padding: 1.5rem 0;
+            margin-top: 3rem;
+        }
+
+        /* --- Animations --- */
+        .reveal-element {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.8s cubic-bezier(0.5, 0, 0, 1);
+        }
+
+        .active {
+            opacity: 1;
+            transform: translate(0, 0);
+        }
+
+        @media (max-width: 991px) {
+            .navbar-brand {
+                margin-right: 0;
+            }
+
+            .navbar-toggler {
+                border: none;
+                padding: 0;
+                margin-left: 10px;
+            }
+
+        
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="top-bar py-2 text-center reveal-element">
+        <div class="container">
+            <span>BUY 2 OR MORE PRODUCTS AND GET FREE SHIPPING USING COUPON CODE ' SHIPOFF '</span>
+        </div>
+    </div>
+
+    <nav class="navbar navbar-expand-lg navbar-light bg-white sticky-top border-bottom py-3 reveal-element"
+        style="transition-delay: 100ms;">
+        <div class="container d-flex align-items-center">
+
+            <a class="navbar-brand order-1" href="index.html">
+                <img src="../Images/Logo text.png" alt="Tokyo Sports" class="logo-img">
+            </a>
+
+
+            <div class="d-flex align-items-center order-3 order-lg-4 ms-auto ms-lg-0">
+                <div class="d-flex align-items-center gap-3">
+                    <a href="javascript:void(0)" onclick="checkAuth('wishlist.html')" class="text-dark"><i
+                            class="far fa-heart"></i></a>
+                    <a href="javascript:void(0)" onclick="checkAuth('cart.html')" class="text-dark"><i
+                            class="fas fa-shopping-cart"></i></a>
+                    <a href="javascript:void(0)" onclick="checkAuth('account.html')" class="text-dark"><i
+                            class="fas fa-user"></i></a>
+                </div>
+
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+            </div>
+
+            <div class="collapse navbar-collapse justify-content-center order-4 order-lg-2" id="navbarNav">
+                <ul class="navbar-nav mb-2 mb-lg-0">
+                    <li class="nav-item"><a class="nav-link" href="index.html">Home</a></li>
+                    <li class="nav-item"><a class="nav-link" href="products.html">Shop</a></li>
+                    <li class="nav-item"><a class="nav-link" href="contact.html">Contact</a></li>
+                    <li class="nav-item"><a class="nav-link" href="about.html">About</a></li>
+                    <li class="nav-item" id="signupNavItem"><a class="nav-link" href="signup.html">Sign Up</a></li>
+                </ul>
+            </div>
+
+        </div>
+    </nav>
+
+    <div class="container my-5 reveal-element" style="transition-delay: 200ms;">
+        <div class="breadcrumb-text">Home / <span>FAQ</span></div>
+
+        <div class="page-content-wrapper">
+            <h1>Frequently Asked Questions</h1>
+
+            <div class="accordion" id="faqAccordion">
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="headingOne">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                            data-bs-target="#collapseOne">
+                            How long does shipping take?
+                        </button>
+                    </h2>
+                    <div id="collapseOne" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                        <div class="accordion-body text-secondary">
+                            We aim to deliver all orders within 1 week of purchase. Delivery times may vary depending on
+                            your specific location in India.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="headingTwo">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                            data-bs-target="#collapseTwo">
+                            What is your return policy?
+                        </button>
+                    </h2>
+                    <div id="collapseTwo" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                        <div class="accordion-body text-secondary">
+                            We offer a free 7-day delivery return policy. To be eligible for a return, your item must
+                            be unused, in the same condition that you received it, and in the original packaging.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="headingThree">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                            data-bs-target="#collapseThree">
+                            Do you ship internationally?
+                        </button>
+                    </h2>
+                    <div id="collapseThree" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                        <div class="accordion-body text-secondary">
+                            Currently, we primarily ship within India. For special international requests, please
+                            contact our support team at tokyo@gmail.com.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="headingFour">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                            data-bs-target="#collapseFour">
+                            How do I track my order?
+                        </button>
+                    </h2>
+                    <div id="collapseFour" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                        <div class="accordion-body text-secondary">
+                            To track your order status, please visit the 'My Orders' page within your account.
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <footer class="text-center reveal-element" style="transition-delay: 300ms;">
+        <div class="container">
+            <div class="row gy-5 justify-content-center">
+                <div class="col-6 col-lg-3">
+                    <h5 class="text-white mb-4">TOKYO</h5>
+                    <p class="small text-secondary">FOLLOW US ON INSTAGRAM</p>
+                    <div class="footer-instagram-link mt-3 mx-auto" style="max-width: 250px; text-align: center;">
+                        <a href="https://www.instagram.com/tokyo._.sports" target="_blank" class="text-white"
+                            style="text-decoration: none; font-size: 16px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                            <i class="fab fa-instagram" style="font-size: 20px;"></i>
+                            <span>tokyo._.sports</span>
+                        </a>
+                    </div>
+                </div>
+                <div class="col-6 col-lg-3">
+                    <h5 class="text-white">Support</h5>
+                    <ul class="text-secondary small mt-4">
+                        <li>Tokyo sports Tirur<br>676102,Kerala</li>
+                        <li class="mt-3">tokyo@gmail.com</li>
+                        <li class="mt-2">+91 9188223835</li>
+                    </ul>
+                </div>
+                <div class="col-6 col-lg-2">
+                    <h5 class="text-white">Account</h5>
+                    <ul class="mt-4">
+                        <li><a href="javascript:void(0)" onclick="checkAuth('account.html')">My Account</a></li>
+                        <li><a href="signup.html">Login / Register</a></li>
+                        <li><a href="javascript:void(0)" onclick="checkAuth('cart.html')">Cart</a></li>
+                        <li><a href="javascript:void(0)" onclick="checkAuth('wishlist.html')">Wishlist</a></li>
+                        <li><a href="products.html">Products</a></li>
+                    </ul>
+                </div>
+                <div class="col-6 col-lg-2">
+                    <h5 class="text-white">Quick Link</h5>
+                    <ul class="mt-4">
+                        <li><a href="privacy.html">Privacy Policy</a></li>
+                        <li><a href="terms.html">Terms Of Use</a></li>
+                        <li><a href="faq.html">FAQ</a></li>
+                        <li><a href="contact.html">Contact</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="copyright text-center">
+                &copy; Copyright Tokyo 2025. All right reserved
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // --- 1. PREVENT BACK BUTTON CACHING ---
+        window.onpageshow = function (event) {
+            if (event.persisted || (window.performance && window.performance.navigation.type === 2)) {
+                window.location.reload();
+            }
+        };
+
+        let userIsLoggedIn = false;
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            // 1. Check Login Status
+            userIsLoggedIn = await checkLoginStatus();
+
+            // 2. Update Navbar
+            updateNavbar(userIsLoggedIn);
+
+            // 3. Reveal Animations
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('active');
+                        observer.unobserve(entry.target);
+                    }
+                });
+            }, { threshold: 0.1 });
+
+            document.querySelectorAll('.reveal-element').forEach(el => {
+                observer.observe(el);
+            });
+        });
+
+        // --- AUTH LOGIC ---
+        async function checkLoginStatus() {
+            try {
+                const res = await fetch('/api/auth/verify-user');
+                return res.ok;
+            } catch (err) { return false; }
+        }
+
+        function updateNavbar(isLoggedIn) {
+            const signupNavItem = document.getElementById('signupNavItem');
+            const iconContainer = document.querySelector('.d-flex.align-items-center.gap-3');
+            let logoutBtn = document.getElementById('dynamicLogoutBtn');
+
+            if (isLoggedIn) {
+                if (signupNavItem) signupNavItem.style.display = 'none';
+
+                if (!logoutBtn && iconContainer) {
+                    logoutBtn = document.createElement('a');
+                    logoutBtn.href = "#";
+                    logoutBtn.id = "dynamicLogoutBtn";
+                    logoutBtn.className = "text-danger";
+                    logoutBtn.innerHTML = '<i class="fas fa-sign-out-alt"></i>';
+                    logoutBtn.title = "Logout";
+                    logoutBtn.style.cursor = "pointer";
+                    logoutBtn.onclick = (e) => { e.preventDefault(); handleLogout(); };
+                    iconContainer.appendChild(logoutBtn);
+                }
+            } else {
+                if (signupNavItem) signupNavItem.style.display = 'block';
+                if (logoutBtn) logoutBtn.remove();
+            }
+        }
+
+        async function handleLogout() {
+            try {
+                await fetch('/api/auth/logout-user', { method: 'POST' });
+                localStorage.removeItem('user');
+
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Logged Out',
+                    timer: 1000,
+                    showConfirmButton: false
+                }).then(() => {
+                    window.location.href = 'index.html';
+                });
+            } catch (err) { console.error('Logout failed', err); }
+        }
+
+        window.checkAuth = function (targetPage) {
+            if (userIsLoggedIn) {
+                window.location.href = targetPage;
+            } else {
+                Swal.fire({
+                    icon: 'info',
+                    title: 'Login Required',
+                    text: 'Please login to access this page.',
+                    confirmButtonText: 'Go to Login',
+                    confirmButtonColor: '#DB4444',
+                    showCancelButton: true
+                }).then((result) => {
+                    if (result.isConfirmed) window.location.href = 'signup.html';
+                });
+            }
+        }
+    </script>
+</body>
+
+</html>

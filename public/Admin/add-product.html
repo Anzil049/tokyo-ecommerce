@@ -1,0 +1,1032 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tokyo Admin - Add Product</title>
+    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" rel="stylesheet">
+
+    <style>
+        /* Force SweetAlert to top */
+        .swal2-container {
+            z-index: 10000 !important;
+        }
+
+        /* --- GLOBAL STYLES --- */
+        :root {
+            --primary: #4880FF;
+            --primary-light: #E8F0FE;
+            --dark: #202224;
+            --grey: #6A7178;
+            --bg: #F5F6FA;
+            --white: #fff;
+            --danger: #EF3826;
+            --border: #e0e0e0;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background: var(--bg);
+            display: flex;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        a {
+            text-decoration: none;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 260px;
+            background: var(--white);
+            padding: 20px;
+            height: 100vh;
+            position: fixed;
+            border-right: 1px solid var(--border);
+            z-index: 1000;
+            transition: 0.3s;
+            left: 0;
+            top: 0;
+            overflow-y: auto;
+        }
+
+        .logo-img {
+            max-width: 150px;
+            display: block;
+            margin: 0 auto 30px;
+        }
+
+        .menu-cat {
+            font-size: 12px;
+            color: var(--grey);
+            margin: 15px 0 10px 10px;
+            font-weight: 700;
+        }
+
+        .menu-link {
+            display: flex;
+            align-items: center;
+            color: var(--grey);
+            padding: 12px 15px;
+            border-radius: 8px;
+            margin-bottom: 5px;
+            font-size: 14px;
+            transition: 0.3s;
+            font-weight: 500;
+            cursor: pointer;
+        }
+
+        .menu-link i {
+            font-size: 20px;
+            margin-right: 10px;
+        }
+
+        .menu-link:hover,
+        .menu-link.active {
+            background: var(--primary);
+            color: var(--white);
+            box-shadow: 0 4px 10px rgba(72, 128, 255, 0.2);
+        }
+
+        .logout {
+            color: var(--danger);
+            background: #FEECEB;
+            margin-top: 15px;
+            justify-content: center;
+            font-weight: 600;
+        }
+
+        /* Main Content */
+        .main-content {
+            margin-left: 260px;
+            flex: 1;
+            padding: 30px;
+            width: calc(100% - 260px);
+            transition: 0.3s;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .menu-toggle {
+            display: none;
+            font-size: 28px;
+            cursor: pointer;
+            margin-right: 15px;
+        }
+
+        /* --- ADD PRODUCT STYLES --- */
+        .ap-grid {
+            display: grid;
+            grid-template-columns: 2.2fr 1fr;
+            gap: 25px;
+        }
+
+        .section {
+            background: var(--white);
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02);
+            border: 1px solid #f0f0f0;
+        }
+
+        h3 {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--dark);
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--dark);
+            margin-bottom: 8px;
+        }
+
+        input,
+        select,
+        textarea {
+            width: 100%;
+            padding: 10px 15px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: #fcfcfc;
+            color: var(--dark);
+            font-size: 14px;
+            outline: none;
+            transition: 0.2s;
+        }
+
+        input:focus,
+        select:focus,
+        textarea:focus {
+            border-color: var(--primary);
+            background: #fff;
+        }
+
+        /* Pricing & Image Styles */
+        .discount-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        .discount-type {
+            width: 140px;
+            flex-shrink: 0;
+        }
+
+        .final-price-input {
+            background: var(--primary-light);
+            color: var(--primary);
+            font-weight: 700;
+            border-color: var(--primary);
+        }
+
+        .image-uploader {
+            border: 2px dashed #e0e0e0;
+            background: #f9f9f9;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            min-height: 250px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .main-preview {
+            max-width: 100%;
+            max-height: 200px;
+            object-fit: contain;
+            display: none;
+            margin-bottom: 15px;
+            border-radius: 8px;
+        }
+
+        .upload-placeholder i {
+            font-size: 40px;
+            color: #ccc;
+            margin-bottom: 10px;
+        }
+
+        .thumb-list {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+
+        .thumb-item {
+            width: 60px;
+            /* Narrower */
+            height: 80px;
+            /* Taller to match 3:4 ratio */
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+            cursor: pointer;
+        }
+
+        .thumb-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .add-thumb {
+            border: 1px dashed var(--primary);
+            background: var(--primary-light);
+            color: var(--primary);
+            font-size: 20px;
+            cursor: pointer;
+        }
+
+        /* Stock Grid */
+        .size-stock-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+        }
+
+        .size-stock-item {
+            display: flex;
+            align-items: center;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
+            background: #fff;
+        }
+
+        .size-label {
+            background: var(--primary-light);
+            color: var(--primary);
+            font-weight: 700;
+            padding: 10px;
+            width: 50px;
+            text-align: center;
+            border-right: 1px solid var(--border);
+            font-size: 14px;
+        }
+
+        .size-qty-input {
+            border: none;
+            width: 100%;
+            padding: 10px;
+            text-align: center;
+            font-weight: 600;
+            outline: none;
+            margin-bottom: 0 !important;
+        }
+
+        /* Header Buttons */
+        .header-btns {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+        }
+
+        .btn-draft {
+            background: white;
+            border: 1px solid var(--border);
+            color: var(--grey);
+        }
+
+        .btn-pub {
+            background: var(--primary);
+            color: white;
+        }
+
+        /* --- CROPPER MODAL STYLES --- */
+        .image-cropper-modal {
+            position: fixed;
+            inset: 0;
+            z-index: 11000;
+            display: none;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .image-cropper-modal::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.8);
+        }
+
+        .cropper-content {
+            position: relative;
+            background: #ffffff;
+            padding: 20px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 600px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            z-index: 1;
+        }
+
+        .crop-container {
+            height: 400px;
+            width: 100%;
+            background: #f0f0f0;
+            overflow: hidden;
+        }
+
+        .crop-container img {
+            max-width: 100%;
+        }
+
+        .cropper-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        @media (max-width: 991px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+
+            .sidebar.active {
+                transform: translateX(0);
+            }
+
+            .main-content {
+                margin-left: 0;
+                width: 100%;
+                padding-bottom: 90px;
+            }
+
+            .menu-toggle {
+                display: block;
+            }
+
+            .ap-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .header-btns {
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                width: 100%;
+                background: var(--white);
+                padding: 15px 20px;
+                box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.05);
+                z-index: 999;
+                display: flex;
+                gap: 15px;
+                border-top: 1px solid var(--border);
+            }
+
+            .header-btns .btn {
+                flex: 1;
+                justify-content: center;
+                padding: 12px;
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <aside class="sidebar" id="sidebar">
+        <img src="../Images/Logo text.png" class="logo-img">
+        <p class="menu-cat">Main menu</p>
+        <a href="dashboard.html" class="menu-link"><i class='bx bxs-dashboard'></i> Dashboard</a>
+        <a href="orders.html" class="menu-link"><i class='bx bx-cart'></i> Orders</a>
+        <a href="customers.html" class="menu-link"><i class='bx bx-user'></i> Customers</a>
+        <a href="coupons.html" class="menu-link"><i class='bx bx-purchase-tag'></i> Coupons</a>
+        <a href="sales.html" class="menu-link"><i class='bx bxs-offer'></i> Sales</a>
+        <a href="categories.html" class="menu-link"><i class='bx bx-category'></i> Categories</a>
+        <a href="transactions.html" class="menu-link"><i class='bx bx-credit-card'></i> Transactions</a>
+        <a href="teams.html" class="menu-link"><i class='bx bx-trophy'></i> Teams</a>
+        <p class="menu-cat">Product</p>
+        <a href="add-product.html" class="menu-link active"><i class='bx bx-plus-circle'></i> Add Product</a>
+        <a href="product-list.html" class="menu-link"><i class='bx bx-list-ul'></i> Product List</a>
+        <a href="reviews.html" class="menu-link"><i class='bx bx-message-square-detail'></i> Reviews</a>
+        <p class="menu-cat">Admin</p>
+        <a href="admin.html" class="menu-link"><i class='bx bx-user-circle'></i> Admin Role</a>
+        <a onclick="logoutUser()" class="menu-link logout"><i class='bx bx-log-out'></i> Log Out</a>
+    </aside>
+
+    <main class="main-content">
+        <div class="header">
+            <div style="display:flex; align-items:center;">
+                <i class='bx bx-menu menu-toggle' onclick="toggleSidebar()"></i>
+                <h2 id="pageTitle">Add New Product</h2>
+            </div>
+            <div class="header-btns">
+                <button class="btn btn-draft" onclick="saveProduct('Draft')">Save Draft</button>
+                <button class="btn btn-pub" onclick="saveProduct('Active')">Publish Product</button>
+            </div>
+        </div>
+
+        <div class="ap-grid">
+            <div class="ap-left">
+                <div class="section">
+                    <h3>Basic Details</h3>
+                    <div class="form-group">
+                        <label>Product Name <span style="color:red">*</span></label>
+                        <input type="text" id="product-name" placeholder="Enter product name (Min 3 chars)...">
+                    </div>
+                    <div class="form-group">
+                        <label>Product SKU (Unique ID) <span style="color:red">*</span></label>
+                        <input type="text" id="product-sku" placeholder="e.g. BAR-25-HOME (No spaces)">
+                    </div>
+                    <div class="form-group">
+                        <label>Description</label>
+                        <textarea id="product-desc" style="height: 100px; resize: none;"
+                            placeholder="Enter product description..."></textarea>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h3>Pricing</h3>
+                    <div class="form-group">
+                        <label>Base Price (₹) <span style="color:red">*</span></label>
+                        <input type="number" id="basePrice" placeholder="0.00" min="0" step="0.01"
+                            oninput="validatePriceInput(this); calculatePrice()">
+                    </div>
+                    <div class="form-group">
+                        <label>Discount</label>
+                        <div class="discount-group">
+                            <select id="discountType" class="discount-type" onchange="calculatePrice()">
+                                <option value="percent">Percent (%)</option>
+                                <option value="fixed">Fixed (₹)</option>
+                            </select>
+                            <input type="number" id="discountValue" placeholder="0" min="0" step="0.01"
+                                oninput="validatePriceInput(this); calculatePrice()">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Final Price</label>
+                        <input type="text" id="finalPrice" class="final-price-input" readonly value="0.00">
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h3>Inventory & Sizes</h3>
+                    <p style="font-size: 13px; color: var(--grey); margin-bottom: 15px;">Enter stock quantity for each
+                        size:</p>
+                    <div class="size-stock-grid">
+                        <div class="size-stock-item">
+                            <span class="size-label">S</span>
+                            <input type="number" class="size-qty-input" data-size="S" value="0" min="0"
+                                oninput="validateStockInput(this)">
+                        </div>
+                        <div class="size-stock-item">
+                            <span class="size-label">M</span>
+                            <input type="number" class="size-qty-input" data-size="M" value="0" min="0"
+                                oninput="validateStockInput(this)">
+                        </div>
+                        <div class="size-stock-item">
+                            <span class="size-label">L</span>
+                            <input type="number" class="size-qty-input" data-size="L" value="0" min="0"
+                                oninput="validateStockInput(this)">
+                        </div>
+                        <div class="size-stock-item">
+                            <span class="size-label">XL</span>
+                            <input type="number" class="size-qty-input" data-size="XL" value="0" min="0"
+                                oninput="validateStockInput(this)">
+                        </div>
+                        <div class="size-stock-item">
+                            <span class="size-label">XXL</span>
+                            <input type="number" class="size-qty-input" data-size="XXL" value="0" min="0"
+                                oninput="validateStockInput(this)">
+                        </div>
+                    </div>
+                    <div style="margin-top: 20px; display: flex; gap: 20px;">
+                        <div style="flex: 1;">
+                            <label>Total Stock (Auto)</label>
+                            <input type="number" id="product-stock" value="0" readonly style="background-color: #eee;">
+                        </div>
+                        <div style="flex: 1;">
+                            <label>Status (Auto)</label>
+                            <input type="text" id="stock-status" value="Out of Stock" readonly
+                                style="background-color: #eee; font-weight: 600; color: #EF3826;">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="ap-right">
+                <div class="section">
+                    <h3>Upload Product Images</h3>
+                    <p style="font-size:12px; color:var(--grey); margin-bottom:10px;">
+                        Images will be cropped to 1200x1600px (3:4 Portrait) and converted to WebP (Max 1MB). <b>Limit:
+                            5 Images</b>.
+                    </p>
+                    <div class="image-uploader">
+                        <img id="mainPreview" class="main-preview">
+                        <div id="uploadPlaceholder">
+                            <i class='bx bx-image-add'></i>
+                            <p>Click + below to add images</p>
+                        </div>
+                        <input type="file" id="imageInput" hidden accept="image/*" onchange="handleFileSelect(this)">
+                    </div>
+                    <div class="thumb-list" id="thumbList">
+                        <div class="thumb-item add-thumb" onclick="document.getElementById('imageInput').click()"><i
+                                class='bx bx-plus'></i></div>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h3>Organization</h3>
+                    <div class="form-group">
+                        <label>Category <span style="color:red; display:none;" id="req-cat">*</span></label>
+                        <select id="product-category">
+                            <option value="">Loading Categories...</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Team <span style="color:red; display:none;" id="req-team">*</span></label>
+                        <select id="product-team">
+                            <option value="">Loading Teams...</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div id="cropperModal" class="image-cropper-modal">
+        <div class="cropper-content">
+            <h3>Crop Image</h3>
+            <div class="crop-container">
+                <img id="cropImageSrc" src="">
+            </div>
+            <div class="cropper-actions">
+                <button class="btn btn-draft" onclick="closeCropper()">Cancel</button>
+                <button class="btn btn-pub" onclick="confirmCrop()">Crop & Save</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+    <script>
+        // --- 1. SETUP & INIT ---
+        // CRITICAL: Force reload if page is loaded from cache (Back button fix)
+        window.onpageshow = function (event) {
+            if (event.persisted || (window.performance && window.performance.navigation.type === 2)) {
+                window.location.reload();
+            }
+        };
+        function toggleSidebar() { document.getElementById('sidebar').classList.toggle('active'); }
+
+        let editingProductId = null;
+        let existingImages = [];
+        let newFiles = [];
+        let currentCropper = null;
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            await checkAuth();
+            await fetchCategories();
+            await fetchTeams();
+
+            const urlParams = new URLSearchParams(window.location.search);
+            const id = urlParams.get('id');
+            if (id) {
+                editingProductId = id;
+                document.getElementById('pageTitle').innerText = "Edit Product";
+                document.querySelector('.btn-pub').innerText = "Update Product";
+                await loadProductData(id);
+            }
+        });
+
+        // --- 2. AUTH ---
+        async function checkAuth() {
+            try {
+                const res = await fetch('/api/auth/verify-admin');
+                const data = await res.json();
+                if (!res.ok || !data.success) {
+                    window.location.replace('admin-login.html');
+                    return;
+                }
+                const role = data.user.role;
+                if (!['superadmin', 'editor'].includes(role)) {
+                    window.location.replace(role === 'viewer' ? 'product-list.html' : 'index.html');
+                }
+            } catch (err) {
+                window.location.replace('admin-login.html');
+            }
+        }
+
+        // --- 3. IMAGE CROPPING FIX ---
+        function handleFileSelect(input) {
+            if (input.files && input.files.length > 0) {
+                // Check Max Limit (5)
+                if (existingImages.length + newFiles.length >= 5) {
+                    Swal.fire({ icon: 'warning', title: 'Limit Reached', text: 'You can upload a maximum of 5 images.' });
+                    input.value = '';
+                    return;
+                }
+
+                const file = input.files[0];
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    openCropper(e.target.result);
+                    input.value = '';
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function openCropper(imageSrc) {
+            const imageElement = document.getElementById('cropImageSrc');
+            const modal = document.getElementById('cropperModal');
+
+            // 1. Show modal first so dimensions are calculated correctly
+            modal.style.display = 'flex';
+
+            // 2. CRITICAL FIX: If cropper exists, use replace() instead of destroying/recreating.
+            // This prevents the "old image ghosting" bug.
+            if (currentCropper) {
+                currentCropper.replace(imageSrc);
+            } else {
+                imageElement.src = imageSrc;
+                currentCropper = new Cropper(imageElement, {
+                    aspectRatio: 3 / 4, // Portrait 3:4
+                    viewMode: 1,
+                    autoCropArea: 1
+                });
+            }
+        }
+
+        function closeCropper() {
+            document.getElementById('cropperModal').style.display = 'none';
+            // We destroy the instance to ensure fresh state next time
+            if (currentCropper) {
+                currentCropper.destroy();
+                currentCropper = null;
+            }
+        }
+
+        function confirmCrop() {
+            if (!currentCropper) return;
+
+            const canvas = currentCropper.getCroppedCanvas({
+                width: 1200,
+                height: 1600, // 3:4 Ratio
+                fillColor: '#fff',
+                imageSmoothingEnabled: true,
+                imageSmoothingQuality: 'high'
+            });
+
+            canvas.toBlob((blob) => {
+                if (!blob) { Swal.fire('Error', 'Cropping failed', 'error'); return; }
+
+                // CRITICAL FIX: Add unique timestamp + random to filename to ensure uniqueness
+                // This stops the server from overwriting "image.webp" with the next "image.webp"
+                const uniqueName = `product_img_${Date.now()}_${Math.floor(Math.random() * 1000)}.webp`;
+
+                // Compression logic
+                if (blob.size > 1048576) {
+                    canvas.toBlob((blob2) => { addFileToList(blob2, uniqueName); }, 'image/webp', 0.6);
+                } else {
+                    addFileToList(blob, uniqueName);
+                }
+            }, 'image/webp', 0.8);
+        }
+
+        function addFileToList(blob, fileName) {
+            const file = new File([blob], fileName, { type: 'image/webp' });
+
+            // Attach the object URL to the file object so we don't recreate it repeatedly
+            file.previewUrl = URL.createObjectURL(file);
+
+            newFiles.push(file);
+            renderAllThumbnails();
+            closeCropper();
+        }
+
+        function renderAllThumbnails(latestNewUrl = null) {
+            const container = document.getElementById('thumbList');
+            // Clear existing content
+            container.innerHTML = `<div class="thumb-item add-thumb" onclick="document.getElementById('imageInput').click()"><i class='bx bx-plus'></i></div>`;
+
+            let hasImages = false;
+            let lastPreviewUrl = null;
+
+            // Render Existing (Server) Images
+            existingImages.forEach((url, index) => {
+                const div = document.createElement('div');
+                div.className = 'thumb-item';
+                div.title = "Click to remove";
+                div.onclick = () => removeExistingImage(index);
+                div.innerHTML = `<img src="${url}">`;
+                container.insertBefore(div, container.lastChild);
+                if (!hasImages) lastPreviewUrl = url;
+                hasImages = true;
+            });
+
+            // Render New (Upload) Images
+            newFiles.forEach((file, index) => {
+                const div = document.createElement('div');
+                div.className = 'thumb-item';
+                div.title = "Click to remove";
+                div.onclick = () => removeNewFile(index);
+
+                // Use the stored previewUrl
+                div.innerHTML = `<img src="${file.previewUrl}">`;
+                container.insertBefore(div, container.lastChild);
+
+                // Update preview with the LATEST added image
+                lastPreviewUrl = file.previewUrl;
+                hasImages = true;
+            });
+
+            // Update Main Preview
+            if (hasImages && lastPreviewUrl) {
+                updateMainPreview(lastPreviewUrl);
+            } else {
+                document.getElementById('mainPreview').style.display = 'none';
+                document.getElementById('uploadPlaceholder').style.display = 'block';
+            }
+        }
+
+        function updateMainPreview(src) {
+            const mp = document.getElementById('mainPreview');
+            mp.src = src;
+            mp.style.display = 'block';
+            document.getElementById('uploadPlaceholder').style.display = 'none';
+        }
+
+        function removeExistingImage(index) {
+            existingImages.splice(index, 1);
+            renderAllThumbnails();
+        }
+
+        function removeNewFile(index) {
+            // Revoke URL to prevent memory leak
+            if (newFiles[index].previewUrl) {
+                URL.revokeObjectURL(newFiles[index].previewUrl);
+            }
+            newFiles.splice(index, 1);
+            renderAllThumbnails();
+        }
+
+        // --- 4. VALIDATION LOGIC ---
+        function validateStockInput(input) {
+            if (input.value < 0) input.value = 0;
+            if (input.value === "") input.value = 0;
+            updateTotalStock();
+        }
+
+        function validatePriceInput(input) {
+            if (input.value < 0) input.value = 0;
+        }
+
+        function updateTotalStock() {
+            let total = 0;
+            document.querySelectorAll('.size-qty-input').forEach(input => {
+                const val = parseInt(input.value);
+                total += (isNaN(val) || val < 0) ? 0 : val;
+            });
+            document.getElementById('product-stock').value = total;
+            const statusInput = document.getElementById('stock-status');
+            if (total === 0) {
+                statusInput.value = "Out of Stock"; statusInput.style.color = "#EF3826";
+            } else {
+                statusInput.value = "In Stock"; statusInput.style.color = "#00B69B";
+            }
+        }
+
+        // --- 5. SAVE PRODUCT ---
+        async function saveProduct(statusType) {
+            // Logic to prevent Viewers
+            // if (currentUserRole === 'viewer') return; 
+
+            const name = document.getElementById('product-name').value.trim();
+            let sku = document.getElementById('product-sku').value.trim();
+            let price = document.getElementById('basePrice').value;
+            const category = document.getElementById('product-category').value;
+            const team = document.getElementById('product-team').value;
+
+            // --- 5a. NAME VALIDATION ---
+            const nameRegex = /^[a-zA-Z0-9][a-zA-Z0-9\s\-\_\&]*$/;
+
+            if (!name || name.length < 3 || name.length > 100) {
+                Swal.fire({ icon: 'warning', title: 'Invalid Name', text: 'Product Name must be 3-100 characters.' });
+                return;
+            }
+            if (!nameRegex.test(name)) {
+                Swal.fire({ icon: 'warning', title: 'Invalid Format', text: 'Name contains invalid characters.' });
+                return;
+            }
+
+            // --- 5b. SKU VALIDATION ---
+            const skuRegex = /^[a-zA-Z0-9-_]+$/;
+            if (sku && !skuRegex.test(sku)) {
+                Swal.fire({ icon: 'warning', title: 'Invalid SKU', text: 'SKU: Letters, numbers, hyphens only.' });
+                return;
+            }
+
+            // --- 5c. DRAFT SKU AUTO-GEN ---
+            if (statusType === 'Draft') {
+                if (!sku) sku = "DRAFT-" + Date.now();
+                if (!price) price = 0;
+            }
+
+            // --- 5d. PUBLISH VALIDATION ---
+            let sizesArray = [];
+            document.querySelectorAll('.size-qty-input').forEach(input => {
+                const val = input.value === "" ? 0 : parseInt(input.value);
+                // Allow 0 stock, just ensure it's a valid number >= 0
+                if (!isNaN(val) && val >= 0) {
+                    sizesArray.push({ size: input.getAttribute('data-size'), stock: val });
+                }
+            });
+
+            if (statusType === 'Active') {
+                if (!sku) return Swal.fire('Warning', 'SKU required to publish', 'warning');
+                if (!price || parseFloat(price) <= 0) return Swal.fire('Warning', 'Price required to publish', 'warning');
+                if (existingImages.length === 0 && newFiles.length === 0) return Swal.fire('Warning', 'Image required to publish', 'warning');
+                if (!category) return Swal.fire('Warning', 'Category required', 'warning');
+                if (!team) return Swal.fire('Warning', 'Team required', 'warning');
+                
+                // --- CHANGE: REMOVED STOCK > 0 CHECK ---
+                // We now allow 0 stock (Out of Stock products)
+            }
+
+            if (existingImages.length + newFiles.length > 5) {
+                Swal.fire('Warning', 'Max 5 images allowed', 'warning');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('name', name);
+            formData.append('sku', sku);
+            formData.append('price', document.getElementById('finalPrice').value);
+            formData.append('basePrice', price);
+            formData.append('discountType', document.getElementById('discountType').value);
+            formData.append('discountValue', document.getElementById('discountValue').value);
+            formData.append('category', category);
+            formData.append('team', team);
+            formData.append('description', document.getElementById('product-desc').value);
+            formData.append('status', statusType);
+            formData.append('stockQuantity', document.getElementById('product-stock').value || 0);
+            formData.append('sizes', JSON.stringify(sizesArray));
+            formData.append('existingImages', JSON.stringify(existingImages));
+            
+            newFiles.forEach(file => formData.append('productImages', file));
+
+            try {
+                let url = '/api/products';
+                let method = 'POST';
+                if (editingProductId) {
+                    url = `/api/products/${editingProductId}`;
+                    method = 'PUT';
+                }
+
+                Swal.fire({ title: 'Saving...', didOpen: () => Swal.showLoading() });
+                const response = await fetch(url, { method: method, body: formData });
+                
+                if (response.status === 401 || response.status === 403) { 
+                    window.location.replace('admin-login.html'); return; 
+                }
+                
+                const result = await response.json();
+
+                if (result.success) {
+                    Swal.fire('Success', 'Product saved!', 'success').then(() => { window.location.href = "product-list.html"; });
+                } else {
+                    // --- ERROR HANDLING FOR DUPLICATES ---
+                    // This logic catches the error message sent from your controller
+                    if (result.error && (result.error.includes('E11000') || result.error.includes('duplicate'))) {
+                        if (result.error.includes('sku')) {
+                            Swal.fire('Duplicate SKU', `The SKU "${sku}" is already taken.`, 'error');
+                        } else if (result.error.includes('name')) {
+                             // This catches the Name duplicate
+                             Swal.fire('Duplicate Name', `The product name "${name}" already exists.`, 'error');
+                        } else {
+                            Swal.fire('Duplicate Error', 'A product with this Name or SKU already exists.', 'error');
+                        }
+                    } else {
+                        Swal.fire('Error', result.error || 'Unknown Error', 'error');
+                    }
+                }
+            } catch (err) { console.error("Error:", err); Swal.fire('Error', 'Connection Failed', 'error'); }
+        }
+
+        // --- UTILS ---
+        function calculatePrice() {
+            const base = parseFloat(document.getElementById('basePrice').value) || 0;
+            const type = document.getElementById('discountType').value;
+            const val = parseFloat(document.getElementById('discountValue').value) || 0;
+            let final = base;
+            if (val > 0) {
+                if (type === 'percent') final = base - (base * (val / 100));
+                else final = base - val;
+            }
+            final = Math.max(0, final);
+            document.getElementById('finalPrice').value = final.toFixed(2);
+        }
+
+        async function fetchCategories() {
+            const res = await fetch('/api/categories');
+            const json = await res.json();
+            if (json.success) {
+                const sel = document.getElementById('product-category');
+                sel.innerHTML = '<option value="">Select Category</option>';
+                json.data.forEach(c => sel.innerHTML += `<option value="${c.name}">${c.name}</option>`);
+            }
+        }
+        async function fetchTeams() {
+            const res = await fetch('/api/teams');
+            const json = await res.json();
+            if (json.success) {
+                const sel = document.getElementById('product-team');
+                sel.innerHTML = '<option value="">Select Team</option>';
+                json.data.forEach(t => sel.innerHTML += `<option value="${t.name}">${t.name}</option>`);
+            }
+        }
+
+        async function loadProductData(id) {
+            try {
+                const res = await fetch(`/api/products/${id}?t=${new Date().getTime()}`);
+                const json = await res.json();
+                if (json.success) {
+                    const p = json.data;
+                    document.getElementById('product-name').value = p.name || '';
+                    document.getElementById('product-sku').value = p.sku || '';
+                    document.getElementById('product-desc').value = p.description || '';
+                    document.getElementById('basePrice').value = p.basePrice || p.price || 0;
+                    document.getElementById('finalPrice').value = p.price || 0;
+                    if (p.discountType) document.getElementById('discountType').value = p.discountType;
+                    if (p.discountValue) document.getElementById('discountValue').value = p.discountValue;
+                    calculatePrice();
+                    document.getElementById('product-category').value = p.category || '';
+                    document.getElementById('product-team').value = p.team || '';
+
+                    document.querySelectorAll('.size-qty-input').forEach(i => i.value = 0);
+                    if (p.sizes && p.sizes.length > 0) {
+                        p.sizes.forEach(s => {
+                            const input = document.querySelector(`.size-qty-input[data-size="${s.size}"]`);
+                            if (input) input.value = s.stock;
+                        });
+                        updateTotalStock();
+                    } else {
+                        document.getElementById('product-stock').value = p.stockQuantity || 0;
+                    }
+
+                    if (p.images && p.images.length > 0) {
+                        existingImages = p.images;
+                        renderAllThumbnails();
+                    }
+                }
+            } catch (err) {
+                console.error("Failed to load data:", err);
+            }
+        }
+
+        async function logoutUser() {
+            try {
+                await fetch('/api/auth/logout-admin', { method: 'POST' });
+                window.location.replace('admin-login.html');
+            } catch (err) {
+                window.location.replace('admin-login.html');
+            }
+        }
+    </script>
+
+
+</body>
+
+</html>

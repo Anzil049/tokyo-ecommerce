@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wishlist - Tokyo Sports</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <style>
+        :root {
+            --primary-blue: #4383FF;
+            --primary-red: #DB4444;
+            --text-dark: #000000;
+            --bg-light: #F5F5F5;
+            --primary-highlight: #4383FF;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            overflow-x: hidden;
+            background-color: #fff;
+        }
+
+        .swal2-container {
+            z-index: 10000 !important;
+        }
+
+        /* --- Header Styling --- */
+        .top-bar {
+            background-color: black;
+            color: white;
+            font-size: 0.875rem;
+        }
+
+        .navbar-brand {
+            font-weight: 700;
+            letter-spacing: 1px;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            margin-right: 0;
+        }
+
+        .logo-img {
+            max-height: 40px;
+            width: auto;
+            object-fit: contain;
+        }
+
+        .nav-link {
+            color: #000 !important;
+            font-weight: 500;
+            margin: 0 10px;
+            position: relative;
+        }
+
+        .nav-link:hover,
+        .nav-link.active {
+            text-decoration: underline;
+            text-decoration-thickness: 2px;
+            text-underline-offset: 4px;
+        }
+
+        .search-container {
+            position: relative;
+            background-color: #f5f5f5;
+            border-radius: 4px;
+            padding: 5px 10px;
+            min-width: 240px;
+        }
+
+        .search-input {
+            border: none;
+            background: transparent;
+            width: 100%;
+            font-size: 0.85rem;
+            outline: none;
+        }
+
+        .search-btn {
+            background: none;
+            border: none;
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        /* --- Wishlist Header --- */
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 3rem;
+        }
+
+        /* Removed .btn-outline-box since the button is gone */
+
+        /* --- PRODUCT CARD STYLES --- */
+        .product-card {
+            border: 1px solid #eee;
+            border-radius: 8px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            position: relative;
+            background: white;
+            cursor: pointer;
+        }
+
+        .product-card:hover {
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.08);
+            transform: translateY(-5px);
+        }
+
+        .product-img-container {
+            position: relative;
+            padding-top: 100%;
+            overflow: hidden;
+            background-color: #f9f9f9;
+        }
+
+        .product-img-container img {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            padding: 20px;
+            transition: transform 0.5s;
+        }
+
+        .product-card:hover .product-img-container img {
+            transform: scale(1.05);
+        }
+
+        .badge-discount {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background-color: var(--primary-red);
+            color: white;
+            padding: 4px 10px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            border-radius: 4px;
+            z-index: 2;
+        }
+
+        .delete-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 32px;
+            height: 32px;
+            background-color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            z-index: 5;
+            transition: 0.2s;
+            color: #666;
+        }
+
+        .delete-btn:hover {
+            background-color: var(--primary-red);
+            color: white;
+        }
+
+        .btn-quick-add {
+            display: block;
+            position: absolute;
+            bottom: -50px;
+            left: 0;
+            width: 100%;
+            background-color: var(--primary-blue);
+            color: white;
+            text-align: center;
+            padding: 12px 0;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: bottom 0.3s ease;
+            border: none;
+        }
+
+        .product-card:hover .btn-quick-add {
+            bottom: 0;
+        }
+
+        .btn-quick-add:hover {
+            background-color: #356ACF;
+        }
+
+        .product-details {
+            padding: 15px;
+            text-align: left;
+        }
+
+        .product-title {
+            font-weight: 600;
+            font-size: 1rem;
+            margin-bottom: 5px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .price-container {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .product-price {
+            color: var(--primary-red);
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .product-old-price {
+            color: #999;
+            text-decoration: line-through;
+            font-size: 0.9rem;
+        }
+
+        /* --- MODAL --- */
+        .size-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .size-modal-content {
+            background-color: white;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            max-width: 90%;
+            width: 350px;
+            animation: fadeIn 0.2s ease-out;
+        }
+
+        .size-modal-sizes {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+
+        .size-modal-content h5 {
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .filter-checkbox-label.size-style {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            user-select: none;
+        }
+
+        .filter-checkbox-label.size-style.selected {
+            background-color: var(--primary-highlight);
+            color: white;
+            border-color: var(--primary-highlight);
+        }
+
+        .modal-size-radio {
+            display: none;
+        }
+
+        /* --- DISABLED/OUT OF STOCK STYLE --- */
+        .filter-checkbox-label.size-style.disabled {
+            opacity: 0.3;
+            background-color: #f0f0f0;
+            border-color: #e0e0e0;
+            cursor: not-allowed;
+            pointer-events: none;
+            /* Prevents clicking */
+        }
+
+        /* Footer & Animation */
+        footer {
+            background-color: black;
+            color: white;
+            padding-top: 4rem;
+            margin-top: 80px;
+        }
+
+        footer h5 {
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+        }
+
+        footer ul {
+            padding-left: 0;
+            list-style: none;
+        }
+
+        footer li {
+            margin-bottom: 1rem;
+        }
+
+        footer a {
+            color: #d1d1d1;
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+
+        footer a:hover {
+            color: white;
+        }
+
+        .footer-input-group {
+            border: 1px solid white;
+            border-radius: 4px;
+            overflow: hidden;
+            display: flex;
+        }
+
+        .footer-input {
+            background: black;
+            border: none;
+            color: white;
+            padding: 10px;
+            width: 100%;
+            font-size: 0.9rem;
+        }
+
+        .footer-input:focus {
+            outline: none;
+        }
+
+        .copyright {
+            border-top: 1px solid #333;
+            color: #666;
+            font-size: 0.85rem;
+            padding: 1.5rem 0;
+            margin-top: 3rem;
+        }
+
+        .reveal-element {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.8s cubic-bezier(0.5, 0, 0, 1);
+        }
+
+        .active {
+            opacity: 1;
+            transform: translate(0, 0);
+        }
+
+        /* Empty State */
+        .empty-wishlist {
+            text-align: center;
+            padding: 50px 0;
+            display: none;
+        }
+
+        .empty-wishlist i {
+            font-size: 3rem;
+            color: #ccc;
+            margin-bottom: 15px;
+        }
+
+        @media (max-width: 991px) {
+            .navbar-collapse {
+                order: 5;
+                position: static;
+                background: #fff;
+            }
+
+            .navbar-brand {
+                margin-right: 0;
+            }
+
+            .navbar-toggler {
+                border: none;
+                padding: 0;
+                margin-left: 10px;
+            }
+
+            .navbar-toggler:focus {
+                box-shadow: none;
+            }
+
+            .search-container {
+                min-width: unset;
+                width: auto;
+                flex-grow: 1;
+                margin: 0 10px;
+                padding: 5px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="size-modal-overlay" id="sizeModal">
+        <div class="size-modal-content">
+            <h5 id="modalProductName">Select Size</h5>
+            <div class="size-modal-sizes" id="modalSizeOptions"></div>
+            <p class="text-danger small mt-3 text-center" id="modalError" style="display:none;">Please select a size to
+                continue.</p>
+        </div>
+    </div>
+
+
+
+    <div class="top-bar py-2 text-center reveal-element">
+        <div class="container">
+            <span>BUY 2 OR MORE PRODUCTS AND GET FREE SHIPPING USING COUPON CODE ' SHIPOFF '</span>
+        </div>
+    </div>
+
+    <nav class="navbar navbar-expand-lg navbar-light bg-white sticky-top border-bottom py-3 reveal-element"
+        style="transition-delay: 100ms;">
+        <div class="container d-flex align-items-center">
+            <a class="navbar-brand order-1" href="index.html">
+                <img src="../Images/Logo text.png" alt="Tokyo Sports" class="logo-img">
+            </a>
+
+            <div class="d-flex align-items-center order-3 order-lg-4 ms-auto ms-lg-0">
+                <div class="d-flex align-items-center gap-3" id="navIcons">
+                    <a href="wishlist.html" class="text-dark"><i class="fas fa-heart"></i></a>
+                    <a href="cart.html" class="text-dark"><i class="fas fa-shopping-cart"></i></a>
+                    <a href="account.html" class="text-dark"><i class="fas fa-user"></i></a>
+                </div>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+            </div>
+
+            <div class="collapse navbar-collapse justify-content-center order-lg-2" id="navbarNav">
+                <ul class="navbar-nav mb-2 mb-lg-0">
+                    <li class="nav-item"><a class="nav-link" href="index.html">Home</a></li>
+                    <li class="nav-item"><a class="nav-link" href="products.html">Shop</a></li>
+                    <li class="nav-item"><a class="nav-link" href="contact.html">Contact</a></li>
+                    <li class="nav-item"><a class="nav-link" href="about.html">About</a></li>
+                    <li class="nav-item" id="signupNavItem"><a class="nav-link" href="signup.html">Sign Up</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container my-5 reveal-element" style="transition-delay: 200ms;">
+
+        <div class="page-header">
+            <h4>Wishlist (<span id="wishlistCount">0</span>)</h4>
+        </div>
+
+        <div id="emptyWishlist" class="empty-wishlist">
+            <i class="far fa-heart"></i>
+            <h3>Your Wishlist is Empty</h3>
+            <p class="text-muted">Explore our shop and save your favorite items here.</p>
+            <a href="products.html"><button class="btn btn-outline-dark mt-3">Go to Shop</button></a>
+        </div>
+
+        <div class="row g-4" id="wishlistContainer">
+            <div class="col-12 text-center py-5">Loading wishlist...</div>
+        </div>
+    </div>
+
+   <footer class="text-center">
+        <div class="container">
+            <div class="row gy-5 justify-content-center">
+                <div class="col-6 col-lg-3">
+                    <h5 class="text-white mb-4">TOKYO</h5>
+                    <p class="small text-secondary">FOLLOW US ON INSTAGRAM</p>
+                    <div class="footer-instagram-link mt-3 mx-auto" style="max-width: 250px; text-align: center;">
+                        <a href="https://www.instagram.com/tokyo._.sports" target="_blank" class="text-white"
+                            style="text-decoration: none; font-size: 16px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                            <i class="fab fa-instagram" style="font-size: 20px;"></i>
+                            <span>tokyo._.sports</span>
+                        </a>
+                    </div>
+                </div>
+                <div class="col-6 col-lg-3">
+                    <h5 class="text-white">Support</h5>
+                    <ul class="text-secondary small mt-4">
+                        <li>Tokyo sports Tirur<br>676102,Kerala</li>
+                        <li class="mt-3">tokyo@gmail.com</li>
+                        <li class="mt-2">+91 9188223835</li>
+                    </ul>
+                </div>
+                <div class="col-6 col-lg-2">
+                    <h5 class="text-white">Account</h5>
+                    <ul class="mt-4">
+                        <li><a href="account.html" >My Account</a></li>
+                        <li><a href="signup.html">Login / Register</a></li>
+                        <li><a href="cart.html" >Cart</a></li>
+                        <li><a href="wishlist.html" >Wishlist</a></li>
+                        <li><a href="products.html">Products</a></li>
+                    </ul>
+                </div>
+                <div class="col-6 col-lg-2">
+                    <h5 class="text-white">Quick Link</h5>
+                    <ul class="mt-4">
+                        <li><a href="privacy.html">Privacy Policy</a></li>
+                        <li><a href="terms.html">Terms Of Use</a></li>
+                        <li><a href="faq.html">FAQ</a></li>
+                        <li><a href="contact.html">Contact</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="copyright text-center">
+                &copy; Copyright Tokyo 2025. All right reserved
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // --- GLOBAL: STORE PRODUCT DATA ---
+        let wishlistProductMap = {}; // Key: ProductID, Value: Full Product Object
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const isLoggedIn = await checkAuth();
+            updateNavbar(isLoggedIn);
+
+            if (isLoggedIn) {
+                loadWishlist();
+            } else {
+                Swal.fire({
+                    icon: 'info', title: 'Login Required', text: 'Please login to view your wishlist.', confirmButtonText: 'Login'
+                }).then(() => window.location.href = 'signup.html');
+            }
+
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('active');
+                        observer.unobserve(entry.target);
+                    }
+                });
+            }, { threshold: 0.1 });
+            document.querySelectorAll('.reveal-element').forEach(el => observer.observe(el));
+        });
+
+        window.onpageshow = function (event) {
+            if (event.persisted || (window.performance && window.performance.navigation.type === 2)) {
+                window.location.reload();
+            }
+        };
+
+        // ========================
+        //  AUTH & NAVBAR
+        // ========================
+        async function checkAuth() {
+            try {
+                const res = await fetch('/api/auth/verify-user');
+                return res.ok;
+            } catch (err) { return false; }
+        }
+
+        function updateNavbar(isLoggedIn) {
+            const signupNavItem = document.getElementById('signupNavItem');
+            const navIcons = document.getElementById('navIcons');
+
+            if (isLoggedIn) {
+                if (signupNavItem) signupNavItem.style.display = 'none';
+                if (navIcons) {
+                    const logoutBtn = document.createElement('a');
+                    logoutBtn.href = "#";
+                    logoutBtn.className = "text-danger";
+                    logoutBtn.innerHTML = '<i class="fas fa-sign-out-alt"></i>';
+                    logoutBtn.onclick = (e) => { e.preventDefault(); logoutUser(); };
+                    navIcons.appendChild(logoutBtn);
+                }
+            }
+        }
+
+        async function logoutUser() {
+            try {
+                // CHANGED: Use '/api/auth/logout-user'
+                await fetch('/api/auth/logout-user', { method: 'POST' });
+                window.location.href = 'signup.html';
+            } catch (err) {
+                console.error("Logout failed", err);
+                window.location.href = 'signup.html';
+            }
+        }
+        // ========================
+        //  WISHLIST LOGIC
+        // ========================
+
+        async function loadWishlist() {
+            try {
+                const res = await fetch('/api/wishlist');
+                if (!res.ok) throw new Error("Failed to load");
+                const data = await res.json();
+                renderWishlist(data);
+            } catch (err) {
+                console.error(err);
+                document.getElementById('wishlistContainer').innerHTML = '<div class="col-12 text-center text-danger">Failed to load wishlist.</div>';
+            }
+        }
+
+        function renderWishlist(items) {
+            const container = document.getElementById('wishlistContainer');
+            const countSpan = document.getElementById('wishlistCount');
+            const emptyState = document.getElementById('emptyWishlist');
+
+            container.innerHTML = '';
+            countSpan.innerText = items.length;
+            wishlistProductMap = {}; // Reset Map
+
+            if (items.length === 0) {
+                container.style.display = 'none';
+                emptyState.style.display = 'block';
+                return;
+            }
+
+            container.style.display = 'flex';
+            emptyState.style.display = 'none';
+
+            items.forEach(item => {
+                // Store in Global Map
+                wishlistProductMap[item._id] = item;
+
+                const img = (item.images && item.images.length > 0) ? item.images[0] : 'https://placehold.co/300x300?text=No+Image';
+
+                // --- 1. CHECK STATUS (Draft or Out of Stock) ---
+                const isDraft = item.status === 'Draft';
+                const isZeroStock = item.stockQuantity === 0;
+                const isUnavailable = isDraft || isZeroStock;
+
+                // --- 2. BADGE LOGIC (Updated) ---
+                let badgeHtml = '';
+                if (isUnavailable) {
+                    // Show Pink "Out of Stock" Badge
+                    badgeHtml = `<span class="badge-discount" style="background-color: #ffb3b3; color: #cc0000;">Out of Stock</span>`;
+                } else if (item.basePrice && item.price < item.basePrice) {
+                    // Show Discount Badge
+                    const discount = Math.round(((item.basePrice - item.price) / item.basePrice) * 100);
+                    badgeHtml = `<span class="badge-discount">-${discount}%</span>`;
+                }
+
+                // --- 3. PRICE LOGIC (Updated) ---
+                let priceHtml = '';
+                if (isUnavailable) {
+                    // Show "Currently Unavailable" text
+                    priceHtml = `<span class="text-danger fw-bold" style="font-size: 0.9rem;">Currently Unavailable</span>`;
+                } else {
+                    // Show Price
+                    priceHtml = `<span class="product-price">₹${item.price}</span>`;
+                    if (item.basePrice && item.basePrice > item.price) {
+                        priceHtml += `<span class="product-old-price">₹${item.basePrice}</span>`;
+                    }
+                }
+
+                // --- 4. BUTTON LOGIC ---
+                let buttonHtml;
+                if (isUnavailable) {
+                    // Disabled Button (Grey)
+                    buttonHtml = `
+                        <button class="btn-quick-add" style="background-color: #ccc; cursor: not-allowed;" disabled>
+                            Out of Stock
+                        </button>
+                    `;
+                } else {
+                    // Active Button (Blue)
+                    buttonHtml = `
+                        <button class="btn-quick-add" onclick="openSizeModal(event, '${item._id}')">
+                            <i class="fas fa-shopping-cart"></i> Add To Cart
+                        </button>
+                    `;
+                }
+
+                // --- 5. RENDER CARD ---
+                container.innerHTML += `
+                <div class="col-6 col-md-3">
+                    <div class="product-card" data-product-id="${item._id}" onclick="goToProduct('${item._id}')">
+                        <div class="product-img-container">
+                            ${badgeHtml}
+                            <button class="delete-btn" onclick="removeFromWishlist(event, '${item._id}')"><i class="fas fa-trash-alt"></i></button>
+                            <img src="${img}" alt="${item.name}" style="${isUnavailable ? 'opacity: 0.6;' : ''}">
+                            
+                            ${buttonHtml}
+                        </div>
+                        <div class="product-details">
+                            <h6 class="product-title">${item.name}</h6>
+                            <div class="price-container">
+                                ${priceHtml}
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
+            });
+        }
+
+        async function removeFromWishlist(event, id) {
+            event.stopPropagation();
+
+            const result = await Swal.fire({
+                title: 'Remove item?',
+                text: 'Do you want to remove this item from your wishlist?',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#DB4444',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Yes, remove',
+                cancelButtonText: 'Cancel'
+            });
+
+            if (!result.isConfirmed) return;
+
+            try {
+                const res = await fetch('/api/wishlist/toggle', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ productId: id })
+                });
+
+                if (res.ok) {
+                    loadWishlist();
+
+                    Swal.fire({
+                        toast: true,
+                        position: 'top-end',
+                        icon: 'success',
+                        title: 'Removed from wishlist',
+                        showConfirmButton: false,
+                        timer: 1500,
+                        timerProgressBar: true
+                    });
+                }
+            } catch (err) {
+                console.error(err);
+                Swal.fire('Error', 'Something went wrong. Try again.', 'error');
+            }
+        }
+
+
+        function goToProduct(id) {
+            window.location.href = `product-details.html?id=${id}`;
+        }
+
+        // ========================
+        //  SIZE MODAL & STOCK CHECK
+        // ========================
+        // ========================
+        //  SIZE MODAL & STOCK CHECK (DYNAMIC UPDATE)
+        // ========================
+        const sizeModal = document.getElementById('sizeModal');
+        const modalSizeOptions = document.getElementById('modalSizeOptions');
+        let activeProductId = null;
+
+        function openSizeModal(event, id) {
+            event.stopPropagation();
+            activeProductId = id;
+
+            const product = wishlistProductMap[id];
+            if (!product) return;
+
+            // Clear previous options
+            modalSizeOptions.innerHTML = '';
+            document.getElementById('modalError').style.display = 'none';
+            sizeModal.querySelector('h5').textContent = `Select Size: ${product.name}`;
+
+            // Check if product has sizes
+            if (!product.sizes || product.sizes.length === 0) {
+                // Handle products with no specific size (optional fallback)
+                modalSizeOptions.innerHTML = '<p class="text-muted">No specific sizes available.</p>';
+                // Optional: You could auto-add to cart here if it's a "One Size" product
+                return;
+            }
+
+            // --- DYNAMICALLY GENERATE BUTTONS FROM DB DATA ---
+            product.sizes.forEach(sizeObj => {
+                // sizeObj is expected to be { size: "S", stock: 10, ... }
+
+                // 1. Create the Label Container
+                const label = document.createElement('label');
+                label.className = 'filter-checkbox-label size-style';
+
+                // 2. Create the Radio Input (Hidden but functional)
+                const input = document.createElement('input');
+                input.type = 'radio';
+                input.name = 'modal-size';
+                input.className = 'modal-size-radio';
+                input.value = sizeObj.size;
+
+                // 3. Create the Span for Text
+                const span = document.createElement('span');
+                span.innerText = sizeObj.size; // e.g., "S", "M", "UK-7"
+
+                // 4. Assemble
+                label.appendChild(input);
+                label.appendChild(span);
+
+                // 5. Check Stock Logic
+                const hasStock = sizeObj.stock > 0;
+
+                if (!hasStock) {
+                    // --- OUT OF STOCK STYLE ---
+                    label.classList.add('disabled');
+                    input.disabled = true;
+                    label.title = "Out of Stock";
+                } else {
+                    // --- IN STOCK LOGIC ---
+                    label.addEventListener('click', (e) => {
+                        e.preventDefault(); // Prevent double triggering
+
+                        // Visual selection update
+                        const allLabels = modalSizeOptions.querySelectorAll('.filter-checkbox-label');
+                        allLabels.forEach(l => l.classList.remove('selected'));
+                        label.classList.add('selected');
+                        input.checked = true;
+
+                        // Trigger Add to Cart immediately
+                        addToCart(sizeObj.size);
+                    });
+                }
+
+                // Append to Modal
+                modalSizeOptions.appendChild(label);
+            });
+
+            // Show Modal
+            sizeModal.style.display = 'flex';
+        }
+
+        // Close Modal Listener
+        sizeModal.addEventListener('click', (e) => {
+            if (e.target === sizeModal) sizeModal.style.display = 'none';
+        });
+
+        // The addToCart function remains the same
+
+        sizeModal.addEventListener('click', (e) => {
+            if (e.target === sizeModal) sizeModal.style.display = 'none';
+        });
+
+        async function addToCart(size) {
+            try {
+                const res = await fetch('/api/cart/add', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ productId: activeProductId, quantity: 1, size: size })
+                });
+
+                if (res.ok) {
+                    sizeModal.style.display = 'none';
+                    Swal.fire({
+                        icon: 'success', title: 'Added to Cart',
+                        showCancelButton: true, confirmButtonText: 'Go to Cart', cancelButtonText: 'Stay Here'
+                    }).then((result) => {
+                        if (result.isConfirmed) window.location.href = 'cart.html';
+                    });
+                } else {
+                    Swal.fire('Error', 'Maximum quantity is already in Cart', 'error');
+                }
+            } catch (err) { console.error(err); }
+        }
+    </script>
+</body>
+
+</html>

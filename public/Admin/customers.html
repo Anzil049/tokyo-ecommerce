@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tokyo Admin - Customers</title>
+    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <style>
+        /* --- 1. CRITICAL: FORCE SWEETALERT TO TOP --- */
+        .swal2-container {
+            z-index: 10000 !important;
+        }
+
+        /* --- 2. GLOBAL VARIABLES & RESET --- */
+        :root {
+            --primary: #4880FF;
+            --primary-light: #E8F0FE;
+            --dark: #202224;
+            --grey: #6A7178;
+            --bg: #F5F6FA;
+            --white: #fff;
+            --danger: #EF3826;
+            --danger-light: #FEECEB;
+            --success: #00B69B;
+            --success-light: #E6F7F5;
+            --warning: #FFB536;
+            --warning-light: #FFF8E7;
+            --border: #e0e0e0;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background: var(--bg);
+            display: flex;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        a {
+            text-decoration: none;
+        }
+
+        /* --- 3. SIDEBAR & LAYOUT --- */
+        .sidebar {
+            width: 260px;
+            background: var(--white);
+            padding: 20px;
+            height: 100vh;
+            position: fixed;
+            border-right: 1px solid var(--border);
+            z-index: 1000;
+            transition: 0.3s;
+            left: 0;
+            top: 0;
+            overflow-y: auto;
+        }
+
+        .logo-img {
+            max-width: 150px;
+            display: block;
+            margin: 0 auto 30px;
+        }
+
+        .menu-cat {
+            font-size: 12px;
+            color: var(--grey);
+            margin: 15px 0 10px 10px;
+            font-weight: 700;
+        }
+
+        .menu-link {
+            display: flex;
+            align-items: center;
+            color: var(--grey);
+            padding: 12px 15px;
+            border-radius: 8px;
+            margin-bottom: 5px;
+            font-size: 14px;
+            transition: 0.3s;
+            font-weight: 500;
+            cursor: pointer;
+        }
+
+        .menu-link i {
+            font-size: 20px;
+            margin-right: 10px;
+        }
+
+        .menu-link:hover,
+        .menu-link.active {
+            background: var(--primary);
+            color: var(--white);
+            box-shadow: 0 4px 10px rgba(72, 128, 255, 0.2);
+        }
+
+        .logout {
+            color: var(--danger);
+            background: var(--danger-light);
+            margin-top: 15px;
+            justify-content: center;
+            font-weight: 600;
+        }
+
+        .logout:hover {
+            background: var(--danger);
+            color: var(--white);
+        }
+
+        .main-content {
+            margin-left: 260px;
+            flex: 1;
+            padding: 30px;
+            width: calc(100% - 260px);
+            transition: 0.3s;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .menu-toggle {
+            display: none;
+            font-size: 28px;
+            cursor: pointer;
+            margin-right: 15px;
+        }
+
+        /* --- 4. TABLE STYLING --- */
+        .table-box {
+            background: var(--white);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+            overflow-x: auto;
+        }
+
+        .table-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .filter-group input {
+            padding: 10px 15px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            outline: none;
+            width: 250px;
+            font-size: 14px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+
+        th {
+            text-align: left;
+            padding: 15px;
+            color: var(--grey);
+            font-weight: 600;
+            border-bottom: 1px solid #eee;
+            font-size: 14px;
+            white-space: nowrap;
+        }
+
+        td {
+            padding: 15px;
+            border-bottom: 1px solid #f9f9f9;
+            vertical-align: middle;
+            color: var(--dark);
+            font-size: 14px;
+        }
+
+        tbody tr {
+            transition: background 0.2s;
+            cursor: pointer;
+        }
+
+        tbody tr:hover {
+            background-color: #f8f9fa;
+        }
+
+        /* --- 5. STATUS BADGES --- */
+        .status-badge {
+            padding: 6px 12px;
+            border-radius: 30px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            white-space: nowrap;
+        }
+
+        .st-active {
+            background: var(--success-light);
+            color: var(--success);
+            border: 1px solid var(--success);
+        }
+
+        .st-blocked {
+            background: var(--danger-light);
+            color: var(--danger);
+            border: 1px solid var(--danger);
+        }
+
+        .st-inactive {
+            background: #F5F6FA;
+            color: var(--grey);
+            border: 1px solid #D5D5D5;
+        }
+
+        /* --- 6. ACTION BUTTONS (MATCHING TEAMS.HTML) --- */
+        .action-btns {
+            display: flex;
+            gap: 8px;
+            /* Default alignment is left, matching Header */
+        }
+
+        .icon-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            transition: 0.2s;
+        }
+
+        /* Block Button (Yellow) */
+        .block-btn {
+            background: var(--warning-light);
+            color: var(--warning);
+        }
+
+        .block-btn:hover {
+            background: #FFB536;
+            color: white;
+        }
+
+        /* Delete Button (Red) */
+        .del-btn {
+            background: var(--danger-light);
+            color: var(--danger);
+        }
+
+        .del-btn:hover {
+            background: #EF3826;
+            color: white;
+        }
+
+        /* --- 7. MODAL STYLES --- */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            backdrop-filter: blur(2px);
+        }
+
+        .modal {
+            background: white;
+            width: 400px;
+            max-width: 90%;
+            border-radius: 16px;
+            padding: 25px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+            animation: slideDown 0.3s ease;
+        }
+
+        @keyframes slideDown {
+            from {
+                transform: translateY(-20px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 15px;
+        }
+
+        .modal-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--dark);
+        }
+
+        .close-modal {
+            cursor: pointer;
+            font-size: 24px;
+            color: var(--grey);
+            transition: 0.2s;
+        }
+
+        .close-modal:hover {
+            color: var(--danger);
+            transform: rotate(90deg);
+        }
+
+        .modal-profile {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-profile img {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            margin-bottom: 10px;
+            border: 2px solid var(--primary-light);
+        }
+
+        .modal-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid #f9f9f9;
+            font-size: 14px;
+        }
+
+        .modal-label {
+            color: var(--grey);
+            font-weight: 500;
+        }
+
+        .modal-val {
+            color: var(--dark);
+            font-weight: 600;
+        }
+
+        /* --- 8. MOBILE RESPONSIVE --- */
+        @media (max-width: 991px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+
+            .sidebar.active {
+                transform: translateX(0);
+            }
+
+            .main-content {
+                margin-left: 0;
+                width: 100%;
+                padding: 20px;
+            }
+
+            .menu-toggle {
+                display: block;
+            }
+
+            /* Card View for Mobile */
+            table,
+            thead,
+            tbody,
+            th,
+            td,
+            tr {
+                display: block;
+                width: 100%;
+            }
+
+            thead {
+                display: none;
+            }
+
+            tr {
+                background: #fff;
+                margin-bottom: 20px;
+                border: 1px solid #eee;
+                border-radius: 12px;
+                padding: 20px;
+                position: relative;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+            }
+
+            td {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                text-align: right;
+                border-bottom: 1px solid #f9f9f9;
+                padding: 12px 0;
+            }
+
+            td:last-child {
+                border-bottom: none;
+                padding-bottom: 0;
+            }
+
+            td::before {
+                content: attr(data-label);
+                font-weight: 600;
+                color: var(--grey);
+                font-size: 13px;
+                text-align: left;
+            }
+
+            /* Mobile Adjustments */
+            td[data-label="Action"] {
+                position: absolute;
+                top: 20px;
+                right: 20px;
+                padding: 0;
+                border: none;
+                width: auto;
+                background: transparent;
+            }
+
+            td[data-label="Action"]::before {
+                display: none;
+            }
+
+            td[data-label="Name"] {
+                font-weight: 700;
+                color: var(--primary);
+                font-size: 16px;
+                padding-right: 60px;
+                justify-content: flex-start;
+                border-bottom: 1px solid #eee;
+                margin-bottom: 10px;
+                padding-bottom: 15px;
+            }
+
+            td[data-label="Name"]::before {
+                display: none;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="modal-overlay" id="customerModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">Customer Profile</h3>
+                <i class='bx bx-x close-modal' onclick="closeModal()"></i>
+            </div>
+            <div id="modalContent"></div>
+            <div style="margin-top: 20px; text-align: right;">
+                <button onclick="closeModal()"
+                    style="background: var(--primary); color: white; border: none; padding: 10px 25px; border-radius: 8px; cursor: pointer; font-weight: 600;">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <aside class="sidebar" id="sidebar">
+        <img src="../Images/Logo text.png" class="logo-img">
+        <p class="menu-cat">Main menu</p>
+        <a href="dashboard.html" class="menu-link"><i class='bx bxs-dashboard'></i> Dashboard</a>
+        <a href="orders.html" class="menu-link"><i class='bx bx-cart'></i> Orders</a>
+        <a href="customers.html" class="menu-link active"><i class='bx bx-user'></i> Customers</a>
+        <a href="coupons.html" class="menu-link"><i class='bx bx-purchase-tag'></i> Coupons</a>
+        <a href="sales.html" class="menu-link"><i class='bx bxs-offer'></i> Sales</a>
+        <a href="categories.html" class="menu-link"><i class='bx bx-category'></i> Categories</a>
+        <a href="transactions.html" class="menu-link"><i class='bx bx-credit-card'></i> Transactions</a>
+        <a href="teams.html" class="menu-link"><i class='bx bx-trophy'></i> Teams</a>
+        <p class="menu-cat">Product</p>
+        <a href="add-product.html" class="menu-link"><i class='bx bx-plus-circle'></i> Add Product</a>
+        <a href="product-list.html" class="menu-link"><i class='bx bx-list-ul'></i> Product List</a>
+        <a href="reviews.html" class="menu-link"><i class='bx bx-message-square-detail'></i> Reviews</a>
+        <p class="menu-cat">Admin</p>
+        <a href="admin.html" class="menu-link"><i class='bx bx-user-circle'></i> Admin Role</a>
+        <a onclick="logoutUser()" class="menu-link logout"><i class='bx bx-log-out'></i> Log Out</a>
+    </aside>
+
+    <main class="main-content">
+        <div class="header">
+            <div style="display:flex; align-items:center;">
+                <i class='bx bx-menu menu-toggle' onclick="toggleSidebar()"></i>
+                <h2>Customers</h2>
+            </div>
+        </div>
+
+        <div class="table-box">
+            <div class="table-head">
+                <h3>Customer List</h3>
+                <div class="filter-group"><input type="text" id="searchInput" placeholder="Search customers..."
+                        onkeyup="filterCustomers()"></div>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Joined Date</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="customerTableBody">
+                    <tr>
+                        <td colspan="5" style="text-align:center;">Loading customers...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+    <script>
+        // --- 1. CRITICAL: PREVENT BACK BUTTON CACHING ---
+        window.onpageshow = function (event) {
+            if (event.persisted || (window.performance && window.performance.navigation.type === 2)) {
+                window.location.reload();
+            }
+        };
+
+        function toggleSidebar() { document.getElementById('sidebar').classList.toggle('active'); }
+
+        let allCustomers = [];
+        let currentUserRole = ''; // Track role for permission logic
+
+        // --- 2. AUTH & LOAD ---
+        document.addEventListener('DOMContentLoaded', async () => {
+            await checkAuth(); // Security First
+            loadCustomers();   // Then Data
+        });
+
+        // --- 3. AUTH CHECK ---
+        async function checkAuth() {
+            try {
+                const res = await fetch('/api/auth/verify-admin');
+                const data = await res.json();
+
+                if (!res.ok || !data.success) {
+                    window.location.replace('admin-login.html');
+                    return;
+                }
+
+                const role = data.user.role;
+                const allowedRoles = ['superadmin', 'editor', 'viewer'];
+
+                if (!allowedRoles.includes(role)) {
+                    // Standard user accessing admin page -> Kick out
+                    window.location.replace('index.html');
+                    return;
+                }
+
+                currentUserRole = role;
+
+            } catch (err) {
+                window.location.replace('admin-login.html');
+            }
+        }
+
+        // --- 4. FETCH CUSTOMERS ---
+        async function loadCustomers() {
+            try {
+                // Use the existing admin/users endpoint which returns ALL users
+                // We will filter it on the frontend to show only 'user' role
+                const response = await fetch('/api/admin/users');
+
+                if (response.status === 401 || response.status === 403) {
+                    window.location.replace('admin-login.html');
+                    return;
+                }
+
+                const result = await response.json();
+
+                // FILTER: Only show users with role 'user' (Customers)
+                allCustomers = result.filter(u => u.role === 'user');
+
+                renderCustomers(allCustomers);
+
+            } catch (err) {
+                console.error("Fetch error:", err);
+            }
+        }
+
+        // --- 5. RENDER TABLE ---
+        // --- 5. RENDER TABLE ---
+        function renderCustomers(customers) {
+            const tbody = document.getElementById('customerTableBody');
+            tbody.innerHTML = '';
+
+            if (customers.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">No customers found</td></tr>';
+                return;
+            }
+
+            customers.forEach(cust => {
+                const tr = document.createElement('tr');
+                const dateJoined = new Date(cust.createdAt).toLocaleDateString();
+
+                // Status
+                let statusClass = 'st-inactive';
+                let statusText = 'Unverified';
+                if (cust.isBlocked) { statusClass = 'st-blocked'; statusText = 'Blocked'; }
+                else if (cust.isVerified) { statusClass = 'st-active'; statusText = 'Active'; }
+
+                const statusHTML = `<span class="status-badge ${statusClass}">${statusText}</span>`;
+
+                // Action Buttons
+                let actionHTML = '';
+                if (currentUserRole === 'viewer') {
+                    actionHTML = `<span style="font-size:12px; color:var(--grey);">View Only</span>`;
+                } else {
+                    const isBlocked = cust.isBlocked === true;
+                    const blockTitle = isBlocked ? "Unblock User" : "Block User";
+                    const blockIcon = isBlocked ? "bx-lock-open-alt" : "bx-lock-alt";
+
+                    actionHTML = `
+                        <div class="action-btns">
+                            <button class="icon-btn block-btn" onclick="toggleBlockUser(event, '${cust._id}', ${isBlocked})" title="${blockTitle}">
+                                <i class='bx ${blockIcon}'></i>
+                            </button>
+                            <button class="icon-btn del-btn" onclick="deleteCustomer(event, '${cust._id}')" title="Delete User">
+                                <i class='bx bx-trash'></i>
+                            </button>
+                        </div>
+                    `;
+                }
+
+                tr.onclick = () => openCustomerDetails(cust._id, cust.name, cust.email, dateJoined, statusText);
+
+                tr.innerHTML = `
+                    <td data-label="Name" style="font-weight:600; color:var(--dark);">${cust.name}</td>
+                    <td data-label="Email">${cust.email}</td>
+                    <td data-label="Joined Date">${dateJoined}</td>
+                    <td data-label="Status">${statusHTML}</td>
+                    <td data-label="Action">${actionHTML}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // --- BLOCK/UNBLOCK LOGIC ---
+        async function toggleBlockUser(event, id, currentBlockedStatus) {
+            event.stopPropagation(); // Prevent row click
+
+            const action = currentBlockedStatus ? "Unblock" : "Block";
+            const color = currentBlockedStatus ? "#00B69B" : "#EF3826"; // Green for unblock, Red for block
+
+            const result = await Swal.fire({
+                title: `${action} User?`,
+                text: currentBlockedStatus ? "User will be allowed to login." : "User will immediately be prevented from logging in.",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: color,
+                confirmButtonText: `Yes, ${action}!`
+            });
+
+            if (result.isConfirmed) {
+                try {
+                    // Call the backend API
+                    const response = await fetch(`/api/admin/user/block/${id}`, { method: 'PUT' });
+                    const resData = await response.json();
+
+                    if (response.ok) {
+                        Swal.fire('Success!', resData.message, 'success');
+                        loadCustomers(); // Reload table to reflect change
+                    } else {
+                        Swal.fire('Error', resData.error || 'Failed to update status', 'error');
+                    }
+                } catch (err) {
+                    console.error(err);
+                    Swal.fire('Error', 'Connection failed', 'error');
+                }
+            }
+        }
+
+        // --- 6. DELETE CUSTOMER ---
+        async function deleteCustomer(event, id) {
+            event.stopPropagation();
+
+            if (currentUserRole === 'viewer') return; // Double guard
+
+            const result = await Swal.fire({
+                title: 'Delete Customer?',
+                text: "This cannot be undone!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#EF3826',
+                confirmButtonText: 'Yes, delete it!'
+            });
+
+            if (result.isConfirmed) {
+                try {
+                    // Re-use the delete user endpoint
+                    const response = await fetch(`/api/admin/user/${id}`, { method: 'DELETE' });
+                    const resData = await response.json();
+
+                    if (response.ok) {
+                        Swal.fire('Deleted!', 'Customer removed.', 'success');
+                        loadCustomers();
+                    } else {
+                        Swal.fire('Error', resData.message, 'error');
+                    }
+                } catch (err) {
+                    Swal.fire('Error', 'Delete failed', 'error');
+                }
+            }
+        }
+
+        // --- 7. SEARCH ---
+        function filterCustomers() {
+            const query = document.getElementById('searchInput').value.toLowerCase();
+            const filtered = allCustomers.filter(c =>
+                c.name.toLowerCase().includes(query) ||
+                c.email.toLowerCase().includes(query)
+            );
+            renderCustomers(filtered);
+        }
+
+        // --- 8. DETAILS MODAL ---
+        function openCustomerDetails(id, name, email, joined, status) {
+            const modal = document.getElementById('customerModal');
+            const content = document.getElementById('modalContent');
+            const avatarUrl = `https://ui-avatars.com/api/?name=${name}&background=E8F0FE&color=4880FF&size=128`;
+
+            // Set Color based on status text
+            let statusColor = '#999';
+            if (status === 'Active') statusColor = '#00B69B';
+            if (status === 'Blocked') statusColor = '#EF3826'; // Red for blocked
+
+            content.innerHTML = `
+                <div class="modal-profile">
+                    <img src="${avatarUrl}" alt="Avatar">
+                    <h3 style="color:var(--dark);">${name}</h3>
+                    <p style="color:var(--grey); font-size:13px;">${id}</p>
+                </div>
+                <div class="modal-row"><span class="modal-label">Email</span><span class="modal-val" style="text-transform:lowercase;">${email}</span></div>
+                <div class="modal-row"><span class="modal-label">Joined On</span><span class="modal-val">${joined}</span></div>
+                <div class="modal-row"><span class="modal-label">Status</span><span class="modal-val" style="color:${statusColor}">${status}</span></div>
+            `;
+            modal.style.display = 'flex';
+        }
+
+        function closeModal() { document.getElementById('customerModal').style.display = 'none'; }
+        window.onclick = function (event) {
+            if (event.target == document.getElementById('customerModal')) closeModal();
+        }
+
+        async function logoutUser() {
+            try {
+                // CHANGED: Use '/api/auth/logout-admin'
+                await fetch('/api/auth/logout-admin', { method: 'POST' }); 
+                
+                // Use REPLACE to prevent back navigation
+                window.location.replace('admin-login.html');
+            } catch (err) {
+                console.error("Logout failed", err);
+                window.location.replace('admin-login.html');
+            }
+        }
+    </script>
+</body>
+
+</html>

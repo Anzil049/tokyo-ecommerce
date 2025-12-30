@@ -1,0 +1,1179 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cart - Tokyo Sports</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <style>
+        :root {
+            --primary-blue: #4383FF;
+            --primary-red: #DB4444;
+            --text-dark: #000000;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            overflow-x: hidden;
+        }
+
+        /* --- Header Styling --- */
+        .top-bar {
+            background-color: black;
+            color: white;
+            font-size: 0.875rem;
+        }
+
+        .navbar-brand {
+            font-weight: 700;
+            letter-spacing: 1px;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            margin-right: 0;
+            /* Reset default margin */
+        }
+
+        .logo-img {
+            max-height: 40px;
+            width: auto;
+            object-fit: contain;
+        }
+
+        .nav-link {
+            color: #000 !important;
+            font-weight: 500;
+            margin: 0 10px;
+            position: relative;
+        }
+
+        .nav-link:hover,
+        .nav-link.active {
+            text-decoration: underline;
+            text-decoration-thickness: 2px;
+            text-underline-offset: 4px;
+        }
+
+        /* Search Container Styling */
+        .search-container {
+            position: relative;
+            background-color: #f5f5f5;
+            border-radius: 4px;
+            padding: 5px 10px;
+            /* Desktop default width */
+            min-width: 240px;
+        }
+
+        .search-input {
+            border: none;
+            background: transparent;
+            width: 100%;
+            font-size: 0.85rem;
+            outline: none;
+        }
+
+        .search-btn {
+            background: none;
+            border: none;
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        /* --- General Page Styling --- */
+        .breadcrumb-text {
+            color: #000;
+            opacity: 0.5;
+            font-size: 0.9rem;
+            margin-bottom: 40px;
+        }
+
+        .breadcrumb-text span {
+            color: #000;
+            opacity: 1;
+            font-weight: 500;
+        }
+
+        /* --- Cart Specific Styling --- */
+        .cart-table {
+            width: 100%;
+            margin-bottom: 2rem;
+            border-collapse: separate;
+            border-spacing: 0 15px;
+        }
+
+        .cart-table th {
+            font-weight: 400;
+            padding: 15px;
+            text-align: left;
+            border-bottom: none;
+        }
+
+        .cart-table td {
+            padding: 15px;
+            vertical-align: middle;
+            background: #fff;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        }
+
+        .cart-table td:first-child {
+            border-top-left-radius: 4px;
+            border-bottom-left-radius: 4px;
+        }
+
+        .cart-table td:last-child {
+            border-top-right-radius: 4px;
+            border-bottom-right-radius: 4px;
+        }
+
+        .product-col {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            width: 100%;
+        }
+
+        .product-img {
+            width: 50px;
+            height: 50px;
+            object-fit: contain;
+        }
+
+        /* Desktop: Icon is in a table cell, center aligned */
+        .remove-col {
+            text-align: center;
+            width: 50px;
+        }
+
+        .remove-icon {
+            color: #DB4444;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+
+        .qty-input {
+            width: 60px;
+            padding: 5px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            text-align: center;
+        }
+
+        .btn-outline-custom {
+            border: 1px solid #000;
+            color: #000;
+            background: transparent;
+            padding: 10px 30px;
+            border-radius: 4px;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+
+        .btn-outline-custom:hover {
+            background: #000;
+            color: #fff;
+        }
+
+        .coupon-input {
+            border: 1px solid #000;
+            padding: 10px 20px;
+            border-radius: 4px;
+            width: 100%;
+            max-width: 300px;
+            outline: none;
+        }
+
+        .btn-coupon {
+            background-color: var(--primary-blue);
+            color: white;
+            padding: 10px 30px;
+            border: none;
+            border-radius: 4px;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+
+        .btn-coupon:hover {
+            background-color: #356ACF;
+            color: white;
+        }
+
+        .cart-total-box {
+            border: 1.5px solid #000;
+            padding: 30px;
+            border-radius: 4px;
+            width: 100%;
+        }
+
+        .cart-total-title {
+            font-weight: 600;
+            margin-bottom: 10px;
+            font-size: 1.1rem;
+        }
+
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            font-size: 0.95rem;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 15px;
+        }
+
+        .summary-row:last-of-type {
+            border-bottom: none;
+        }
+
+        .btn-checkout {
+            background-color: var(--primary-blue);
+            color: white;
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 4px;
+            font-weight: 500;
+            margin-top: 10px;
+        }
+
+        .btn-checkout:hover {
+            background-color: #356ACF;
+            color: white;
+        }
+
+        /* --- Footer Styling --- */
+        footer {
+            background-color: black;
+            color: white;
+            padding-top: 4rem;
+            margin-top: 80px;
+        }
+
+        footer h5 {
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+        }
+
+        footer ul {
+            padding-left: 0;
+            list-style: none;
+        }
+
+        footer li {
+            margin-bottom: 1rem;
+        }
+
+        footer a {
+            color: #d1d1d1;
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+
+        footer a:hover {
+            color: white;
+        }
+
+        .footer-input-group {
+            border: 1px solid white;
+            border-radius: 4px;
+            overflow: hidden;
+            display: flex;
+        }
+
+        .footer-input {
+            background: black;
+            border: none;
+            color: white;
+            padding: 10px;
+            width: 100%;
+            font-size: 0.9rem;
+        }
+
+        .footer-input:focus {
+            outline: none;
+        }
+
+        .copyright {
+            border-top: 1px solid #333;
+            color: #666;
+            font-size: 0.85rem;
+            padding: 1.5rem 0;
+            margin-top: 3rem;
+        }
+
+        /* --- Animations --- */
+        .reveal-element {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.8s cubic-bezier(0.5, 0, 0, 1);
+        }
+
+        .active {
+            opacity: 1;
+            transform: translate(0, 0);
+        }
+
+        /* --- MOBILE SPECIFIC STYLES --- */
+        @media (max-width: 991px) {
+            .navbar-brand {
+                margin-right: 0;
+            }
+
+            .navbar-toggler {
+                border: none;
+                padding: 0;
+                margin-left: 10px;
+            }
+
+            .navbar-toggler:focus {
+                box-shadow: none;
+            }
+
+            /* --- SEARCH BAR MOBILE TWEAKS --- */
+            .search-container {
+                min-width: unset;
+                /* Remove fixed width */
+                width: auto;
+                flex-grow: 1;
+                /* Fill space */
+                margin: 0 10px;
+                /* Gap between logo and icons */
+                padding: 5px;
+                /* Smaller padding */
+            }
+
+            .search-input {
+                font-size: 0.75rem;
+                /* Smaller text */
+            }
+        }
+
+        @media (max-width: 768px) {
+            .cart-table th {
+                display: none;
+            }
+
+            /* General Mobile Table Styling */
+            .cart-table,
+            .cart-table tbody,
+            .cart-table tr,
+            .cart-table td {
+                display: block;
+                width: 100%;
+            }
+
+            .cart-table tr {
+                margin-bottom: 15px;
+                border: 1px solid #eee;
+                border-radius: 4px;
+                position: relative;
+            }
+
+            /* Style for Price, Qty, Subtotal cells */
+            .cart-table td:not([data-label="Product"]):not([data-label="Remove"]) {
+                text-align: right;
+                padding-left: 50%;
+                position: relative;
+                border-bottom: 1px solid #eee;
+            }
+
+            .cart-table td:not([data-label="Product"]):not([data-label="Remove"])::before {
+                content: attr(data-label);
+                position: absolute;
+                left: 15px;
+                font-weight: 600;
+                text-align: left;
+            }
+
+            /* Product Column on Mobile */
+            .cart-table td[data-label="Product"] {
+                padding: 15px;
+                text-align: left;
+                padding-right: 40px;
+            }
+
+            .cart-table td[data-label="Product"]::before {
+                display: none;
+            }
+
+            .product-col {
+                justify-content: flex-start;
+            }
+
+            /* REMOVE ICON - SPECIAL MOBILE POSITIONING */
+            .cart-table td.remove-col {
+                position: absolute;
+                top: 5px;
+                right: 5px;
+                border: none;
+                background: transparent;
+                box-shadow: none;
+                width: auto;
+                padding: 10px;
+            }
+
+            /* COUPON FIX */
+            .coupon-group {
+                flex-wrap: nowrap !important;
+            }
+
+            .coupon-input {
+                width: auto !important;
+                flex-grow: 1;
+                max-width: none;
+            }
+
+            .btn-coupon {
+                padding: 10px 15px;
+            }
+        }
+    </style>
+
+
+</head>
+
+<body>
+
+    <div class="top-bar py-2 text-center reveal-element">
+        <div class="container">
+            <span>BUY 2 OR MORE PRODUCTS AND GET FREE SHIPPING USING COUPON CODE ' SHIPOFF '</span>
+        </div>
+    </div>
+
+    <nav class="navbar navbar-expand-lg navbar-light bg-white sticky-top border-bottom py-3 reveal-element"
+        style="transition-delay: 100ms;">
+        <div class="container d-flex align-items-center">
+            <a class="navbar-brand order-1" href="index.html">
+                <img src="../Images/Logo text.png" alt="Tokyo Sports" class="logo-img">
+            </a>
+
+
+
+            <div class="d-flex align-items-center order-3 order-lg-4 ms-auto ms-lg-0">
+                <div class="d-flex align-items-center gap-3">
+                    <a href="wishlist.html" class="text-dark"><i class="fas fa-heart"></i></a>
+                    <a href="cart.html" class="text-dark active"><i class="fas fa-shopping-cart"></i></a>
+                    <a href="account.html" class="text-dark"><i class="fas fa-user"></i></a>
+                </div>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+            </div>
+
+            <div class="collapse navbar-collapse justify-content-center order-4 order-lg-2" id="navbarNav">
+                <ul class="navbar-nav mb-2 mb-lg-0">
+                    <li class="nav-item"><a class="nav-link" href="index.html">Home</a></li>
+                    <li class="nav-item"><a class="nav-link" href="products.html">Shop</a></li>
+                    <li class="nav-item"><a class="nav-link" href="contact.html">Contact</a></li>
+                    <li class="nav-item"><a class="nav-link" href="about.html">About</a></li>
+                    <li class="nav-item"><a class="nav-link" href="signup.html">Sign Up</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container my-5 reveal-element" style="transition-delay: 200ms;">
+        <div class="breadcrumb-text">
+            Home / <span>Cart</span>
+        </div>
+
+        <div id="emptyCart" class="empty-cart">
+            <i class="fas fa-shopping-cart empty-icon"></i>
+            <h3>Your Cart is Empty</h3>
+            <p class="text-muted">Looks like you haven't made your choice yet.</p>
+            <a href="products.html"><button class="btn-outline-custom mt-3">Start Shopping</button></a>
+        </div>
+
+        <div id="cartContent">
+            <table class="cart-table">
+                <thead>
+                    <tr>
+                        <th style="width: 40%;">Product</th>
+                        <th>Price</th>
+                        <th>Quantity</th>
+                        <th>Subtotal</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody id="cartTableBody">
+                </tbody>
+            </table>
+
+            <div class="d-flex justify-content-between mb-5 flex-wrap gap-3">
+                <a href="products.html"><button class="btn-outline-custom">Return To Shop</button></a>
+
+            </div>
+
+            <div class="row">
+                <div class="col-lg-6 mb-4 mb-lg-0">
+                    <div class="d-flex gap-3 coupon-group">
+                        <input type="text" id="couponInput" class="coupon-input" placeholder="Coupon Code">
+                        <button id="couponBtn" class="btn-coupon" onclick="applyCoupon()">Apply Coupon</button>
+                    </div>
+                </div>
+
+                <div class="col-lg-5 offset-lg-1">
+                    <div class="cart-total-box">
+                        <h5 class="cart-total-title">Cart Total</h5>
+                        <p style="opacity: 50%;">Free Shipping On Orders Above 600</p>
+
+                        <div class="summary-row">
+                            <span>Subtotal:</span>
+                            <span id="cartSubtotal">₹0.00</span>
+                        </div>
+
+                        <div class="summary-row text-success" id="discountRow" style="display: none;">
+                            <span>Discount:</span>
+                            <span id="cartDiscount">- ₹0.00</span>
+                        </div>
+
+                        <div class="summary-row">
+                            <span>Shipping:</span>
+                            <span id="cartShipping">Free</span>
+                        </div>
+
+                        <div class="summary-row summary-total">
+                            <span>Total:</span>
+                            <span id="cartTotal">₹0.00</span>
+                        </div>
+                        <button class="btn-checkout" onclick="proceedToCheckout()">Proceed to checkout</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="text-center">
+        <div class="container">
+            <div class="row gy-5 justify-content-center">
+                <div class="col-6 col-lg-3">
+                    <h5 class="text-white mb-4">TOKYO</h5>
+                    <p class="small text-secondary">FOLLOW US ON INSTAGRAM</p>
+                    <div class="footer-instagram-link mt-3 mx-auto" style="max-width: 250px; text-align: center;">
+                        <a href="https://www.instagram.com/tokyo._.sports" target="_blank" class="text-white"
+                            style="text-decoration: none; font-size: 16px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                            <i class="fab fa-instagram" style="font-size: 20px;"></i>
+                            <span>tokyo._.sports</span>
+                        </a>
+                    </div>
+                </div>
+                <div class="col-6 col-lg-3">
+                    <h5 class="text-white">Support</h5>
+                    <ul class="text-secondary small mt-4">
+                        <li>Tokyo sports Tirur<br>676102,Kerala</li>
+                        <li class="mt-3">tokyo@gmail.com</li>
+                        <li class="mt-2">+91 9188223835</li>
+                    </ul>
+                </div>
+                <div class="col-6 col-lg-2">
+                    <h5 class="text-white">Account</h5>
+                    <ul class="mt-4">
+                        <li><a href="javascript:void(0)" onclick="checkAuth('account.html')">My Account</a></li>
+                        <li><a href="signup.html">Login / Register</a></li>
+                        <li><a href="javascript:void(0)" onclick="checkAuth('cart.html')">Cart</a></li>
+                        <li><a href="javascript:void(0)" onclick="checkAuth('wishlist.html')">Wishlist</a></li>
+                        <li><a href="products.html">Products</a></li>
+                    </ul>
+                </div>
+                <div class="col-6 col-lg-2">
+                    <h5 class="text-white">Quick Link</h5>
+                    <ul class="mt-4">
+                        <li><a href="privacy.html">Privacy Policy</a></li>
+                        <li><a href="terms.html">Terms Of Use</a></li>
+                        <li><a href="faq.html">FAQ</a></li>
+                        <li><a href="contact.html">Contact</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="copyright text-center">
+                &copy; Copyright Tokyo 2025. All right reserved
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+
+        let currentCartId = null;
+
+        window.onpageshow = function (event) {
+            if (event.persisted || (window.performance && window.performance.navigation.type === 2)) {
+                window.location.reload();
+            }
+        };
+        document.addEventListener('DOMContentLoaded', async () => {
+            // 1. Check Login Status via Server (Cookies)
+            const isLoggedIn = await checkLoginStatus();
+
+            // 2. Update UI
+            updateNavbar(isLoggedIn);
+
+            // 3. Load Cart if logged in
+            if (isLoggedIn) {
+                loadCart();
+            } else {
+                showLoginAlert();
+            }
+
+            // 4. Reveal animations
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('active');
+                        observer.unobserve(entry.target);
+                    }
+                });
+            }, { threshold: 0.1 });
+            document.querySelectorAll('.reveal-element').forEach(el => observer.observe(el));
+        });
+
+        // ==========================================
+        //  AUTH & NAVBAR LOGIC (Cookie Based)
+        // ==========================================
+
+        async function checkLoginStatus() {
+            try {
+                const res = await fetch('/api/auth/verify-user');
+                return res.ok;
+            } catch (err) {
+                return false;
+            }
+        }
+
+        function updateNavbar(isLoggedIn) {
+            const signupLink = document.querySelector('a[href="signup.html"]');
+            const signupLi = signupLink ? signupLink.closest('li') : null;
+            const iconContainer = document.querySelector('.d-flex.align-items-center.gap-3');
+            let logoutBtn = document.getElementById('dynamicLogoutBtn');
+
+            if (isLoggedIn) {
+                // Hide Signup
+                if (signupLi) signupLi.style.display = 'none';
+
+                // Add Logout Icon
+                if (!logoutBtn && iconContainer) {
+                    logoutBtn = document.createElement('a');
+                    logoutBtn.href = "#";
+                    logoutBtn.id = "dynamicLogoutBtn";
+                    logoutBtn.className = "text-danger";
+                    logoutBtn.innerHTML = '<i class="fas fa-sign-out-alt"></i>';
+                    logoutBtn.title = "Logout";
+                    logoutBtn.style.cursor = "pointer";
+                    logoutBtn.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        handleLogout();
+                    });
+                    iconContainer.appendChild(logoutBtn);
+                }
+            } else {
+                if (signupLi) signupLi.style.display = 'block';
+                if (logoutBtn) logoutBtn.remove();
+            }
+        }
+
+        // Add this anywhere in your script
+        window.checkAuth = async function (targetPage) {
+            // Since we are already on the Cart page (protected), we know user is logged in if page loaded.
+            // But to be safe and consistent:
+            const isLoggedIn = await checkLoginStatus();
+            if (isLoggedIn) {
+                window.location.href = targetPage;
+            } else {
+                showLoginAlert();
+            }
+        }
+
+        async function handleLogout() {
+            try {
+                await fetch('/api/auth/logout-user', { method: 'POST' });
+                localStorage.removeItem('user');
+
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Logged Out',
+                    timer: 1000,
+                    showConfirmButton: false
+                }).then(() => {
+                    window.location.href = 'signup.html';
+                });
+            } catch (err) {
+                console.error('Logout failed', err);
+            }
+        }
+
+        function showLoginAlert() {
+            Swal.fire({
+                icon: 'info',
+                title: 'Login Required',
+                text: 'Please login to view your cart.',
+                confirmButtonText: 'Go to Login',
+                confirmButtonColor: '#DB4444',
+                allowOutsideClick: false
+            }).then(() => window.location.href = 'signup.html');
+        }
+
+        // ==========================================
+        //  CART LOGIC
+        // ==========================================
+
+
+        async function loadCart() {
+            try {
+                const res = await fetch('/api/cart');
+
+                if (res.status === 401 || res.status === 403) {
+                    showLoginAlert();
+                    return;
+                }
+
+                if (!res.ok) throw new Error('Failed to fetch cart');
+
+                let cartData = await res.json();
+
+                // --- AUTO FIX STOCK LOGIC ---
+                // This checks if Cart Qty > Real Stock and fixes it before rendering
+                const wasAdjusted = await validateAndAutoFixStock(cartData);
+
+                if (wasAdjusted) {
+                    // Fetch fresh data if adjustments were made
+                    const freshRes = await fetch('/api/cart');
+                    cartData = await freshRes.json();
+
+                    Swal.fire({
+                        icon: 'info',
+                        title: 'Stock Update',
+                        text: 'Some items were adjusted to match available stock.',
+                        toast: true,
+                        position: 'top-end',
+                        showConfirmButton: false,
+                        timer: 4000
+                    });
+                }
+                // -----------------------------
+
+                currentCartId = cartData._id;
+                renderCart(cartData);
+
+            } catch (err) {
+                console.error(err);
+                Swal.fire('Error', 'Could not load cart.', 'error');
+            }
+        }
+
+        // --- NEW HELPER FUNCTION ---
+        async function validateAndAutoFixStock(cartData) {
+            if (!cartData.items || cartData.items.length === 0) return false;
+
+            let adjustmentMade = false;
+            const updatePromises = [];
+
+            for (const item of cartData.items) {
+                if (!item.product || !item.product.sizes) continue;
+
+                // Find stock for size
+                const sizeObj = item.product.sizes.find(s => s.size === item.size);
+                const realStock = sizeObj ? parseInt(sizeObj.stock) : 0;
+
+                // If Cart > Stock, reset it
+                if (realStock > 0 && item.quantity > realStock) {
+                    const req = fetch('/api/cart/update', {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ cartItemId: item._id, quantity: realStock })
+                    });
+                    updatePromises.push(req);
+                    adjustmentMade = true;
+                }
+            }
+
+            if (updatePromises.length > 0) {
+                await Promise.all(updatePromises);
+            }
+
+            return adjustmentMade;
+        }
+
+        function renderCart(cartData) {
+            const tbody = document.getElementById('cartTableBody');
+            const cartSection = document.getElementById('cartContent');
+            const emptySection = document.getElementById('emptyCart');
+
+            const items = cartData.items || [];
+
+            if (!items || items.length === 0) {
+                cartSection.style.display = 'none';
+                emptySection.style.display = 'block';
+                return;
+            }
+
+            cartSection.style.display = 'block';
+            emptySection.style.display = 'none';
+            tbody.innerHTML = '';
+
+            items.forEach(item => {
+                if (!item.product) return;
+                const imgUrl = (item.product.images && item.product.images.length > 0) ? item.product.images[0] : 'https://placehold.co/50x50';
+
+                // --- 1. CALCULATE REAL STOCK FOR THIS SIZE ---
+                let realStock = 0;
+                if (item.product.sizes) {
+                    const sizeObj = item.product.sizes.find(s => s.size === item.size);
+                    realStock = sizeObj ? parseInt(sizeObj.stock) : 0;
+                }
+
+                // --- 2. PRICE DISPLAY LOGIC (NEW) ---
+                let priceDisplay = `₹${item.price}`;
+                // Check if basePrice exists and is greater than selling price
+                if (item.basePrice && item.basePrice > item.price) {
+                    priceDisplay = `
+                        <div class="d-flex flex-column flex-md-row align-items-md-center">
+                            <small class="text-muted text-decoration-line-through me-2">₹${item.basePrice}</small>
+                            <span class="fw-medium text-danger">₹${item.price}</span>
+                        </div>
+                    `;
+                }
+                // ------------------------------------
+
+                // Check if Out of Stock
+                if (item.isOutofStock || realStock === 0) {
+                    tbody.innerHTML += `
+                    <tr class="table-light">
+                        <td data-label="Product">
+                            <div class="product-col">
+                                <div style="position: relative;">
+                                    <img src="${imgUrl}" class="product-img" style="filter: grayscale(100%); opacity: 0.7;">
+                                    <span class="badge bg-danger" style="position: absolute; top: -5px; left: -10px; font-size: 0.65rem;">Out of Stock</span>
+                                </div>
+                                <div class="product-info ms-3">
+                                    <span class="text-muted text-decoration-line-through">${item.product.name}</span>
+                                    <small class="text-danger d-block">Size: ${item.size} - Unavailable</small>
+                                </div>
+                            </div>
+                        </td>
+                        <td colspan="3" class="text-center text-muted align-middle">
+                            <small>Item unavailable</small>
+                        </td>
+                        <td class="remove-col" data-label="Remove">
+                            <i class="fas fa-times remove-icon" onclick="removeItem('${item._id}')"></i>
+                        </td>
+                    </tr>`;
+                } else {
+                    const itemTotal = item.price * item.quantity;
+                    tbody.innerHTML += `
+                    <tr>
+                        <td data-label="Product">
+                            <div class="product-col">
+                                <img src="${imgUrl}" class="product-img">
+                                <div class="product-info">
+                                    <span>${item.product.name}</span>
+                                    <small>Size: ${item.size}</small>
+                                    ${realStock < 10 ? `<small class="text-danger d-block" style="font-size:0.7rem">Only ${realStock} left!</small>` : ''}
+                                </div>
+                            </div>
+                        </td>
+                        <td data-label="Price">${priceDisplay}</td>
+                        
+                        <td data-label="Quantity">
+                            <input type="number" 
+                                   value="${item.quantity}" 
+                                   min="1" 
+                                   data-stock="${realStock}" 
+                                   class="qty-input" 
+                                   onchange="updateQuantity('${item._id}', this.value, this)"> 
+                        </td>
+                        <td data-label="Subtotal">₹${itemTotal}</td>
+                        <td class="remove-col" data-label="Remove">
+                            <i class="fas fa-times remove-icon" onclick="removeItem('${item._id}')"></i>
+                        </td>
+                    </tr>`;
+                }
+            });
+
+            updateTotalsUI(cartData);
+            updateCouponUI(cartData.coupon);
+        }
+
+        // Debounce timer to prevent too many API calls while clicking fast
+        let debounceTimer;
+
+        async function updateQuantity(cartItemId, qty, inputElement) {
+            let newQty = parseInt(qty);
+
+            // Handle NaN or missing data safely
+            let maxStock = parseInt(inputElement.getAttribute('data-stock'));
+            if (isNaN(maxStock)) maxStock = 999; // Fallback if data is missing
+
+            const globalLimit = 12;
+
+            // 1. Sanity Check (Minimum)
+            if (newQty < 1 || isNaN(newQty)) {
+                if (isNaN(newQty)) return;
+                inputElement.value = 1;
+                newQty = 1;
+            }
+
+            // 2. LOGIC FIX: Determine the stricter limit (The lower number)
+            const effectiveLimit = Math.min(maxStock, globalLimit);
+
+            if (newQty > effectiveLimit) {
+                let title = 'Limit Reached';
+                let msg = '';
+
+                // Determine which message to show based on what caused the limit
+                if (effectiveLimit === maxStock) {
+                    title = 'Stock Limit Reached';
+                    msg = `Only ${maxStock} units are available in stock.`;
+                } else {
+                    msg = `You can only buy a maximum of ${globalLimit} units per product.`;
+                }
+
+                Swal.fire({
+                    icon: 'warning',
+                    title: title,
+                    text: msg,
+                    toast: true,
+                    position: 'top-end',
+                    showConfirmButton: false,
+                    timer: 3000
+                });
+
+                // Reset to the valid limit
+                inputElement.value = effectiveLimit;
+                newQty = effectiveLimit;
+            }
+
+            // 3. Send to Server (Debounced)
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(async () => {
+                try {
+                    const res = await fetch('/api/cart/update', {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ cartItemId, quantity: newQty })
+                    });
+
+                    const data = await res.json();
+
+                    if (!res.ok) {
+                        Swal.fire({ icon: 'error', title: 'Error', text: data.message });
+                        loadCart();
+                        return;
+                    }
+
+                    // Refresh totals
+                    loadCart();
+
+                } catch (err) {
+                    console.error(err);
+                }
+            }, 500);
+        }
+
+
+        async function removeItem(cartItemId) {
+            const result = await Swal.fire({
+                title: 'Remove Item?',
+                text: 'Are you sure?',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#DB4444',
+                confirmButtonText: 'Yes'
+            });
+
+            if (!result.isConfirmed) return;
+
+            try {
+                const res = await fetch(`/api/cart/remove/${cartItemId}`, {
+                    method: 'DELETE'
+                });
+
+                if (!res.ok) throw new Error('Remove failed');
+
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Removed!',
+                    showConfirmButton: false,
+                    timer: 1000
+                });
+                loadCart();
+            } catch (err) {
+                console.error(err);
+                Swal.fire('Error', 'Failed to remove item.', 'error');
+            }
+        }
+
+        function updateTotalsUI(cart) {
+            const subtotal = cart.totalPrice || 0;
+            const discount = cart.discountAmount || 0;
+            const finalTotal = cart.totalAfterDiscount !== undefined ? cart.totalAfterDiscount : subtotal;
+
+            // Shipping Logic
+            let shippingCost = subtotal > 600 ? 0 : 50;
+
+            // If discount > 0 and subtotal == totalAfterDiscount, backend likely handled free shipping
+            if (cart.discountAmount === 0 && cart.coupon && finalTotal === subtotal) {
+                shippingCost = 0;
+            }
+
+            const grandTotal = finalTotal + shippingCost;
+
+            // --- SAFE UPDATES (Prevents "Cannot set property of null") ---
+
+            // 1. Update Subtotal
+            const elSubtotal = document.getElementById('cartSubtotal');
+            if (elSubtotal) elSubtotal.innerText = `₹${subtotal}`;
+
+            // 2. Update Discount (Only if row exists)
+            const elDiscountRow = document.getElementById('discountRow');
+            const elDiscountText = document.getElementById('cartDiscount');
+
+            if (elDiscountRow && elDiscountText) {
+                if (discount > 0) {
+                    elDiscountRow.style.display = 'flex';
+                    elDiscountText.innerText = `- ₹${discount}`;
+                } else {
+                    elDiscountRow.style.display = 'none';
+                }
+            }
+
+            // 3. Update Shipping
+            const elShipping = document.getElementById('cartShipping');
+            if (elShipping) elShipping.innerText = shippingCost === 0 ? 'Free' : `₹${shippingCost}`;
+
+            // 4. Update Total
+            const elTotal = document.getElementById('cartTotal');
+            if (elTotal) elTotal.innerText = `₹${grandTotal}`;
+        }
+
+        function updateCouponUI(couponCode) {
+            const input = document.getElementById('couponInput');
+
+            // FIX: Select by ID so we don't lose the button when classes change
+            const btn = document.getElementById('couponBtn');
+
+            if (!input || !btn) return;
+
+            if (couponCode) {
+                // --- COUPON APPLIED STATE ---
+                input.value = couponCode;
+                input.disabled = true; // Lock input
+                input.classList.add('bg-light');
+
+                // Change Button to "Remove" style
+                btn.innerText = "Remove Coupon";
+                btn.classList.remove('btn-coupon');
+                btn.classList.add('btn', 'btn-danger', 'text-white'); // Bootstrap red button
+                btn.onclick = removeCoupon;
+            } else {
+                // --- NO COUPON STATE ---
+                input.value = ''; // Clear text
+                input.disabled = false; // Unlock input
+                input.classList.remove('bg-light');
+
+                // Change Button back to "Apply" style
+                btn.innerText = "Apply Coupon";
+                btn.classList.remove('btn', 'btn-danger', 'text-white');
+                btn.classList.add('btn-coupon'); // Your custom blue style
+                btn.onclick = applyCoupon;
+            }
+        }
+
+        function proceedToCheckout() {
+            // 1. Get the current subtotal from the UI
+            const subtotalText = document.getElementById('cartSubtotal').innerText;
+
+            // 2. Clean string (remove '₹' and spaces) to get number
+            const subtotal = parseFloat(subtotalText.replace(/[^0-9.]/g, ''));
+
+            // 3. Check Condition
+            if (subtotal > 0) {
+                // Success: Go to checkout
+                window.location.href = 'checkout.html';
+            } else {
+                // Failure: Show Alert
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Cannot Checkout',
+                    text: 'Your cart is empty or contains only out-of-stock items.',
+                    confirmButtonColor: '#DB4444',
+                    confirmButtonText: 'OK'
+                });
+            }
+        }
+        async function applyCoupon() {
+            const code = document.getElementById('couponInput').value.trim();
+            if (!code) return Swal.fire('Error', 'Please enter a code', 'warning');
+
+            try {
+                const res = await fetch('/api/coupons/verify', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ code: code, cartId: currentCartId })
+                });
+
+                const data = await res.json();
+
+                if (res.ok) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Coupon Applied!',
+                        text: `You saved ₹${data.discountAmount}`,
+                        timer: 2000,
+                        showConfirmButton: false
+                    });
+                    loadCart(); // Refresh cart to show new totals
+                } else {
+                    Swal.fire('Error', data.message || 'Invalid Coupon', 'error');
+                }
+            } catch (err) {
+                console.error(err);
+                Swal.fire('Error', 'Server Error', 'error');
+            }
+        }
+
+
+        async function removeCoupon() {
+            try {
+                const res = await fetch('/api/cart/remove-coupon', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+
+                // Check for server errors (404, 500, etc.) before parsing JSON
+                if (!res.ok) {
+                    throw new Error(`Server Error: ${res.status} ${res.statusText}`);
+                }
+
+                const updatedCartData = await res.json();
+
+                if (res.ok) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Removed',
+                        text: 'Coupon removed successfully',
+                        timer: 1000,
+                        showConfirmButton: false
+                    });
+                    renderCart(updatedCartData);
+                } else {
+                    Swal.fire('Error', updatedCartData.message, 'error');
+                }
+            } catch (err) {
+                console.error(err);
+                // Show the specific error message
+                Swal.fire('Error', err.message || 'Server connection failed', 'error');
+            }
+        }
+
+    </script>
+
+</body>
+
+</html>

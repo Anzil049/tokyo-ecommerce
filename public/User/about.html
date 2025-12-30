@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About Us - Tokyo Sports</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <style>
+        .swal2-container {
+            z-index: 10000 !important;
+        }
+
+        :root {
+            --primary-blue: #4383FF;
+            --primary-red: #DB4444;
+            --text-dark: #000000;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            overflow-x: hidden;
+        }
+
+        /* --- Header Styling (Synced) --- */
+        .top-bar {
+            background-color: black;
+            color: white;
+            font-size: 0.875rem;
+        }
+
+        .navbar-brand {
+            font-weight: 700;
+            letter-spacing: 1px;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            margin-right: 0;
+        }
+
+        .logo-img {
+            max-height: 40px;
+            width: auto;
+            object-fit: contain;
+        }
+
+        .nav-link {
+            color: #000 !important;
+            font-weight: 500;
+            margin: 0 10px;
+            position: relative;
+        }
+
+        .nav-link:hover,
+        .nav-link.active {
+            text-decoration: underline;
+            text-decoration-thickness: 2px;
+            text-underline-offset: 4px;
+        }
+
+
+        /* --- About Page Specific Styling --- */
+        .breadcrumb-text {
+            color: #000;
+            opacity: 0.5;
+            font-size: 0.9rem;
+            margin-bottom: 40px;
+        }
+
+        .breadcrumb-text span {
+            color: #000;
+            opacity: 1;
+            font-weight: 500;
+        }
+
+        .story-text h1 {
+            font-size: 3rem;
+            font-weight: 600;
+            margin-bottom: 2rem;
+            letter-spacing: 1px;
+        }
+
+        .story-text p {
+            line-height: 1.7;
+            margin-bottom: 1.5rem;
+            font-size: 0.95rem;
+            color: #333;
+        }
+
+        .story-image img {
+            width: 100%;
+            height: auto;
+            border-radius: 4px;
+            object-fit: cover;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+        }
+
+        /* Stats Cards */
+        .stat-card {
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            padding: 30px 10px;
+            text-align: center;
+            transition: all 0.3s ease;
+            height: 100%;
+            background: white;
+        }
+
+        .stat-card:hover {
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+            border-color: transparent;
+        }
+
+        .stat-icon-wrapper {
+            width: 60px;
+            height: 60px;
+            background-color: #000;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 15px auto;
+            border: 8px solid #c1c0c1;
+        }
+
+        .stat-icon-wrapper i {
+            color: white;
+            font-size: 1.5rem;
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 5px;
+            display: block;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: #333;
+        }
+
+
+        .stat-card.active-card .stat-icon-wrapper {
+            background-color: white;
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .stat-card.active-card .stat-icon-wrapper i {
+            color: black;
+        }
+
+        .stat-card.active-card .stat-label {
+            color: white;
+        }
+
+        /* Features Section */
+        .feature-item {
+            text-align: center;
+            padding: 10px;
+        }
+
+        .feature-icon-circle {
+            width: 70px;
+            height: 70px;
+            background-color: #c1c0c1;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px auto;
+            border: 10px solid #e6e6e6;
+        }
+
+        .feature-icon-circle.dark {
+            background-color: black;
+            border-color: #c1c0c1;
+        }
+
+        .feature-icon-circle.dark i {
+            color: white;
+            font-size: 1.5rem;
+        }
+
+        .feature-title {
+            font-weight: 700;
+            font-size: 1.1rem;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+        }
+
+        .feature-desc {
+            font-size: 0.85rem;
+            color: #666;
+        }
+
+        /* Mobile adjustments */
+        @media (max-width: 768px) {
+            .feature-icon-circle {
+                width: 50px;
+                height: 50px;
+                border-width: 5px;
+                margin-bottom: 10px;
+            }
+
+            .feature-icon-circle.dark i {
+                font-size: 1rem;
+            }
+
+            .feature-title {
+                font-size: 0.75rem;
+            }
+
+            .feature-desc {
+                font-size: 0.65rem;
+            }
+
+            .stat-number {
+                font-size: 1.5rem;
+            }
+
+            .stat-icon-wrapper {
+                width: 50px;
+                height: 50px;
+                border-width: 5px;
+            }
+
+            .stat-icon-wrapper i {
+                font-size: 1.2rem;
+            }
+        }
+
+        /* --- Footer Styling (Synced) --- */
+        footer {
+            background-color: black;
+            color: white;
+            padding-top: 4rem;
+            margin-top: 80px;
+        }
+
+        footer h5 {
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+        }
+
+        footer ul {
+            padding-left: 0;
+            list-style: none;
+        }
+
+        footer li {
+            margin-bottom: 1rem;
+        }
+
+        footer a {
+            color: #d1d1d1;
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+
+        footer a:hover {
+            color: white;
+        }
+
+        .footer-input-group {
+            border: 1px solid white;
+            border-radius: 4px;
+            overflow: hidden;
+            display: flex;
+        }
+
+        .footer-input {
+            background: black;
+            border: none;
+            color: white;
+            padding: 10px;
+            width: 100%;
+            font-size: 0.9rem;
+        }
+
+        .footer-input:focus {
+            outline: none;
+        }
+
+        .copyright {
+            border-top: 1px solid #333;
+            color: #666;
+            font-size: 0.85rem;
+            padding: 1.5rem 0;
+            margin-top: 3rem;
+        }
+
+        /* --- Animations --- */
+        .reveal-element {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.8s cubic-bezier(0.5, 0, 0, 1);
+        }
+
+        .active {
+            opacity: 1;
+            transform: translate(0, 0);
+        }
+
+        /* Mobile specific */
+        @media (max-width: 991px) {
+            .navbar-brand {
+                margin-right: 0;
+            }
+
+            .navbar-toggler {
+                border: none;
+                padding: 0;
+                margin-left: 10px;
+            }
+
+            .navbar-toggler:focus {
+                box-shadow: none;
+            }
+
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="top-bar py-2 text-center reveal-element">
+        <div class="container">
+            <span>BUY 2 OR MORE PRODUCTS AND GET FREE SHIPPING USING COUPON CODE ' SHIPOFF '</span>
+        </div>
+    </div>
+
+    <nav class="navbar navbar-expand-lg navbar-light bg-white sticky-top border-bottom py-3 reveal-element"
+        style="transition-delay: 100ms;">
+        <div class="container d-flex align-items-center">
+
+            <a class="navbar-brand order-1" href="index.html">
+                <img src="../Images/Logo text.png" alt="Tokyo Sports" class="logo-img">
+            </a>
+
+        
+
+            <div class="d-flex align-items-center order-3 order-lg-4 ms-auto ms-lg-0">
+                <div class="d-flex align-items-center gap-3">
+                    <a href="javascript:void(0)" onclick="checkAuth('wishlist.html')" class="text-dark"><i
+                            class="fas fa-heart"></i></a>
+                    <a href="javascript:void(0)" onclick="checkAuth('cart.html')" class="text-dark"><i
+                            class="fas fa-shopping-cart"></i></a>
+                    <a href="javascript:void(0)" onclick="checkAuth('account.html')" class="text-dark"><i
+                            class="fas fa-user"></i></a>
+                </div>
+
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+            </div>
+
+            <div class="collapse navbar-collapse justify-content-center order-4 order-lg-2" id="navbarNav">
+                <ul class="navbar-nav mb-2 mb-lg-0">
+                    <li class="nav-item"><a class="nav-link" href="index.html">Home</a></li>
+                    <li class="nav-item"><a class="nav-link" href="products.html">Shop</a></li>
+                    <li class="nav-item"><a class="nav-link" href="contact.html">Contact</a></li>
+                    <li class="nav-item"><a class="nav-link active" href="about.html">About</a></li>
+                    <li class="nav-item" id="signupNavItem"><a class="nav-link" href="signup.html">Sign Up</a></li>
+                </ul>
+            </div>
+
+        </div>
+    </nav>
+
+    <div class="container my-5 reveal-element" style="transition-delay: 200ms;">
+        <div class="breadcrumb-text mb-5">
+            Home / <span>About</span>
+        </div>
+
+        <div class="row align-items-center mb-5 gx-lg-5">
+            <div class="col-lg-6 mb-4 mb-lg-0 story-text">
+                <h1>Our Story</h1>
+                <p>
+                    At Tokyo, we bring the passion of football straight to your wardrobe. Our mission is simple — to
+                    deliver premium-quality football jerseys that let fans express their love for the game with pride.
+                    From iconic club kits to national team classics, every jersey we offer reflects authenticity,
+                    comfort, and style.
+                </p>
+                <p>
+                    Built for true supporters, Tokyo stands for trust, quality, and a seamless shopping experience.
+                    Whether you're a player, a collector, or a die-hard fan cheering from home, we make sure you get the
+                    perfect jersey that matches your spirit.
+                </p>
+            </div>
+            <div class="col-lg-6 story-image">
+                <img src="../Images/Hanging jersey.jpg" alt="Jerseys on wall" class="img-fluid">
+            </div>
+        </div>
+
+        <div class="row g-3 my-5 py-5 justify-content-center reveal-element" style="transition-delay: 300ms;">
+
+            <div class="col-6 col-lg-3">
+                <div class="stat-card">
+                    <div class="stat-icon-wrapper">
+                        <i class="fas fa-store"></i>
+                    </div>
+                    <span class="stat-number" id="statProducts">0</span>
+                    <span class="stat-label">Exclusive Products</span>
+                </div>
+            </div>
+
+            <div class="col-6 col-lg-3">
+                <div class="stat-card">
+                    <div class="stat-icon-wrapper">
+                        <i class="fas fa-dollar-sign"></i>
+                    </div>
+                    <span class="stat-number" id="statOrders">0</span>
+                    <span class="stat-label">Total Orders</span>
+                </div>
+            </div>
+
+            <div class="col-6 col-lg-3">
+                <div class="stat-card">
+                    <div class="stat-icon-wrapper">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <span class="stat-number" id="statCustomers">0</span>
+                    <span class="stat-label">Happy Customers</span>
+                </div>
+            </div>
+
+            <div class="col-6 col-lg-3">
+                <div class="stat-card">
+                    <div class="stat-icon-wrapper">
+                        <i class="fas fa-money-bill-wave"></i>
+                    </div>
+                    <span class="stat-number" id="statRevenue">0</span>
+                    <span class="stat-label">Gross Sales</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-2 my-5 justify-content-center text-center reveal-element" style="transition-delay: 400ms;">
+            <div class="col-4">
+                <div class="feature-item">
+                    <div class="feature-icon-circle dark"><i class="fas fa-truck"></i></div>
+                    <h5 class="feature-title">FREE AND FAST DELIVERY</h5>
+                    <p class="feature-desc">Free delivery for all orders over ₹600</p>
+                </div>
+            </div>
+
+            <div class="col-4">
+                <div class="feature-item">
+                    <div class="feature-icon-circle dark"><i class="fas fa-headset"></i></div>
+                    <h5 class="feature-title">24/7 CUSTOMER SERVICE</h5>
+                    <p class="feature-desc">Friendly 24/7 customer support</p>
+                </div>
+            </div>
+
+            <div class="col-4">
+                <div class="feature-item">
+                    <div class="feature-icon-circle dark"><i class="fas fa-shield-alt"></i></div>
+                    <h5 class="feature-title">MONEY BACK GUARANTEE</h5>
+                    <p class="feature-desc">We return money within 30 days</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="text-center reveal-element" style="transition-delay: 500ms;">
+        <div class="container">
+            <div class="row gy-5 justify-content-center">
+                <div class="col-6 col-lg-3">
+                    <h5 class="text-white mb-4">TOKYO</h5>
+                    <p class="small text-secondary">FOLLOW US ON INSTAGRAM</p>
+                    <div class="footer-instagram-link mt-3 mx-auto" style="max-width: 250px; text-align: center;">
+                        <a href="https://www.instagram.com/tokyo._.sports" target="_blank" class="text-white"
+                            style="text-decoration: none; font-size: 16px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                            <i class="fab fa-instagram" style="font-size: 20px;"></i>
+                            <span>tokyo._.sports</span>
+                        </a>
+                    </div>
+                </div>
+                <div class="col-6 col-lg-3">
+                    <h5 class="text-white">Support</h5>
+                    <ul class="text-secondary small mt-4">
+                        <li>Tokyo sports Tirur<br>676102,Kerala</li>
+                        <li class="mt-3">tokyo@gmail.com</li>
+                        <li class="mt-2">+91 9188223835</li>
+                    </ul>
+                </div>
+                <div class="col-6 col-lg-2">
+                    <h5 class="text-white">Account</h5>
+                    <ul class="mt-4">
+                        <li><a href="javascript:void(0)" onclick="checkAuth('account.html')">My Account</a></li>
+                        <li><a href="signup.html">Login / Register</a></li>
+                        <li><a href="javascript:void(0)" onclick="checkAuth('cart.html')">Cart</a></li>
+                        <li><a href="javascript:void(0)" onclick="checkAuth('wishlist.html')">Wishlist</a></li>
+                        <li><a href="products.html">Products</a></li>
+                    </ul>
+                </div>
+                <div class="col-6 col-lg-2">
+                    <h5 class="text-white">Quick Link</h5>
+                    <ul class="mt-4">
+                        <li><a href="privacy.html">Privacy Policy</a></li>
+                        <li><a href="terms.html">Terms Of Use</a></li>
+                        <li><a href="faq.html">FAQ</a></li>
+                        <li><a href="contact.html">Contact</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="copyright text-center">
+                &copy; Copyright Tokyo 2025. All right reserved
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        // --- 1. PREVENT BACK BUTTON CACHING ---
+        window.onpageshow = function (event) {
+            if (event.persisted || (window.performance && window.performance.navigation.type === 2)) {
+                window.location.reload();
+            }
+        };
+
+        let userIsLoggedIn = false;
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            // 1. Check Login Status
+            userIsLoggedIn = await checkLoginStatus();
+            updateNavbar(userIsLoggedIn);
+
+            // 2. Fetch Stats
+            fetchStats();
+
+            // 3. Reveal Animations
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('active');
+                        observer.unobserve(entry.target);
+                    }
+                });
+            }, { threshold: 0.1 });
+
+            document.querySelectorAll('.reveal-element').forEach(el => observer.observe(el));
+        });
+
+        // --- FETCH STATS ---
+        async function fetchStats() {
+            try {
+                // Call the Public API we created
+                const res = await fetch('/api/stats/public');
+                const data = await res.json();
+
+                if (data.success) {
+                    const { products, orders, customers, revenue } = data.stats;
+
+                    // Animate the numbers
+                    animateNumber('statProducts', products);
+                    animateNumber('statOrders', orders);
+                    animateNumber('statCustomers', customers);
+                    animateNumber('statRevenue', revenue, true); // true for currency formatting
+                }
+            } catch (err) {
+                console.error('Failed to load stats', err);
+            }
+        }
+
+        // Helper: Number Formatter & Animator
+        function formatNumber(num) {
+            if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
+            if (num >= 1000) return (num / 1000).toFixed(1) + 'k';
+            return num.toLocaleString();
+        }
+
+        function animateNumber(id, target, isCurrency = false) {
+            const el = document.getElementById(id);
+            if (!el) return;
+
+            let start = 0;
+            const end = target;
+            const duration = 2000; // 2 seconds animation
+            const increment = Math.max(1, end / (duration / 16));
+
+            function update() {
+                start += increment;
+                if (start >= end) {
+                    // Final display
+                    if (isCurrency) {
+                        el.innerText = '₹' + formatNumber(end);
+                    } else {
+                        el.innerText = formatNumber(end);
+                    }
+                } else {
+                    // Intermediate display
+                    if (isCurrency) {
+                        el.innerText = '₹' + Math.floor(start).toLocaleString();
+                    } else {
+                        el.innerText = Math.floor(start);
+                    }
+                    requestAnimationFrame(update);
+                }
+            }
+            if (end > 0) update();
+            else el.innerText = isCurrency ? '₹0' : '0';
+        }
+
+        // --- AUTH LOGIC (Standard) ---
+        async function checkLoginStatus() {
+            try {
+                const res = await fetch('/api/auth/verify-user');
+                return res.ok;
+            } catch (err) { return false; }
+        }
+
+        function updateNavbar(isLoggedIn) {
+            const signupNavItem = document.getElementById('signupNavItem');
+            const iconContainer = document.querySelector('.d-flex.align-items-center.gap-3');
+            let logoutBtn = document.getElementById('dynamicLogoutBtn');
+
+            if (isLoggedIn) {
+                if (signupNavItem) signupNavItem.style.display = 'none';
+
+                if (!logoutBtn && iconContainer) {
+                    logoutBtn = document.createElement('a');
+                    logoutBtn.href = "#";
+                    logoutBtn.id = "dynamicLogoutBtn";
+                    logoutBtn.className = "text-danger";
+                    logoutBtn.innerHTML = '<i class="fas fa-sign-out-alt"></i>';
+                    logoutBtn.title = "Logout";
+                    logoutBtn.style.cursor = "pointer";
+                    logoutBtn.onclick = (e) => { e.preventDefault(); handleLogout(); };
+                    iconContainer.appendChild(logoutBtn);
+                }
+            } else {
+                if (signupNavItem) signupNavItem.style.display = 'block';
+                if (logoutBtn) logoutBtn.remove();
+            }
+        }
+
+        async function handleLogout() {
+            try {
+                await fetch('/api/auth/logout-user', { method: 'POST' });
+                localStorage.removeItem('user');
+
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Logged Out',
+                    timer: 1000,
+                    showConfirmButton: false
+                }).then(() => {
+                    window.location.href = 'index.html';
+                });
+            } catch (err) { console.error('Logout failed', err); }
+        }
+
+        window.checkAuth = function (targetPage) {
+            if (userIsLoggedIn) {
+                window.location.href = targetPage;
+            } else {
+                Swal.fire({
+                    icon: 'info',
+                    title: 'Login Required',
+                    text: 'Please login to access this page.',
+                    confirmButtonText: 'Go to Login',
+                    confirmButtonColor: '#DB4444',
+                    showCancelButton: true
+                }).then((result) => {
+                    if (result.isConfirmed) window.location.href = 'signup.html';
+                });
+            }
+        }
+    </script>
+</body>
+
+</html>

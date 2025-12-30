@@ -1,0 +1,1140 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tokyo Admin - Sales</title>
+    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" rel="stylesheet">
+
+    <style>
+        /* Force SweetAlert Z-Index */
+        .swal2-container {
+            z-index: 10000 !important;
+        }
+
+        :root {
+            --primary: #4880FF;
+            --primary-light: #E8F0FE;
+            --dark: #202224;
+            --grey: #6A7178;
+            --bg: #F5F6FA;
+            --white: #fff;
+            --danger: #EF3826;
+            --danger-light: #FEECEB;
+            --success: #00B69B;
+            --success-light: #E6F7F5;
+            --warning: #FFB536;
+            --warning-light: #FFF8E7;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background: var(--bg);
+            display: flex;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        a {
+            text-decoration: none;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 260px;
+            background: var(--white);
+            padding: 20px;
+            height: 100vh;
+            position: fixed;
+            border-right: 1px solid #e0e0e0;
+            z-index: 1000;
+            transition: 0.3s;
+            left: 0;
+            top: 0;
+            overflow-y: auto;
+        }
+
+        .logo-img {
+            max-width: 150px;
+            display: block;
+            margin: 0 auto 30px;
+        }
+
+        .menu-cat {
+            font-size: 12px;
+            color: var(--grey);
+            margin: 15px 0 10px 10px;
+            font-weight: 700;
+        }
+
+        .menu-link {
+            display: flex;
+            align-items: center;
+            color: var(--grey);
+            padding: 12px 15px;
+            border-radius: 8px;
+            margin-bottom: 5px;
+            font-size: 14px;
+            transition: 0.3s;
+            font-weight: 500;
+            cursor: pointer;
+        }
+
+        .menu-link i {
+            font-size: 20px;
+            margin-right: 10px;
+        }
+
+        .menu-link:hover,
+        .menu-link.active {
+            background: var(--primary);
+            color: var(--white);
+            box-shadow: 0 4px 10px rgba(72, 128, 255, 0.2);
+        }
+
+        .logout {
+            color: var(--danger);
+            background: var(--danger-light);
+            margin-top: 15px;
+            justify-content: center;
+            font-weight: 600;
+        }
+
+        .logout:hover {
+            background: var(--danger);
+            color: var(--white);
+        }
+
+        /* Main Content */
+        .main-content {
+            margin-left: 260px;
+            flex: 1;
+            padding: 30px;
+            width: calc(100% - 260px);
+            transition: 0.3s;
+            height: 100vh;
+            overflow-y: auto;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .menu-toggle {
+            display: none;
+            font-size: 28px;
+            cursor: pointer;
+            margin-right: 15px;
+        }
+
+        /* Table Styles */
+        .table-box {
+            background: var(--white);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+        }
+
+        .table-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .action-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .search-input {
+            padding: 10px 15px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            outline: none;
+            width: 250px;
+            font-size: 13px;
+        }
+
+        .add-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            transition: 0.2s;
+        }
+
+        .add-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(72, 128, 255, 0.3);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+
+        th {
+            text-align: left;
+            padding: 15px;
+            color: var(--grey);
+            border-bottom: 1px solid #eee;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        td {
+            padding: 15px;
+            border-bottom: 1px solid #f5f5f5;
+            vertical-align: middle;
+            color: var(--dark);
+            font-size: 14px;
+        }
+
+        tbody tr:hover {
+            background-color: #f8f9fa;
+        }
+
+        .table-banner-img {
+            width: 100px;
+            height: 35px;
+            object-fit: cover;
+            border-radius: 4px;
+            border: 1px solid #eee;
+        }
+
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            display: inline-block;
+        }
+
+        .st-active {
+            background: var(--success-light);
+            color: var(--success);
+        }
+
+        .st-inactive {
+            background: var(--danger-light);
+            color: var(--danger);
+        }
+
+        .action-btns {
+            display: flex;
+            gap: 8px;
+        }
+
+        .icon-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            transition: 0.2s;
+        }
+
+        .edit-btn {
+            background: var(--warning-light);
+            color: var(--warning);
+        }
+
+        .del-btn {
+            background: var(--danger-light);
+            color: var(--danger);
+        }
+
+        /* Banner Upload Box */
+        .banner-upload-box {
+            border: 2px dashed #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            background: #fafafa;
+            position: relative;
+            cursor: pointer;
+            min-height: 120px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .banner-upload-box:hover {
+            border-color: var(--primary);
+            background: var(--primary-light);
+        }
+
+        .banner-preview {
+            width: 100%;
+            height: 120px;
+            object-fit: cover;
+            border-radius: 8px;
+            margin-top: 10px;
+            display: none;
+        }
+
+        /* Modal Base */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            backdrop-filter: blur(2px);
+        }
+
+        .modal {
+            background: white;
+            width: 600px;
+            max-width: 90%;
+            border-radius: 16px;
+            padding: 25px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+            animation: slideDown 0.3s ease;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        @keyframes slideDown {
+            from {
+                transform: translateY(-20px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 15px;
+        }
+
+        .modal-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--dark);
+        }
+
+        .close-modal {
+            cursor: pointer;
+            font-size: 24px;
+            color: var(--grey);
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 13px;
+            color: var(--dark);
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            outline: none;
+            font-size: 14px;
+        }
+
+        .form-section-title {
+            font-size: 12px;
+            text-transform: uppercase;
+            color: var(--primary);
+            font-weight: 700;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #f0f0f0;
+            padding-bottom: 5px;
+        }
+
+        .form-section-title:first-of-type {
+            margin-top: 0;
+        }
+
+        .modal-footer {
+            text-align: right;
+            margin-top: 20px;
+        }
+
+        .cancel-btn {
+            background: white;
+            border: 1px solid #eee;
+            color: var(--grey);
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+
+        .save-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        /* Cropper */
+        .image-cropper-modal {
+            position: fixed;
+            inset: 0;
+            z-index: 11000;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.85);
+        }
+
+        .cropper-content {
+            background: #fff;
+            padding: 20px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 800px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .crop-container {
+            height: 400px;
+            width: 100%;
+            background: #000;
+            overflow: hidden;
+        }
+
+        .cropper-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        /* Details Modal */
+        .detail-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .detail-banner {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            border: 1px solid #eee;
+        }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid #f9f9f9;
+            font-size: 14px;
+        }
+
+        .detail-label {
+            color: var(--grey);
+            font-weight: 500;
+        }
+
+        .detail-val {
+            color: var(--dark);
+            font-weight: 600;
+        }
+
+        @media (max-width: 991px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+
+            .sidebar.active {
+                transform: translateX(0);
+            }
+
+            .main-content {
+                margin-left: 0;
+                width: 100%;
+                padding: 20px;
+            }
+
+            .menu-toggle {
+                display: block;
+            }
+
+            table,
+            thead,
+            tbody,
+            th,
+            td,
+            tr {
+                display: block;
+                width: 100%;
+            }
+
+            thead {
+                display: none;
+            }
+
+            tr {
+                background: #fff;
+                margin-bottom: 20px;
+                border: 1px solid #eee;
+                border-radius: 12px;
+                padding: 20px;
+                position: relative;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+            }
+
+            td {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                text-align: right;
+                border-bottom: 1px solid #f9f9f9;
+                padding: 12px 0;
+            }
+
+            td:last-child {
+                border-bottom: none;
+                padding-bottom: 0;
+            }
+
+            td::before {
+                content: attr(data-label);
+                font-weight: 600;
+                color: var(--grey);
+                font-size: 13px;
+                text-align: left;
+            }
+
+            td[data-label="Banner"] {
+                justify-content: flex-end;
+            }
+
+            td[data-label="Action"] {
+                position: absolute;
+                top: 15px;
+                right: 15px;
+                padding: 0;
+                border: none;
+                width: auto;
+                z-index: 5;
+            }
+
+            td[data-label="Action"]::before {
+                display: none;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="cropperModal" class="image-cropper-modal">
+        <div class="cropper-content">
+            <h3 style="margin: 0; color: var(--dark);">Crop Banner (2:1 Ratio)</h3>
+            <div class="crop-container">
+                <img id="cropImageSrc" src="">
+            </div>
+            <div class="cropper-actions">
+                <button class="cancel-btn" onclick="closeCropper()">Cancel</button>
+                <button class="save-btn" onclick="confirmCrop()">Crop & Save</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="detailsModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">Sale Details</h3>
+                <i class='bx bx-x close-modal' onclick="closeModal('detailsModal')"></i>
+            </div>
+            <div id="detailsContent"></div>
+            <div class="modal-footer">
+                <button class="save-btn" onclick="closeModal('detailsModal')">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="saleFormModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title" id="formTitle">Create Sale</h3>
+                <i class='bx bx-x close-modal' onclick="closeModal('saleFormModal')"></i>
+            </div>
+            <div class="modal-body">
+                <div class="form-section-title">Sale Info</div>
+                <div class="form-group">
+                    <label class="form-label">Sale Name <span style="color:red">*</span></label>
+                    <input type="text" id="s-name" class="form-input" placeholder="e.g. Monsoon Mega Sale">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Banner Image <span style="color:red">*</span></label>
+                    <div class="banner-upload-box" onclick="document.getElementById('bannerInput').click()">
+                        <div id="uploadText">
+                            <i class='bx bx-image-add' style="font-size: 30px; color: var(--grey);"></i>
+                            <p style="font-size: 12px; color: var(--grey); margin-top: 5px;">Click to upload (Rec:
+                                1200x600)</p>
+                        </div>
+                        <img id="bannerPreview" class="banner-preview">
+                        <input type="file" id="bannerInput" hidden accept="image/*" onchange="handleFileSelect(this)">
+                    </div>
+                </div>
+
+                <div class="form-section-title">Discount Rules</div>
+                <div class="form-grid">
+                    <div>
+                        <label class="form-label">Offer Type</label>
+                        <select id="s-offer-type" class="form-input">
+                            <option value="flat">Flat Discount</option>
+                            <option value="upto">Min Discount</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="form-label">Discount Unit</label>
+                        <select id="s-unit" class="form-input">
+                            <option value="percent">Percentage (%)</option>
+                            <option value="amount">Fixed Amount (₹)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Value <span style="color:red">*</span></label>
+                    <input type="number" id="s-value" class="form-input" placeholder="e.g. 50 or 500">
+                </div>
+
+                <div class="form-section-title">Targeting</div>
+                <div class="form-group">
+                    <label class="form-label">Applies To</label>
+                    <select id="s-scope" class="form-input" onchange="toggleScopeUI()">
+                        <option value="all">All Products</option>
+                        <option value="category">Specific Category</option>
+                        <option value="team">Specific Team</option>
+                        <option value="product">Specific Product</option>
+                    </select>
+                </div>
+                <div class="form-group hidden" id="target-wrapper">
+                    <label class="form-label" id="target-label">Select Items <span style="color:red">*</span></label>
+                    <select id="s-targets" class="form-input" multiple style="height: 100px; padding: 5px;"></select>
+                    <small style="font-size: 11px; color: var(--grey)">Hold Ctrl/Cmd to select multiple.</small>
+                </div>
+
+                <div class="form-section-title">Schedule</div>
+                <div class="form-grid">
+                    <div>
+                        <label class="form-label">Start Date <span style="color:red">*</span></label>
+                        <input type="date" id="s-start" class="form-input">
+                    </div>
+                    <div>
+                        <label class="form-label">End Date <span style="color:red">*</span></label>
+                        <input type="date" id="s-end" class="form-input">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Status</label>
+                    <select id="s-status" class="form-input">
+                        <option value="true">Active</option>
+                        <option value="false">Inactive</option>
+                    </select>
+                </div>
+
+            </div>
+            <div class="modal-footer">
+                <button class="cancel-btn" onclick="closeModal('saleFormModal')">Cancel</button>
+                <button class="save-btn" onclick="saveSale()">Save Sale</button>
+            </div>
+        </div>
+    </div>
+
+    <aside class="sidebar" id="sidebar">
+        <img src="../Images/Logo text.png" class="logo-img" alt="Logo">
+        <p class="menu-cat">Main menu</p>
+        <a href="dashboard.html" class="menu-link"><i class='bx bxs-dashboard'></i> Dashboard</a>
+        <a href="orders.html" class="menu-link"><i class='bx bx-cart'></i> Orders</a>
+        <a href="customers.html" class="menu-link"><i class='bx bx-user'></i> Customers</a>
+        <a href="coupons.html" class="menu-link"><i class='bx bx-purchase-tag'></i> Coupons</a>
+        <a href="sales.html" class="menu-link active"><i class='bx bxs-offer'></i> Sales</a>
+        <a href="categories.html" class="menu-link"><i class='bx bx-category'></i> Categories</a>
+        <a href="transactions.html" class="menu-link"><i class='bx bx-credit-card'></i> Transactions</a>
+        <a href="teams.html" class="menu-link"><i class='bx bx-trophy'></i> Teams</a>
+        <p class="menu-cat">Product</p>
+        <a href="add-product.html" class="menu-link"><i class='bx bx-plus-circle'></i> Add Product</a>
+        <a href="product-list.html" class="menu-link"><i class='bx bx-list-ul'></i> Product List</a>
+        <a href="reviews.html" class="menu-link"><i class='bx bx-message-square-detail'></i> Reviews</a>
+        <p class="menu-cat">Admin</p>
+        <a href="admin.html" class="menu-link"><i class='bx bx-user-circle'></i> Admin Role</a>
+        <a onclick="logoutUser()" class="menu-link logout"><i class='bx bx-log-out'></i> Log Out</a>
+    </aside>
+
+    <main class="main-content">
+        <div class="header">
+            <div style="display:flex; align-items:center;">
+                <i class='bx bx-menu menu-toggle' onclick="toggleSidebar()"></i>
+                <h2>Sales & Offers</h2>
+            </div>
+        </div>
+
+        <div class="table-box">
+            <div class="table-head">
+                <h3>Active Sales</h3>
+                <div class="action-group">
+                    <input type="text" class="search-input" placeholder="Search sale name..."
+                        onkeyup="filterTable(this.value)">
+                    <button class="add-btn" onclick="openFormModal()" id="addSaleBtn">
+                        <i class='bx bx-plus'></i> New Sale
+                    </button>
+                </div>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Banner</th>
+                        <th>Sale Name</th>
+                        <th>Offer</th>
+                        <th>Target</th>
+                        <th>Duration</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="saleTableBody">
+                    <tr>
+                        <td colspan="7" style="text-align:center; padding:30px;">Loading data...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+    <script>
+        // --- 1. SETUP ---
+        window.onpageshow = function (event) { if (event.persisted) window.location.reload(); };
+        function toggleSidebar() { document.getElementById('sidebar').classList.toggle('active'); }
+
+        let allSales = [];
+        let isEditing = false;
+        let editingId = null;
+        let currentCropper = null;
+        let bannerBlob = null;
+        let currentUserRole = '';
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            await checkAuth();
+            loadSales();
+            setupDateLogic();
+        });
+
+        async function checkAuth() {
+            try {
+                const res = await fetch('/api/auth/verify-admin');
+                const data = await res.json();
+                if (!res.ok || !data.success) { window.location.replace('admin-login.html'); return; }
+                currentUserRole = data.user.role;
+                if (currentUserRole === 'viewer') document.getElementById('addSaleBtn').style.display = 'none';
+            } catch (err) { window.location.replace('admin-login.html'); }
+        }
+
+        // --- 2. CROPPER LOGIC ---
+        function handleFileSelect(input) {
+            if (input.files && input.files[0]) {
+                const file = input.files[0];
+                if (!file.type.startsWith('image/')) return Swal.fire('Error', 'Select an image file.', 'error');
+
+                const reader = new FileReader();
+                reader.onload = (e) => openCropper(e.target.result);
+                reader.readAsDataURL(file);
+                input.value = '';
+            }
+        }
+
+        function openCropper(imageSrc) {
+            const imageElement = document.getElementById('cropImageSrc');
+            document.getElementById('cropperModal').style.display = 'flex';
+            if (currentCropper) { currentCropper.destroy(); }
+            currentCropper = new Cropper(imageElement, {
+                viewMode: 1,
+                aspectRatio: 2 / 1, // 2:1 Ratio
+                autoCropArea: 1
+            });
+            // Important: Replace src AFTER init to avoid bugs
+            currentCropper.replace(imageSrc);
+        }
+
+        function closeCropper() {
+            document.getElementById('cropperModal').style.display = 'none';
+            if (currentCropper) { currentCropper.destroy(); currentCropper = null; }
+        }
+
+        function confirmCrop() {
+            if (!currentCropper) return;
+            const canvas = currentCropper.getCroppedCanvas({ width: 1200, height: 600 });
+            canvas.toBlob((blob) => {
+                bannerBlob = blob;
+                const url = URL.createObjectURL(blob);
+                const preview = document.getElementById('bannerPreview');
+                const text = document.getElementById('uploadText');
+                preview.src = url;
+                preview.style.display = 'block';
+                text.style.display = 'none';
+                closeCropper();
+            }, 'image/webp', 0.85);
+        }
+
+        // --- 3. CRUD & TABLE ---
+        async function loadSales() {
+            try {
+                const res = await fetch('/api/sales');
+                const result = await res.json();
+                if (result.success) {
+                    allSales = result.data;
+                    renderTable(allSales);
+                }
+            } catch (err) { console.error(err); }
+        }
+
+        function renderTable(sales) {
+            const tbody = document.getElementById('saleTableBody');
+            tbody.innerHTML = '';
+            if (!sales.length) { tbody.innerHTML = '<tr><td colspan="7" class="text-center p-3">No sales found</td></tr>'; return; }
+
+            sales.forEach(sale => {
+                const isActive = sale.isActive && new Date(sale.endDate) > new Date();
+                const statusClass = isActive ? 'st-active' : 'st-inactive';
+                const statusText = isActive ? 'Active' : 'Expired/Inactive';
+
+                const typeText = sale.offerType === 'flat' ? 'Flat' : 'Min';
+                let offerDisplay = sale.discountUnit === 'amount' ? `${typeText} ₹${sale.discountValue}` : `${typeText} ${sale.discountValue}%`;
+
+                // Safe date formatting
+                const sDate = new Date(sale.startDate);
+                const eDate = new Date(sale.endDate);
+                const dateRange = !isNaN(sDate) && !isNaN(eDate) ? `${sDate.toLocaleDateString()} - ${eDate.toLocaleDateString()}` : 'Invalid Date';
+
+                const dataStr = encodeURIComponent(JSON.stringify(sale));
+
+                let actions = '';
+                if (currentUserRole !== 'viewer') {
+                    actions = `
+                        <button class="icon-btn edit-btn" onclick="openEditModal('${dataStr}', event)"><i class='bx bx-edit'></i></button>
+                        <button class="icon-btn del-btn" onclick="deleteSale('${sale._id}', event)"><i class='bx bx-trash'></i></button>
+                    `;
+                } else {
+                    actions = `<span style="font-size:12px; color:var(--grey);">View Only</span>`;
+                }
+
+                const tr = document.createElement('tr');
+                tr.onclick = () => openDetails(dataStr);
+                tr.innerHTML = `
+                    <td data-label="Banner"><img src="${sale.bannerUrl || 'https://placehold.co/120x40'}" class="table-banner-img"></td>
+                    <td data-label="Sale Name" style="font-weight:600">${sale.name}</td>
+                    <td data-label="Offer" style="color:var(--primary); font-weight:600">${offerDisplay}</td>
+                    <td data-label="Target" style="text-transform:capitalize">${sale.appliesTo}</td>
+                    <td data-label="Duration" style="font-size:12px;">${dateRange}</td>
+                    <td data-label="Status"><span class="status-badge ${statusClass}">${statusText}</span></td>
+                    <td data-label="Action"><div class="action-btns">${actions}</div></td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function filterTable(query) {
+            const lowerQ = query.toLowerCase();
+            const filtered = allSales.filter(s => s.name.toLowerCase().includes(lowerQ));
+            renderTable(filtered);
+        }
+
+        // --- 4. FORM HANDLING ---
+        function openFormModal() {
+            resetForm();
+            document.getElementById('formTitle').innerText = "Create Sale";
+            document.getElementById('saleFormModal').style.display = 'flex';
+        }
+
+        // --- FIXED OPEN EDIT MODAL ---
+        async function openEditModal(dataStr, e) {
+            e.stopPropagation();
+            try {
+                const sale = JSON.parse(decodeURIComponent(dataStr));
+                resetForm();
+
+                isEditing = true;
+                editingId = sale._id;
+                document.getElementById('formTitle').innerText = "Edit Sale";
+
+                // 1. Populate Basic Fields
+                document.getElementById('s-name').value = sale.name;
+                document.getElementById('s-offer-type').value = sale.offerType;
+                document.getElementById('s-unit').value = sale.discountUnit;
+                document.getElementById('s-value').value = sale.discountValue;
+                document.getElementById('s-scope').value = sale.appliesTo;
+                document.getElementById('s-status').value = sale.isActive;
+
+                // 2. Date Logic (Fixed)
+                if (sale.startDate && sale.endDate) {
+                    const sDateObj = new Date(sale.startDate);
+                    const eDateObj = new Date(sale.endDate);
+
+                    if (!isNaN(sDateObj) && !isNaN(eDateObj)) {
+                        const sDate = sDateObj.toISOString().split('T')[0];
+                        const eDate = eDateObj.toISOString().split('T')[0];
+                        const today = new Date().toISOString().split('T')[0];
+
+                        const startInput = document.getElementById('s-start');
+                        const endInput = document.getElementById('s-end');
+
+                        startInput.value = sDate;
+                        // FIX: Allow picking "Today" even if the original start date was in the future
+                        startInput.min = today;
+
+                        endInput.value = eDate;
+                        endInput.min = sDate; // End date must be after start date
+                    }
+                }
+
+                // 3. Banner
+                if (sale.bannerUrl) {
+                    document.getElementById('bannerPreview').src = sale.bannerUrl;
+                    document.getElementById('bannerPreview').style.display = 'block';
+                    document.getElementById('uploadText').style.display = 'none';
+                }
+
+                // 4. Async Targeting
+                await toggleScopeUI();
+
+                const select = document.getElementById('s-targets');
+                const targets = sale.targetIds || [];
+
+                Array.from(select.options).forEach(opt => {
+                    if (targets.includes(opt.value)) opt.selected = true;
+                });
+
+                document.getElementById('saleFormModal').style.display = 'flex';
+
+            } catch (err) {
+                console.error("Edit Error:", err);
+                Swal.fire('Error', 'Could not load sale details.', 'error');
+            }
+        }
+
+        function resetForm() {
+            isEditing = false; editingId = null; bannerBlob = null;
+
+            document.getElementById('s-name').value = '';
+            document.getElementById('s-value').value = '';
+            document.getElementById('s-scope').value = 'all';
+            document.getElementById('s-offer-type').value = 'flat';
+            document.getElementById('s-unit').value = 'percent';
+            document.getElementById('s-status').value = 'true';
+
+            document.getElementById('bannerPreview').style.display = 'none';
+            document.getElementById('uploadText').style.display = 'block';
+            document.getElementById('bannerInput').value = '';
+
+            toggleScopeUI();
+
+            const today = new Date().toISOString().split('T')[0];
+            const sInput = document.getElementById('s-start');
+            const eInput = document.getElementById('s-end');
+
+            sInput.value = today;
+            sInput.min = today;
+            eInput.value = '';
+            eInput.min = today;
+        }
+
+        async function toggleScopeUI() {
+            const scope = document.getElementById('s-scope').value;
+            const wrap = document.getElementById('target-wrapper');
+            const select = document.getElementById('s-targets');
+
+            if (scope === 'all') { wrap.classList.add('hidden'); return; }
+
+            wrap.classList.remove('hidden');
+            select.innerHTML = '<option>Loading...</option>';
+
+            let url = '';
+            if (scope === 'category') url = '/api/categories';
+            if (scope === 'team') url = '/api/teams';
+            if (scope === 'product') url = '/api/products';
+
+            try {
+                const res = await fetch(url);
+                let data = await res.json();
+                if (data.data) data = data.data; // normalize structure
+
+                select.innerHTML = '';
+                if (!data || data.length === 0) {
+                    select.innerHTML = '<option disabled>No items found</option>';
+                    return;
+                }
+
+                data.forEach(item => {
+                    const opt = document.createElement('option');
+                    opt.value = scope === 'product' ? item._id : (item.name || item.teamName);
+                    opt.text = item.name || item.teamName || item.title;
+                    select.appendChild(opt);
+                });
+            } catch (err) {
+                console.error("Scope Load Error:", err);
+                select.innerHTML = '<option disabled>Error loading</option>';
+            }
+        }
+
+        async function saveSale() {
+            if (currentUserRole === 'viewer') return;
+
+            const name = document.getElementById('s-name').value.trim();
+            const val = document.getElementById('s-value').value;
+            const start = document.getElementById('s-start').value;
+            const end = document.getElementById('s-end').value;
+            const scope = document.getElementById('s-scope').value;
+            const targets = Array.from(document.getElementById('s-targets').selectedOptions).map(o => o.value);
+
+            // Validation
+            if (!name || !val || !start || !end) return Swal.fire('Error', 'Please fill required fields', 'warning');
+            if (!isEditing && !bannerBlob) return Swal.fire('Error', 'Please upload a banner', 'warning');
+            if (parseFloat(val) <= 0) return Swal.fire('Error', 'Discount must be positive', 'warning');
+            if (scope !== 'all' && targets.length === 0) return Swal.fire('Error', 'Please select at least one item', 'warning');
+            if (new Date(start) > new Date(end)) return Swal.fire('Invalid Date', 'End Date must be after Start Date', 'warning');
+
+            const formData = new FormData();
+            formData.append('name', name);
+            formData.append('offerType', document.getElementById('s-offer-type').value);
+            formData.append('discountUnit', document.getElementById('s-unit').value);
+            formData.append('discountValue', val);
+            formData.append('appliesTo', scope);
+            formData.append('startDate', start);
+            formData.append('endDate', end);
+            formData.append('isActive', document.getElementById('s-status').value);
+            formData.append('targetIds', JSON.stringify(targets));
+
+            if (bannerBlob) formData.append('saleBanner', bannerBlob, 'banner.webp');
+
+            const url = isEditing ? `/api/sales/${editingId}` : '/api/sales';
+            const method = isEditing ? 'PUT' : 'POST';
+
+            try {
+                Swal.fire({ title: 'Saving...', didOpen: () => Swal.showLoading() });
+                const res = await fetch(url, { method: method, body: formData });
+                const data = await res.json();
+
+                if (data.success) {
+                    Swal.fire('Success', 'Sale Saved', 'success');
+                    closeModal('saleFormModal');
+                    loadSales();
+                } else { Swal.fire('Error', data.message || 'Unknown error', 'error'); }
+            } catch (e) { Swal.fire('Error', 'Connection failed', 'error'); }
+        }
+
+        async function deleteSale(id, e) {
+            e.stopPropagation();
+            if (currentUserRole === 'viewer') return;
+            const confirm = await Swal.fire({ title: 'Delete?', icon: 'warning', showCancelButton: true, confirmButtonColor: '#EF3826' });
+            if (confirm.isConfirmed) {
+                await fetch(`/api/sales/${id}`, { method: 'DELETE' });
+                loadSales();
+                Swal.fire('Deleted', '', 'success');
+            }
+        }
+
+        // --- UTILS ---
+        function setupDateLogic() {
+            const s = document.getElementById('s-start');
+            const e = document.getElementById('s-end');
+            const today = new Date().toISOString().split('T')[0];
+            s.min = today;
+            s.addEventListener('change', () => { e.min = s.value; if (e.value < s.value) e.value = ''; });
+        }
+
+        function openDetails(dataStr) {
+            try {
+                const sale = JSON.parse(decodeURIComponent(dataStr));
+                const content = document.getElementById('detailsContent');
+
+                const typeText = sale.offerType === 'flat' ? 'Flat' : 'Min';
+                const unitText = sale.discountUnit === 'amount' ? `₹${sale.discountValue}` : `${sale.discountValue}%`;
+                const endText = new Date(sale.endDate).toDateString();
+
+                content.innerHTML = `
+                    <img src="${sale.bannerUrl}" class="detail-banner">
+                    <div class="detail-header"><h3>${sale.name}</h3></div>
+                    <div class="detail-row"><span class="detail-label">Offer</span><span class="detail-val" style="color:var(--primary)">${typeText} ${unitText} Off</span></div>
+                    <div class="detail-row"><span class="detail-label">Target</span><span class="detail-val" style="text-transform:capitalize">${sale.appliesTo}</span></div>
+                    <div class="detail-row"><span class="detail-label">Start</span><span class="detail-val">${new Date(sale.startDate).toDateString()}</span></div>
+                    <div class="detail-row"><span class="detail-label">End</span><span class="detail-val">${endText}</span></div>
+                `;
+                document.getElementById('detailsModal').style.display = 'flex';
+            } catch (e) { console.error(e); }
+        }
+
+        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+        window.onclick = function (e) { if (e.target.classList.contains('modal-overlay')) e.target.style.display = 'none'; }
+        async function logoutUser() { await fetch('/api/auth/logout-admin', { method: 'POST' }); window.location.replace('admin-login.html'); }
+    </script>
+</body>
+
+</html>

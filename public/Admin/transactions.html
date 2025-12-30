@@ -1,0 +1,974 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tokyo Admin - Transactions</title>
+    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        /* Base CSS */
+        :root {
+            --primary: #4880FF;
+            --primary-light: #E8F0FE;
+            --dark: #202224;
+            --grey: #6A7178;
+            --bg: #F5F6FA;
+            --white: #fff;
+            --danger: #EF3826;
+            --danger-light: #FEECEB;
+            --success: #00B69B;
+            --success-light: #E6F7F5;
+            --warning: #FFB536;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background: var(--bg);
+            display: flex;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        a {
+            text-decoration: none;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 260px;
+            background: var(--white);
+            padding: 20px;
+            height: 100vh;
+            position: fixed;
+            border-right: 1px solid #e0e0e0;
+            z-index: 1000;
+            transition: 0.3s;
+            left: 0;
+            top: 0;
+            overflow-y: auto;
+        }
+
+        .logo-img {
+            max-width: 150px;
+            display: block;
+            margin: 0 auto 30px;
+        }
+
+        .menu-cat {
+            font-size: 12px;
+            color: var(--grey);
+            margin: 15px 0 10px 10px;
+            font-weight: 700;
+        }
+
+        .menu-link {
+            display: flex;
+            align-items: center;
+            color: var(--grey);
+            padding: 12px 15px;
+            border-radius: 8px;
+            margin-bottom: 5px;
+            font-size: 14px;
+            transition: 0.3s;
+            font-weight: 500;
+        }
+
+        .menu-link i {
+            font-size: 20px;
+            margin-right: 10px;
+        }
+
+        .menu-link:hover,
+        .menu-link.active {
+            background: var(--primary);
+            color: var(--white);
+            box-shadow: 0 4px 10px rgba(72, 128, 255, 0.2);
+        }
+
+        .logout {
+            color: var(--danger);
+            background: var(--danger-light);
+            margin-top: 15px;
+            justify-content: center;
+            font-weight: 600;
+        }
+
+        .logout:hover {
+            background: var(--danger);
+            color: var(--white);
+        }
+
+        /* Main Content */
+        .main-content {
+            margin-left: 260px;
+            flex: 1;
+            padding: 30px;
+            width: calc(100% - 260px);
+            transition: 0.3s;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .menu-toggle {
+            display: none;
+            font-size: 28px;
+            cursor: pointer;
+            margin-right: 15px;
+        }
+
+        /* Table Box */
+        .table-box {
+            background: var(--white);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+        }
+
+        .table-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .action-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .search-input,
+        .sort-select {
+            padding: 10px 15px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            outline: none;
+            font-size: 13px;
+            color: var(--dark);
+        }
+
+        .export-btn {
+            background: var(--white);
+            color: var(--dark);
+            border: 1px solid #e0e0e0;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            transition: 0.2s;
+        }
+
+        .export-btn:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        /* Table Styles */
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+
+        th {
+            text-align: left;
+            padding: 15px;
+            color: var(--grey);
+            border-bottom: 1px solid #eee;
+        }
+
+        td {
+            padding: 15px;
+            border-bottom: 1px solid #f5f5f5;
+            vertical-align: middle;
+            color: var(--dark);
+            font-size: 14px;
+        }
+
+        tbody tr {
+            transition: background 0.2s;
+            cursor: pointer;
+        }
+
+        tbody tr:hover {
+            background-color: #f8f9fa;
+        }
+
+        /* Wrappers for cell content to fix mobile flex alignment */
+        .content-wrap {
+            text-align: left;
+        }
+
+        /* Default desktop alignment */
+        .icon-text-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Status Badges */
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            display: inline-block;
+        }
+
+        .st-success {
+            background: var(--success-light);
+            color: var(--success);
+        }
+
+        .st-pending {
+            background: var(--warning-light);
+            color: var(--warning);
+        }
+
+        .st-failed {
+            background: var(--danger-light);
+            color: var(--danger);
+        }
+
+        /* --- MODAL STYLES --- */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            backdrop-filter: blur(2px);
+        }
+
+        .modal {
+            background: white;
+            width: 450px;
+            max-width: 90%;
+            border-radius: 16px;
+            padding: 25px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+            animation: slideDown 0.3s ease;
+        }
+
+        @keyframes slideDown {
+            from {
+                transform: translateY(-20px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 15px;
+        }
+
+        .modal-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--dark);
+        }
+
+        .close-modal {
+            cursor: pointer;
+            font-size: 24px;
+            color: var(--grey);
+        }
+
+        /* Receipt Style in Modal */
+        .receipt-header {
+            text-align: center;
+            margin-bottom: 25px;
+            background: #f9f9f9;
+            padding: 20px;
+            border-radius: 12px;
+        }
+
+        .receipt-amount {
+            font-size: 32px;
+            font-weight: 800;
+            color: var(--dark);
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .receipt-status {
+            font-size: 13px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px dashed #eee;
+            font-size: 14px;
+        }
+
+        .detail-row:last-child {
+            border-bottom: none;
+        }
+
+        .detail-label {
+            color: var(--grey);
+            font-weight: 500;
+        }
+
+        .detail-val {
+            color: var(--dark);
+            font-weight: 600;
+            text-align: right;
+        }
+
+        .modal-footer {
+            margin-top: 20px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .modal-btn {
+            flex: 1;
+            padding: 10px;
+            border-radius: 8px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .btn-close {
+            background: #eee;
+            color: var(--dark);
+        }
+
+        .btn-download {
+            background: var(--primary);
+            color: white;
+        }
+
+        /* --- MOBILE RESPONSIVE STYLES --- */
+        @media (max-width: 991px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+
+            .sidebar.active {
+                transform: translateX(0);
+            }
+
+            .main-content {
+                margin-left: 0;
+                width: 100%;
+                padding: 20px;
+            }
+
+            .menu-toggle {
+                display: block;
+            }
+
+            .table-head {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .action-group {
+                width: 100%;
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 10px;
+            }
+
+            .search-input {
+                grid-column: span 2;
+                width: 100%;
+            }
+
+            /* Mobile Table to Card Transformation */
+            table,
+            thead,
+            tbody,
+            th,
+            td,
+            tr {
+                display: block;
+                width: 100%;
+            }
+
+            thead {
+                display: none;
+            }
+
+            tr {
+                background: #fff;
+                margin-bottom: 20px;
+                border: 1px solid #eee;
+                border-radius: 12px;
+                padding: 20px;
+                position: relative;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+            }
+
+            td {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                text-align: right;
+                border-bottom: 1px solid #f9f9f9;
+                padding: 12px 0;
+            }
+
+            td:last-child {
+                border-bottom: none;
+                padding-bottom: 0;
+            }
+
+            td::before {
+                content: attr(data-label);
+                font-weight: 600;
+                color: var(--grey);
+                font-size: 13px;
+                text-align: left;
+            }
+
+            /* Transaction ID Row (Hero) */
+            td[data-label="Trx ID"] {
+                font-weight: 700;
+                color: var(--primary);
+                font-size: 16px;
+                border-bottom: 1px solid #eee;
+                margin-bottom: 10px;
+                padding-bottom: 15px;
+                justify-content: flex-start;
+            }
+
+            td[data-label="Trx ID"]::before {
+                display: none;
+            }
+
+            /* Fix Alignment for wrapped content (Date and Method) */
+            .content-wrap,
+            .icon-text-wrap {
+                text-align: right;
+                justify-content: flex-end;
+                /* Pushes flex items (icon+text) to the right */
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="modal-overlay" id="trxModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">Transaction Receipt</h3>
+                <i class='bx bx-x close-modal' onclick="closeModal()"></i>
+            </div>
+            <div id="modalContent"></div>
+            <div class="modal-footer">
+                <button class="modal-btn btn-close" onclick="closeModal()">Close</button>
+                <button class="modal-btn btn-download" onclick="downloadPDF()">
+                    <i class='bx bx-download'></i> Download PDF
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <aside class="sidebar" id="sidebar">
+        <img src="../Images/Logo text.png" class="logo-img">
+        <p class="menu-cat">Main menu</p>
+        <a href="dashboard.html" class="menu-link"><i class='bx bxs-dashboard'></i> Dashboard</a>
+        <a href="orders.html" class="menu-link"><i class='bx bx-cart'></i> Orders</a>
+        <a href="customers.html" class="menu-link"><i class='bx bx-user'></i> Customers</a>
+        <a href="coupons.html" class="menu-link"><i class='bx bx-purchase-tag'></i> Coupons</a>
+        <a href="sales.html" class="menu-link"><i class='bx bxs-offer'></i> Sales</a>
+        <a href="categories.html" class="menu-link"><i class='bx bx-category'></i> Categories</a>
+        <a href="transactions.html" class="menu-link active"><i class='bx bx-credit-card'></i> Transactions</a>
+        <a href="teams.html" class="menu-link"><i class='bx bx-trophy'></i> Teams</a>
+        <p class="menu-cat">Product</p>
+        <a href="add-product.html" class="menu-link"><i class='bx bx-plus-circle'></i> Add Product</a>
+        <a href="product-list.html" class="menu-link"><i class='bx bx-list-ul'></i> Product List</a>
+        <a href="reviews.html" class="menu-link"><i class='bx bx-message-square-detail'></i> Reviews</a>
+        <p class="menu-cat">Admin</p>
+        <a href="admin.html" class="menu-link"><i class='bx bx-user-circle'></i> Admin Role</a>
+        <a href="#" class="menu-link logout"><i class='bx bx-log-out'></i> Log Out</a>
+    </aside>
+
+    <main class="main-content">
+        <div class="header">
+            <div style="display:flex; align-items:center;">
+                <i class='bx bx-menu menu-toggle' onclick="toggleSidebar()"></i>
+                <h2>Transactions</h2>
+            </div>
+        </div>
+
+        <div class="table-box">
+            <div class="table-head">
+                <h3>Transaction List</h3>
+                <div class="action-group">
+                    <select class="sort-select" id="dateFilter" onchange="applyFilters()">
+                        <option value="all">Date: All Time</option>
+                        <option value="today">Today</option>
+                        <option value="week">Last 1 Week</option>
+                        <option value="month">Last 1 Month</option>
+                        <option value="6months">Last 6 Months</option>
+                        <option value="year">Last 1 Year</option>
+                    </select>
+
+                    <select class="sort-select" id="typeFilter" onchange="applyFilters()">
+                        <option value="all">Type: All</option>
+                        <option value="Credit">Credit (Income)</option>
+                        <option value="Debit">Debit (Refunds)</option>
+                    </select>
+
+                    <button class="export-btn" onclick="exportData()">
+                        <i class='bx bx-export'></i> Export
+                    </button>
+
+                    <input type="text" id="searchInput" class="search-input" placeholder="Search ID, Name..."
+                        onkeyup="applyFilters()">
+                </div>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Trx ID</th>
+                        <th>Date</th>
+                        <th>Customer</th>
+                        <th>Item</th>
+                        <th>Method</th>
+                        <th>Type</th>
+                        <th>Amount</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="transactionTable">
+                    <tr>
+                        <td colspan="6" style="text-align:center; padding: 20px;">Loading transactions...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+    <script>
+        // --- 1. PREVENT BACK BUTTON CACHING ---
+        window.onpageshow = function (event) {
+            if (event.persisted || (window.performance && window.performance.navigation.type === 2)) {
+                window.location.reload();
+            }
+        };
+
+        function toggleSidebar() { document.getElementById('sidebar').classList.toggle('active'); }
+
+        let allTransactions = [];
+        let filteredTransactions = [];
+
+        // GLOBAL VARIABLE TO STORE CURRENT RECEIPT DATA
+        let currentTrxData = null;
+
+        // --- 2. INITIALIZATION ---
+        document.addEventListener('DOMContentLoaded', async () => {
+            await checkAuth();
+            loadTransactions();
+        });
+
+        // --- 3. AUTH CHECK ---
+        async function checkAuth() {
+            try {
+                const res = await fetch('/api/auth/verify-admin');
+                const data = await res.json();
+                if (!res.ok || !data.success) {
+                    window.location.replace('admin-login.html');
+                }
+            } catch (err) {
+                window.location.replace('admin-login.html');
+            }
+        }
+
+        // --- 4. LOAD DATA (BATCH-AWARE LOGIC) ---
+        async function loadTransactions() {
+            try {
+                const res = await fetch('/api/orders/admin/all');
+                const json = await res.json();
+
+                if (json.success) {
+                    const generatedTrx = [];
+
+                    json.data.forEach(order => {
+                        const isPrepaid = ['Razorpay', 'Wallet', 'Online'].includes(order.paymentMethod);
+                        const isCOD = order.paymentMethod === 'COD';
+
+                        // 1. RECONSTRUCT SHIPPING COST
+                        let historicShipping = order.shippingCost;
+                        if (order.totalAmount === 0 && historicShipping === 0) {
+                            const rawSubtotal = order.items.reduce((sum, i) => sum + (i.price * i.quantity), 0);
+                            if (rawSubtotal < 600) {
+                                const isFreeShipCoupon = (order.couponCode && order.discountAmount === 0);
+                                if (!isFreeShipCoupon) historicShipping = 50;
+                            }
+                        }
+
+                        const hasShipping = historicShipping > 0;
+                        const allItemsDead = order.items.every(i => ['Cancelled', 'Returned'].includes(i.status));
+
+                        let shippingAddedToCredit = false;
+                        let shippingAddedToDebit = false;
+
+                        order.items.forEach((item, index) => {
+                            const itemTotal = item.price * item.quantity;
+                            const itemStatus = item.status || 'Pending';
+                            const idSuffix = `-${(index + 1).toString().padStart(2, '0')}`;
+
+                            // A. CREDIT LOGIC
+                            let showCredit = false;
+                            let creditStatus = 'Pending';
+                            let creditAmount = itemTotal;
+                            let creditLabel = `${item.name} (x${item.quantity})`;
+
+                            const isItemPaidCOD = isCOD && ['Delivered', 'Return Requested', 'Return Rejected', 'Returned', 'Completed'].includes(itemStatus);
+
+                            if (isPrepaid || isItemPaidCOD) {
+                                showCredit = true;
+                                creditStatus = 'Success';
+                            }
+
+                            if (showCredit && hasShipping && !shippingAddedToCredit) {
+                                creditAmount += historicShipping;
+                                creditLabel += ` (+ Shipping)`; // Removed HTML tags for PDF safety
+                                shippingAddedToCredit = true;
+                            }
+
+                            if (showCredit) {
+                                generatedTrx.push({
+                                    trxId: `TRX-${order._id.slice(-6).toUpperCase()}${idSuffix}`,
+                                    type: 'Credit',
+                                    date: new Date(order.createdAt),
+                                    customer: order.shippingAddress.fullName,
+                                    itemDisplay: creditLabel, // Plain text is better for filtering/PDF
+                                    method: order.paymentMethod,
+                                    amount: creditAmount,
+                                    status: creditStatus
+                                });
+                            }
+
+                            // B. DEBIT LOGIC
+                            let showDebit = false;
+                            let debitDate = new Date(order.updatedAt);
+                            let debitAmount = itemTotal;
+                            let debitLabel = `${item.name} (x${item.quantity})`;
+
+                            if (isPrepaid && itemStatus === 'Cancelled') showDebit = true;
+                            if (itemStatus === 'Returned') {
+                                if (isPrepaid || isItemPaidCOD) showDebit = true;
+                            }
+
+                            if (showDebit && allItemsDead && hasShipping && !shippingAddedToDebit) {
+                                debitAmount += historicShipping;
+                                debitLabel += ` (+ Shipping Refund)`;
+                                shippingAddedToDebit = true;
+                            }
+
+                            if (showDebit) {
+                                generatedTrx.push({
+                                    trxId: `REF-${order._id.slice(-6).toUpperCase()}${idSuffix}`,
+                                    type: 'Debit',
+                                    date: debitDate,
+                                    customer: order.shippingAddress.fullName,
+                                    itemDisplay: debitLabel,
+                                    method: 'Wallet',
+                                    amount: debitAmount,
+                                    status: 'Refunded'
+                                });
+                            }
+                        });
+                    });
+
+                    generatedTrx.sort((a, b) => b.date - a.date);
+                    allTransactions = generatedTrx;
+                    filteredTransactions = [...allTransactions];
+                    renderTable(filteredTransactions);
+                }
+            } catch (err) { console.error("Failed to load transactions", err); }
+        }
+
+        // --- 5. RENDER TABLE ---
+        function renderTable(data) {
+            const tbody = document.getElementById('transactionTable');
+            tbody.innerHTML = '';
+
+            if (data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding:20px;">No transactions found.</td></tr>';
+                return;
+            }
+
+            data.forEach(trx => {
+                const dateStr = trx.date.toLocaleDateString();
+                const timeStr = trx.date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                const amountClass = trx.type === 'Credit' ? 'amount-credit' : 'amount-debit';
+                const typeClass = trx.type === 'Credit' ? 'type-credit' : 'type-debit';
+
+                let statusBadge = 'st-pending';
+                if (trx.status === 'Success') statusBadge = 'st-success';
+                if (trx.status === 'Refunded') statusBadge = 'st-failed';
+
+                let methodIcon = 'bx-credit-card';
+                if (trx.method === 'COD') methodIcon = 'bx-money';
+                if (trx.method === 'Wallet') methodIcon = 'bx-wallet';
+                if (trx.method === 'Razorpay' || trx.method === 'Online') methodIcon = 'bx-globe';
+
+                const tr = document.createElement('tr');
+                tr.onclick = () => openDetails(trx); // Pass object reference
+
+                tr.innerHTML = `
+                    <td data-label="Trx ID" style="font-weight:600; color:var(--primary); font-size:13px;">${trx.trxId}</td>
+                    <td data-label="Date">
+                        <div class="content-wrap">
+                            ${dateStr}<br><small style="color:var(--grey)">${timeStr}</small>
+                        </div>
+                    </td>
+                    <td data-label="Customer" style="font-size:13px;">${trx.customer}</td>
+                    <td data-label="Item" style="font-weight:600; font-size:13px; color:#555;">${trx.itemDisplay}</td>
+                    <td data-label="Method">
+                        <div class="icon-text-wrap" style="font-size:13px;">
+                            <i class='bx ${methodIcon}'></i> ${trx.method}
+                        </div>
+                    </td>
+                    <td data-label="Type"><span class="type-badge ${typeClass}">${trx.type}</span></td>
+                    <td data-label="Amount" class="${amountClass}">₹${trx.amount.toFixed(2)}</td>
+                    <td data-label="Status"><span class="status-badge ${statusBadge}">${trx.status}</span></td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function applyFilters() {
+            const dateVal = document.getElementById('dateFilter').value;
+            const typeVal = document.getElementById('typeFilter').value;
+            const searchVal = document.getElementById('searchInput').value.toLowerCase();
+            const now = new Date();
+            let limitDate = new Date(0);
+
+            if (dateVal === 'today') limitDate = new Date().setHours(0, 0, 0, 0);
+            else if (dateVal === 'week') limitDate = new Date(now.setDate(now.getDate() - 7));
+            else if (dateVal === 'month') limitDate = new Date(now.setMonth(now.getMonth() - 1));
+            else if (dateVal === 'year') limitDate = new Date(now.setFullYear(now.getFullYear() - 1));
+
+            filteredTransactions = allTransactions.filter(trx => {
+                const dateMatch = (dateVal === 'all' || trx.date >= limitDate);
+                const typeMatch = (typeVal === 'all' || trx.type === typeVal);
+                const searchMatch = (
+                    trx.trxId.toLowerCase().includes(searchVal) ||
+                    trx.customer.toLowerCase().includes(searchVal) ||
+                    (trx.itemDisplay && trx.itemDisplay.toLowerCase().includes(searchVal))
+                );
+                return dateMatch && typeMatch && searchMatch;
+            });
+            renderTable(filteredTransactions);
+        }
+
+        // --- 8. EXPORT CSV ---
+        function exportData() {
+            if (filteredTransactions.length === 0) { alert("No data"); return; }
+            let csvContent = "data:text/csv;charset=utf-8,";
+            csvContent += "Trx ID,Date,Customer,Item,Method,Type,Amount,Status\n";
+            filteredTransactions.forEach(row => {
+                const d = new Date(row.date);
+                const fullDateStr = `"\t${d.toLocaleDateString()} ${d.toLocaleTimeString()}"`;
+                const cleanItem = `"${row.itemDisplay.replace(/"/g, '""')}"`;
+                const rowStr = `${row.trxId},${fullDateStr},${row.customer},${cleanItem},${row.method},${row.type},${row.amount.toFixed(2)},${row.status}`;
+                csvContent += rowStr + "\n";
+            });
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "transactions.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // --- 9. MODAL & PDF LOGIC ---
+
+        // Helper: Convert Image URL to Base64
+        function getBase64ImageFromURL(url) {
+            return new Promise((resolve, reject) => {
+                var img = new Image();
+                img.setAttribute("crossOrigin", "anonymous");
+                img.onload = () => {
+                    var canvas = document.createElement("canvas");
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    var ctx = canvas.getContext("2d");
+                    ctx.drawImage(img, 0, 0);
+                    var dataURL = canvas.toDataURL("image/png");
+                    resolve(dataURL);
+                };
+                img.onerror = error => reject(error);
+                img.src = url;
+            });
+        }
+
+        // Open Modal and Store Data
+        function openDetails(trx) {
+            currentTrxData = trx; // Store globally for PDF download
+
+            const content = document.getElementById('modalContent');
+            let color = trx.type === 'Credit' ? '#00B69B' : '#EF3826';
+            let sign = trx.type === 'Credit' ? '+' : '-';
+
+            content.innerHTML = `
+                <div class="receipt-header">
+                    <span class="receipt-amount" style="color:${color}">${sign} ₹${trx.amount.toFixed(2)}</span>
+                    <span class="receipt-status">${trx.status}</span>
+                </div>
+                <div class="detail-row"><span class="detail-label">Transaction ID</span><span class="detail-val">${trx.trxId}</span></div>
+                <div class="detail-row"><span class="detail-label">Date</span><span class="detail-val">${trx.date.toLocaleString()}</span></div>
+                <div class="detail-row"><span class="detail-label">Customer</span><span class="detail-val">${trx.customer}</span></div>
+                <div class="detail-row"><span class="detail-label">Item / Details</span><span class="detail-val">${trx.itemDisplay}</span></div>
+                <div class="detail-row"><span class="detail-label">Payment Method</span><span class="detail-val">${trx.method}</span></div>
+                <div class="detail-row"><span class="detail-label">Type</span><span class="detail-val">${trx.type}</span></div>
+            `;
+            document.getElementById('trxModal').style.display = 'flex';
+        }
+
+        function closeModal() { document.getElementById('trxModal').style.display = 'none'; }
+        window.onclick = function (event) { if (event.target.classList.contains('modal-overlay')) closeModal(); }
+
+        // --- GENERATE PDF ---
+        async function downloadPDF() {
+            if (!currentTrxData) return;
+
+            const btn = document.querySelector('.btn-download');
+            const oldText = btn.innerHTML;
+            btn.innerHTML = `<i class='bx bx-loader-alt bx-spin'></i> Generating...`;
+
+            try {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+
+                // 1. Add Logo (Load it first)
+                try {
+                    const logoData = await getBase64ImageFromURL('../Images/logo white.png');
+                    doc.addImage(logoData, 'PNG', 15, 5, 37, 28); // x, y, width, height
+                } catch (e) {
+                    console.warn("Logo not found, skipping");
+                    doc.setFontSize(16);
+                    doc.text("TOKYO SPORTS", 15, 20);
+                }
+
+                // 2. Header
+                doc.setFont("helvetica", "bold");
+                doc.setFontSize(18);
+                doc.text("TRANSACTION RECEIPT", 195, 20, { align: "right" });
+
+                doc.setDrawColor(200, 200, 200);
+                doc.line(15, 30, 195, 30); // Horizontal Line
+
+                // 3. Receipt Details
+                const trx = currentTrxData;
+                let startY = 45;
+                const lineHeight = 10;
+
+                doc.setFont("helvetica", "normal");
+                doc.setFontSize(12);
+
+                // Helper to add rows
+                const addRow = (label, value) => {
+                    doc.setTextColor(100);
+                    doc.text(label, 15, startY);
+                    doc.setTextColor(0);
+                    doc.text(String(value), 195, startY, { align: "right" });
+                    startY += lineHeight;
+                };
+
+                addRow("Transaction ID:", trx.trxId);
+                addRow("Date:", trx.date.toLocaleString());
+                addRow("Customer Name:", trx.customer);
+                addRow("Payment Method:", trx.method);
+                addRow("Transaction Type:", trx.type);
+                addRow("Item Details:", trx.itemDisplay); // Ensure this is plain text
+
+                // 4. Amount Section
+                startY += 5;
+                doc.line(15, startY, 195, startY);
+                startY += 15;
+
+                doc.setFontSize(16);
+                doc.setFont("helvetica", "bold");
+                doc.text("TOTAL AMOUNT", 15, startY);
+
+                const sign = trx.type === 'Credit' ? '+' : '-';
+                doc.setTextColor(trx.type === 'Credit' ? 0 : 200, trx.type === 'Credit' ? 100 : 0, 0); // Greenish or Redish
+                doc.text(`${sign} Rs. ${trx.amount.toFixed(2)}`, 195, startY, { align: "right" });
+
+                doc.setTextColor(0); // Reset color
+                startY += 10;
+                doc.setFontSize(12);
+                doc.setFont("helvetica", "normal");
+                doc.text(`Status: ${trx.status.toUpperCase()}`, 195, startY, { align: "right" });
+
+                // 5. Footer
+                startY += 30;
+                doc.setFontSize(10);
+                doc.setTextColor(150);
+                doc.text("Thank you for shopping with Tokyo Sports!", 105, startY, { align: "center" });
+                doc.text("www.tokyosports.com", 105, startY + 5, { align: "center" });
+
+                // 6. Save
+                doc.save(`Receipt_${trx.trxId}.pdf`);
+
+            } catch (err) {
+                console.error(err);
+                alert("Error generating PDF");
+            } finally {
+                btn.innerHTML = oldText;
+            }
+        }
+
+        async function logoutUser() {
+            try {
+                await fetch('/api/auth/logout-admin', { method: 'POST' });
+                window.location.replace('admin-login.html');
+            } catch (err) { window.location.replace('admin-login.html'); }
+        }
+
+
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,1107 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tokyo Admin - Product List</title>
+    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <style>
+        /* Force SweetAlert to top */
+        .swal2-container {
+            z-index: 10000 !important;
+        }
+
+        /* Base CSS */
+        :root {
+            --primary: #4880FF;
+            --primary-light: #E8F0FE;
+            --dark: #202224;
+            --grey: #6A7178;
+            --bg: #F5F6FA;
+            --white: #fff;
+            --danger: #EF3826;
+            --danger-light: #FEECEB;
+            --success: #00B69B;
+            --success-light: #E6F7F5;
+            --warning: #FFB536;
+            --warning-light: #FFF8E7;
+            --draft: #9ca3af;
+            --draft-light: #f3f4f6;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background: var(--bg);
+            display: flex;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        a {
+            text-decoration: none;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 260px;
+            background: var(--white);
+            padding: 20px;
+            height: 100vh;
+            position: fixed;
+            border-right: 1px solid #e0e0e0;
+            z-index: 1000;
+            transition: 0.3s;
+            left: 0;
+            top: 0;
+            overflow-y: auto;
+        }
+
+        .logo-img {
+            max-width: 150px;
+            display: block;
+            margin: 0 auto 30px;
+        }
+
+        .menu-cat {
+            font-size: 12px;
+            color: var(--grey);
+            margin: 15px 0 10px 10px;
+            font-weight: 700;
+        }
+
+        .menu-link {
+            display: flex;
+            align-items: center;
+            color: var(--grey);
+            padding: 12px 15px;
+            border-radius: 8px;
+            margin-bottom: 5px;
+            font-size: 14px;
+            transition: 0.3s;
+            font-weight: 500;
+            cursor: pointer;
+        }
+
+        .menu-link i {
+            font-size: 20px;
+            margin-right: 10px;
+        }
+
+        .menu-link:hover,
+        .menu-link.active {
+            background: var(--primary);
+            color: var(--white);
+            box-shadow: 0 4px 10px rgba(72, 128, 255, 0.2);
+        }
+
+        .logout {
+            color: var(--danger);
+            background: var(--danger-light);
+            margin-top: 15px;
+            justify-content: center;
+            font-weight: 600;
+        }
+
+        .logout:hover {
+            background: var(--danger);
+            color: var(--white);
+        }
+
+        /* Main Content */
+        .main-content {
+            margin-left: 260px;
+            flex: 1;
+            padding: 30px;
+            width: calc(100% - 260px);
+            transition: 0.3s;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .menu-toggle {
+            display: none;
+            font-size: 28px;
+            cursor: pointer;
+            margin-right: 15px;
+        }
+
+        /* Table Box */
+        .table-box {
+            background: var(--white);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+        }
+
+        .table-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .action-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .search-input {
+            padding: 10px 15px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            outline: none;
+            width: 200px;
+        }
+
+        .btn {
+            padding: 10px 18px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            transition: 0.2s;
+            border: none;
+            text-decoration: none;
+        }
+
+        .add-btn {
+            background: var(--primary);
+            color: white;
+        }
+
+        .add-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(72, 128, 255, 0.3);
+        }
+
+        .draft-btn {
+            background: white;
+            border: 1px solid #e0e0e0;
+            color: var(--grey);
+        }
+
+        .draft-btn:hover,
+        .draft-btn.active {
+            background: var(--dark);
+            color: white;
+            border-color: var(--dark);
+        }
+
+        /* Table Styles */
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+
+        th {
+            text-align: left;
+            padding: 15px;
+            color: var(--grey);
+            border-bottom: 1px solid #eee;
+        }
+
+        tbody tr {
+            transition: background 0.2s;
+            cursor: pointer;
+        }
+
+        tbody tr:hover {
+            background-color: #f8f9fa;
+        }
+
+        td {
+            padding: 15px;
+            border-bottom: 1px solid #f5f5f5;
+            vertical-align: middle;
+            color: var(--dark);
+            font-size: 14px;
+        }
+
+        /* Product Cell */
+        .prod-cell {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .prod-img {
+            width: 45px;
+            height: 45px;
+            border-radius: 8px;
+            object-fit: cover;
+            border: 1px solid #eee;
+            background: #fff;
+        }
+
+        .prod-name {
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        .prod-sub {
+            font-size: 12px;
+            color: var(--grey);
+        }
+
+        /* Status Badge */
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            display: inline-block;
+        }
+
+        .st-instock {
+            background: var(--success-light);
+            color: var(--success);
+        }
+
+        .st-low {
+            background: var(--warning-light);
+            color: var(--warning);
+        }
+
+        .st-out {
+            background: var(--danger-light);
+            color: var(--danger);
+        }
+
+        .st-draft {
+            background: var(--draft-light);
+            color: var(--draft);
+            border: 1px dashed var(--draft);
+        }
+
+        /* Action Buttons */
+        .action-btns {
+            display: flex;
+            gap: 8px;
+        }
+
+        .icon-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            transition: 0.2s;
+        }
+
+        .edit-btn {
+            background: var(--primary-light);
+            color: var(--primary);
+        }
+
+        .edit-btn:hover {
+            background: var(--primary);
+            color: white;
+        }
+
+        .del-btn {
+            background: var(--danger-light);
+            color: var(--danger);
+        }
+
+        .del-btn:hover {
+            background: #EF3826;
+            color: white;
+        }
+
+        .pub-btn {
+            background: var(--success-light);
+            color: var(--success);
+        }
+
+        .pub-btn:hover {
+            background: var(--success);
+            color: white;
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            backdrop-filter: blur(2px);
+        }
+
+        .modal {
+            background: white;
+            width: 450px;
+            max-width: 90%;
+            border-radius: 16px;
+            padding: 25px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+            animation: slideDown 0.3s ease;
+        }
+
+        @keyframes slideDown {
+            from {
+                transform: translateY(-20px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 15px;
+        }
+
+        .modal-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--dark);
+        }
+
+        .close-modal {
+            cursor: pointer;
+            font-size: 24px;
+            color: var(--grey);
+            transition: 0.2s;
+        }
+
+        .close-modal:hover {
+            color: var(--danger);
+            transform: rotate(90deg);
+        }
+
+        .modal-profile {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-profile img {
+            width: 120px;
+            height: 120px;
+            border-radius: 12px;
+            object-fit: contain;
+            margin-bottom: 10px;
+            border: 1px solid #eee;
+            padding: 5px;
+        }
+
+        .modal-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid #f9f9f9;
+            font-size: 14px;
+        }
+
+        /* Add this inside your <style> tag */
+        tr.row-out-of-stock {
+            opacity: 1;
+            background-color: #fff;
+        }
+
+        tr.row-out-of-stock:hover {
+            opacity: 1;
+            /* Allows admin to focus on it when hovering to edit/restock */
+        }
+
+        .modal-label {
+            color: var(--grey);
+            font-weight: 500;
+        }
+
+        .modal-val {
+            color: var(--dark);
+            font-weight: 600;
+        }
+
+        /* Mobile */
+        @media (max-width: 991px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+
+            .sidebar.active {
+                transform: translateX(0);
+            }
+
+            .main-content {
+                margin-left: 0;
+                width: 100%;
+                padding: 20px;
+            }
+
+            .menu-toggle {
+                display: block;
+            }
+
+            .table-head {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .action-group {
+                width: 100%;
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 10px;
+            }
+
+            .search-input {
+                grid-column: span 2;
+                width: 100%;
+                order: 1;
+            }
+
+            .draft-btn {
+                order: 2;
+                justify-content: center;
+            }
+
+            .add-btn {
+                order: 3;
+                justify-content: center;
+            }
+
+            table,
+            thead,
+            tbody,
+            th,
+            td,
+            tr {
+                display: block;
+                width: 100%;
+            }
+
+            thead {
+                display: none;
+            }
+
+            tr {
+                background: #fff;
+                margin-bottom: 20px;
+                border: 1px solid #eee;
+                border-radius: 12px;
+                padding: 20px;
+                position: relative;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+            }
+
+            td {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                text-align: right;
+                border-bottom: 1px solid #f9f9f9;
+                padding: 12px 0;
+            }
+
+            td:last-child {
+                border-bottom: none;
+                padding-bottom: 0;
+            }
+
+            td::before {
+                content: attr(data-label);
+                font-weight: 600;
+                color: var(--grey);
+                font-size: 13px;
+                text-align: left;
+            }
+
+            td[data-label="Product"] {
+                flex-direction: column;
+                align-items: flex-start;
+                padding-top: 0;
+                padding-bottom: 15px;
+                margin-bottom: 10px;
+                border-bottom: 1px solid #eee;
+                width: 100%;
+                padding-right: 110px;
+            }
+
+            td[data-label="Product"]::before {
+                display: none;
+            }
+
+            .prod-cell {
+                width: 100%;
+                display: flex;
+                align-items: center;
+                justify-content: flex-start !important;
+                text-align: left !important;
+            }
+
+            .prod-cell>div {
+                display: flex;
+                flex-direction: column;
+                align-items: flex-start !important;
+                text-align: left !important;
+            }
+
+            .prod-name {
+                text-align: left;
+            }
+
+            .prod-sub {
+                text-align: left;
+            }
+
+            td[data-label="Action"] {
+                position: absolute;
+                top: 20px;
+                right: 20px;
+                padding: 0;
+                border: none;
+                width: auto;
+                z-index: 5;
+            }
+
+            td[data-label="Action"]::before {
+                display: none;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="modal-overlay" id="productModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">Product Details</h3>
+                <i class='bx bx-x close-modal' onclick="closeModal()"></i>
+            </div>
+            <div id="modalContent"></div>
+            <div style="margin-top: 20px; text-align: right;">
+                <button onclick="closeModal()"
+                    style="background: var(--primary); color: white; border: none; padding: 10px 25px; border-radius: 8px; cursor: pointer; font-weight: 600;">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <aside class="sidebar" id="sidebar">
+        <img src="../Images/Logo text.png" class="logo-img">
+        <p class="menu-cat">Main menu</p>
+        <a href="dashboard.html" class="menu-link"><i class='bx bxs-dashboard'></i> Dashboard</a>
+        <a href="orders.html" class="menu-link"><i class='bx bx-cart'></i> Orders</a>
+        <a href="customers.html" class="menu-link"><i class='bx bx-user'></i> Customers</a>
+        <a href="coupons.html" class="menu-link"><i class='bx bx-purchase-tag'></i> Coupons</a>
+        <a href="sales.html" class="menu-link"><i class='bx bxs-offer'></i> Sales</a>
+        <a href="categories.html" class="menu-link"><i class='bx bx-category'></i> Categories</a>
+        <a href="transactions.html" class="menu-link"><i class='bx bx-credit-card'></i> Transactions</a>
+        <a href="teams.html" class="menu-link"><i class='bx bx-trophy'></i> Teams</a>
+        <p class="menu-cat">Product</p>
+        <a href="add-product.html" class="menu-link"><i class='bx bx-plus-circle'></i> Add Product</a>
+        <a href="product-list.html" class="menu-link active"><i class='bx bx-list-ul'></i> Product List</a>
+        <a href="reviews.html" class="menu-link"><i class='bx bx-message-square-detail'></i> Reviews</a>
+        <p class="menu-cat">Admin</p>
+        <a href="admin.html" class="menu-link"><i class='bx bx-user-circle'></i> Admin Role</a>
+        <a onclick="logoutUser()" class="menu-link logout"><i class='bx bx-log-out'></i> Log Out</a>
+    </aside>
+
+    <main class="main-content">
+        <div class="header">
+            <div style="display:flex; align-items:center;">
+                <i class='bx bx-menu menu-toggle' onclick="toggleSidebar()"></i>
+                <h2>Product Inventory</h2>
+            </div>
+        </div>
+
+        <div class="table-box">
+            <div class="table-head">
+                <h3>All Products</h3>
+                <div class="action-group">
+                    <select id="stockFilter" onchange="applyFilters()"
+                        style="padding: 10px; border: 1px solid #e0e0e0; border-radius: 8px; outline: none; cursor:pointer;">
+                        <option value="all">Stock: All</option>
+                        <option value="in">In Stock</option>
+                        <option value="out">Out of Stock</option>
+                    </select>
+
+
+                    <button class="btn draft-btn" onclick="toggleDrafts(this)" id="draftToggleBtn">
+                        <i class='bx bx-file'></i> Show Drafts
+                    </button>
+                    <input type="text" class="search-input" placeholder="Search product..." onkeyup="filterTable()"
+                        id="searchInput">
+
+                    <a href="add-product.html" class="btn add-btn" id="addProductBtn">
+                        <i class='bx bx-plus'></i> Add Product
+                    </a>
+                </div>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Product</th>
+                        <th>Category</th>
+                        <th>Team</th>
+                        <th>Price</th>
+                        <th>Stock</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="productTableBody">
+                    <tr>
+                        <td colspan="6" style="text-align:center;">Loading inventory...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+    <script>
+        // --- 1. CRITICAL: PREVENT BACK BUTTON CACHING ---
+        // This ensures the page reloads (and runs checkAuth) if user hits "Back"
+        // --- 1. CRITICAL: PREVENT BACK BUTTON CACHING ---
+        window.onpageshow = function (event) {
+            // If the page is loaded from cache (back button), force reload
+            if (event.persisted || (window.performance && window.performance.navigation.type === 2)) {
+                window.location.reload();
+            }
+        };
+
+        function toggleSidebar() { document.getElementById('sidebar').classList.toggle('active'); }
+
+        let showingDrafts = false;
+        // Add this at the top of your <script>, near 'let showingDrafts = false;'
+        let allProducts = [];
+        let currentUserRole = '';
+
+        // --- 2. INITIALIZATION SEQUENCE ---
+        document.addEventListener("DOMContentLoaded", async () => {
+            await checkAuth();
+            loadProducts();
+        });
+
+        // --- 3. AUTH CHECK ---
+        async function checkAuth() {
+            try {
+                const res = await fetch('/api/auth/verify-admin');
+                const data = await res.json();
+
+                if (!res.ok || !data.success) {
+                    window.location.replace('admin-login.html'); // Use replace to prevent back nav
+                    return;
+                }
+
+                // Check Admin Roles
+                const allowedRoles = ['superadmin', 'editor', 'viewer'];
+                if (!allowedRoles.includes(data.user.role)) {
+                    // It's a regular user -> Redirect to shop
+                    window.location.replace('index.html');
+                    return;
+                }
+
+                currentUserRole = data.user.role;
+
+                // UI ADJUSTMENTS
+                if (currentUserRole === 'viewer') {
+                    document.getElementById('addProductBtn').style.display = 'none';
+                }
+
+            } catch (err) {
+                window.location.replace('admin-login.html');
+            }
+        }
+
+        // --- 4. FETCH PRODUCTS ---
+        // Replace your existing loadProducts function with this:
+        async function loadProducts() {
+            try {
+                const response = await fetch('/api/products');
+
+                if (response.status === 401 || response.status === 403) {
+                    window.location.replace('admin-login.html');
+                    return;
+                }
+
+                const result = await response.json();
+
+                if (result.success) {
+                    allProducts = result.data; // Store data globally
+                    applyFilters(); // Trigger the render logic
+                }
+            } catch (err) {
+                console.error("Error loading products:", err);
+            }
+        }
+
+        function filterTable() {
+            applyFilters();
+        }
+
+        function applyFilters() {
+            // 1. Get Values
+            const searchInput = document.getElementById("searchInput").value.toLowerCase();
+            const stockFilter = document.getElementById("stockFilter").value;
+            const tbody = document.getElementById('productTableBody');
+
+            tbody.innerHTML = "";
+
+            // 2. Filter Data
+            const filtered = allProducts.filter(product => {
+                const isDraft = product.status === "Draft";
+
+                // Draft Logic
+                if (showingDrafts && !isDraft) return false;
+                if (!showingDrafts && isDraft) return false;
+
+                // Search Logic
+                if (!product.name.toLowerCase().includes(searchInput)) return false;
+
+                // Stock Logic
+                if (stockFilter === 'in' && product.stockQuantity === 0) return false;
+                if (stockFilter === 'out' && product.stockQuantity > 0) return false;
+
+                return true;
+            });
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">No products match your filter.</td></tr>';
+                return;
+            }
+
+            // 3. Render Rows
+            filtered.forEach(product => {
+                const isDraft = product.status === "Draft";
+
+                // Determine Badge & Row Style
+                let badgeClass = 'st-instock';
+                let stockText = 'In Stock';
+                let rowClass = ''; // Default
+
+                if (isDraft) {
+                    badgeClass = 'st-draft'; stockText = 'Draft';
+                } else if (product.stockQuantity === 0) {
+                    badgeClass = 'st-out'; stockText = 'Out of Stock';
+                    rowClass = 'row-out-of-stock'; // Apply the greyed-out style
+                } else if (product.stockQuantity < 5) {
+                    badgeClass = 'st-low'; stockText = 'Low Stock';
+                }
+
+                // Action Buttons (Same as before)
+                let actionButtons = '';
+                if (currentUserRole !== 'viewer') {
+                    if (isDraft) {
+                        actionButtons = `
+                    <button class="icon-btn pub-btn" onclick="publishDraft(event, '${product._id}')"><i class='bx bx-cloud-upload'></i></button>
+                    <button class="icon-btn edit-btn" onclick="editProduct(event, '${product._id}')"><i class='bx bx-edit'></i></button>
+                    <button class="icon-btn del-btn" onclick="deleteRow(event, '${product._id}', this)"><i class='bx bx-trash'></i></button>`;
+                    } else {
+                        actionButtons = `
+                    <button class="icon-btn edit-btn" onclick="editProduct(event, '${product._id}')"><i class='bx bx-edit'></i></button>
+                    <button class="icon-btn del-btn" onclick="deleteRow(event, '${product._id}', this)"><i class='bx bx-trash'></i></button>`;
+                    }
+                } else {
+                    actionButtons = `<span style="font-size:12px; color:var(--grey);">View Only</span>`;
+                }
+
+                const imgPath = (product.images && product.images.length > 0) ? product.images[0] : './Images/placeholder.png';
+                const tr = document.createElement("tr");
+
+                // Add the visual class here
+                if (rowClass) tr.className = rowClass;
+
+                tr.onclick = () => openProductDetails(product.name, product.sku || 'N/A', product.category, product.team || '', '₹' + product.price, stockText, imgPath);
+
+                tr.innerHTML = `
+            <td data-label="Product">
+                <div class="prod-cell">
+                    <img src="${imgPath}" class="prod-img" style="${isDraft ? 'opacity:0.7' : ''}">
+                    <div><div class="prod-name">${product.name}</div><div class="prod-sub">SKU: ${product.sku || 'N/A'}</div></div>
+                </div>
+            </td>
+            <td data-label="Category">${product.category}</td>
+            <td data-label="Team">${product.team || ''}</td>
+            <td data-label="Price">₹${product.price}</td>
+            <td data-label="Stock"><span class="status-badge ${badgeClass}">${stockText}</span></td>
+            <td data-label="Action"><div class="action-btns">${actionButtons}</div></td>
+        `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // --- UTILS ---
+        function filterTable() {
+            const input = document.getElementById("searchInput").value.toLowerCase();
+            const rows = document.querySelectorAll("#productTableBody tr");
+            rows.forEach(row => {
+                const name = row.querySelector(".prod-name")?.innerText.toLowerCase() || "";
+                row.style.display = name.includes(input) ? "" : "none";
+            });
+        }
+
+        function toggleDrafts(btn) {
+            showingDrafts = !showingDrafts;
+            btn.classList.toggle('active');
+            btn.innerHTML = showingDrafts ? "<i class='bx bx-list-ul'></i> Show All" : "<i class='bx bx-file'></i> Show Drafts";
+            loadProducts();
+        }
+
+        function editProduct(event, id) {
+            event.stopPropagation();
+            window.location.href = `add-product.html?id=${id}`;
+        }
+
+        async function deleteRow(event, id, btn) {
+            event.stopPropagation();
+
+            if (currentUserRole === 'viewer') return;
+
+            const result = await Swal.fire({
+                title: 'Are you sure?',
+                text: "You won't be able to revert this!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#EF3826',
+                cancelButtonColor: '#6A7178',
+                confirmButtonText: 'Yes, delete it!'
+            });
+
+            if (result.isConfirmed) {
+                try {
+                    const response = await fetch(`/api/products/${id}`, { method: 'DELETE' });
+
+                    // --- SECURITY CHECK ON DELETE ---
+                    if (response.status === 401 || response.status === 403) {
+                        window.location.replace('admin-login.html');
+                        return;
+                    }
+
+                    const resData = await response.json();
+
+                    if (response.ok) {
+                        const row = btn.closest('tr');
+                        row.style.opacity = '0';
+                        setTimeout(() => { row.remove(); }, 300);
+                        Swal.fire('Deleted!', 'Product has been deleted.', 'success');
+                    } else {
+                        Swal.fire('Error', resData.message || 'Failed to delete', 'error');
+                    }
+                } catch (err) {
+                    Swal.fire('Error', 'Failed to delete product.', 'error');
+                }
+            }
+        }
+
+        // --- STRICT PUBLISH VALIDATION ---
+        async function publishDraft(event, id) {
+            event.stopPropagation();
+
+            // 1. Show loading while validating
+            Swal.fire({ title: 'Validating...', didOpen: () => Swal.showLoading() });
+
+            try {
+                // 2. Fetch FULL product details to ensure hidden fields (like sizes/desc) are valid
+                const res = await fetch(`/api/products/${id}`);
+                const json = await res.json();
+
+                if (!json.success) {
+                    Swal.fire('Error', 'Product not found', 'error');
+                    return;
+                }
+
+                const p = json.data;
+                const errors = [];
+
+                // --- A. NAME VALIDATION ---
+                // Must be 3-100 chars, start with alphanumeric, allow letters, numbers, spaces, -, _, &
+                const nameRegex = /^[a-zA-Z0-9][a-zA-Z0-9\s\-\_\&]*$/;
+                if (!p.name || p.name.trim().length < 3 || p.name.trim().length > 100) {
+                    errors.push("Name must be between 3 and 100 characters.");
+                } else if (!nameRegex.test(p.name)) {
+                    errors.push("Name contains invalid characters (Allowed: Alphanumeric, Space, -, _, &).");
+                }
+
+                // --- B. SKU VALIDATION ---
+                // Alphanumeric, hyphens, underscores. NO SPACES.
+                const skuRegex = /^[a-zA-Z0-9-_]+$/;
+                if (!p.sku || !skuRegex.test(p.sku)) {
+                    errors.push("SKU is invalid (Alphanumeric, hyphen, underscore only. No spaces).");
+                }
+
+                // --- C. PRICE VALIDATION ---
+                if (!p.price || parseFloat(p.price) <= 0) {
+                    errors.push("Price must be greater than 0.");
+                }
+
+                // --- D. CATEGORY & TEAM VALIDATION ---
+                if (!p.category || p.category.trim() === "") {
+                    errors.push("Category is required.");
+                }
+                if (!p.team || p.team.trim() === "") {
+                    errors.push("Team is required.");
+                }
+
+                // --- E. STOCK VALIDATION ---
+                // Must have at least 1 unit of stock in total across sizes
+                let totalStock = 0;
+                if (p.sizes && p.sizes.length > 0) {
+                    p.sizes.forEach(s => totalStock += (parseInt(s.stock) || 0));
+                } else {
+                    totalStock = parseInt(p.stockQuantity) || 0;
+                }
+
+                if (totalStock <= 0) {
+                    errors.push("Total Stock must be greater than 0 to publish.");
+                }
+
+                // --- 3. CHECK ERRORS ---
+                // --- 3. CHECK ERRORS ---
+                if (errors.length > 0) {
+                    // Create a clean, centered list with inline styles
+                    let errorHtml = `<div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">`;
+
+                    errors.forEach(err => {
+                        errorHtml += `
+                            <div style="color: #EF3826; font-size: 14px; font-weight: 500; display: flex; align-items: center; gap: 6px;">
+                                <i class='bx bxs-error-circle'></i> ${err}
+                            </div>`;
+                    });
+
+                    errorHtml += `</div>`;
+                    errorHtml += `<div style="margin-top: 15px; color: #6A7178; font-size: 13px;">Please edit the product to fix these issues.</div>`;
+
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Validation Failed',
+                        html: errorHtml, // Inject the styled HTML
+                        confirmButtonText: 'Edit Now',
+                        confirmButtonColor: '#4880FF',
+                        showCancelButton: true,
+                        cancelButtonText: 'Close',
+                        cancelButtonColor: '#202224',
+                        reverseButtons: true,
+                        customClass: {
+                            popup: 'swal-custom-popup' // Optional: hook for specific sizing
+                        }
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            window.location.href = `add-product.html?id=${id}`;
+                        }
+                    });
+                    return; // Stop execution
+                }
+
+                // --- 4. IF VALID, PROCEED TO PUBLISH ---
+                const confirmResult = await Swal.fire({
+                    title: 'Publish Product?',
+                    text: 'This product is valid and will be visible to customers.',
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonColor: '#00B69B',
+                    confirmButtonText: 'Yes, Publish'
+                });
+
+                if (confirmResult.isConfirmed) {
+                    const updateRes = await fetch(`/api/products/${id}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ status: 'Active' })
+                    });
+
+                    // Security Check
+                    if (updateRes.status === 401 || updateRes.status === 403) {
+                        window.location.replace('admin-login.html');
+                        return;
+                    }
+
+                    if (updateRes.ok) {
+                        Swal.fire({ icon: 'success', title: 'Published!', timer: 1500, showConfirmButton: false });
+                        showingDrafts = false; // Switch view back to active list
+                        document.getElementById('draftToggleBtn').classList.remove('active');
+                        document.getElementById('draftToggleBtn').innerHTML = "<i class='bx bx-file'></i> Show Drafts";
+                        loadProducts();
+                    } else {
+                        Swal.fire('Error', 'Failed to publish', 'error');
+                    }
+                }
+
+            } catch (err) {
+                console.error(err);
+                Swal.fire('Error', 'Connection failed during validation', 'error');
+            }
+        }
+
+        function openProductDetails(name, sku, cat, team, price, stock, img) {
+            const modal = document.getElementById('productModal');
+            const content = document.getElementById('modalContent');
+            content.innerHTML = `
+                <div class="modal-profile">
+                    <img src="${img}" alt="Product">
+                    <h3 style="color:var(--dark);">${name}</h3>
+                    <p style="color:var(--grey); font-size:13px;">${sku}</p>
+                </div>
+                <div class="modal-row"><span class="modal-label">Category</span><span class="modal-val">${cat}</span></div>
+                <div class="modal-row"><span class="modal-label">Team</span><span class="modal-val">${team}</span></div>
+                <div class="modal-row"><span class="modal-label">Price</span><span class="modal-val" style="color:var(--primary); font-weight:800;">${price}</span></div>
+                <div class="modal-row"><span class="modal-label">Status</span><span class="modal-val">${stock}</span></div>
+            `;
+            modal.style.display = 'flex';
+        }
+
+        function closeModal() { document.getElementById('productModal').style.display = 'none'; }
+        window.onclick = function (event) {
+            const modal = document.getElementById('productModal');
+            if (event.target == modal) modal.style.display = "none";
+        }
+
+        async function logoutUser() {
+            try {
+                // 1. Call Backend to clear cookie
+                await fetch('/api/auth/logout-admin', { method: 'POST' });
+
+                // 2. Clear Local Storage if you use it (optional)
+                // localStorage.clear(); 
+
+                // 3. Use REPLACE to kill current history entry
+                window.location.replace('admin-login.html');
+            } catch (err) {
+                console.error("Logout error", err);
+                // Fallback redirect even if fetch fails
+                window.location.replace('admin-login.html');
+            }
+        }
+    </script>
+</body>
+
+</html>
