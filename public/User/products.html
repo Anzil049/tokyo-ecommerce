@@ -136,7 +136,8 @@
 
         .filter-options ul {
             list-style: none;
-            padding-left: 0;
+            padding-left: 5px;
+            /* Added padding to prevent cut-off */
             margin-bottom: 0;
         }
 
@@ -220,6 +221,12 @@
             opacity: 0.4;
             cursor: not-allowed;
             pointer-events: none;
+        }
+
+        .btn-apply-custom {
+            width: 70%;
+            /* Reduces width */
+            display: inline-block;
         }
 
         /* --- Product Card --- */
@@ -393,7 +400,7 @@
         }
 
         .mobile-filter-button {
-            background-color: var(--primary-highlight);
+            background-color: var(--primary-blue);
             color: white;
             border: none;
             padding: 8px 20px;
@@ -502,7 +509,83 @@
             transform: translate(0, 0);
         }
 
+        /* --- SEARCH SUGGESTIONS DROPDOWN --- */
+        .search-suggestions {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            width: 100%;
+            background: white;
+            border: 1px solid #ddd;
+            border-top: none;
+            border-radius: 0 0 4px 4px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            display: none;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .suggestion-item {
+            padding: 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .suggestion-item:hover {
+            background-color: #f9f9f9;
+        }
+
+        .suggestion-img {
+            width: 40px;
+            height: 40px;
+            object-fit: contain;
+            border-radius: 4px;
+            border: 1px solid #eee;
+        }
+
+        .suggestion-info h6 {
+            margin: 0;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .suggestion-info p {
+            margin: 0;
+            font-size: 0.75rem;
+            color: #888;
+        }
+
+        .offcanvas-body {
+            display: flex;
+            flex-direction: column;
+            padding: 0;
+            /* Remove default padding for full-width button */
+        }
+
+        /* Mobile Scroll Area */
+        #mobileFilterContent {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        /* Mobile Fixed Button */
+        .mobile-sticky-btn {
+            padding: 15px;
+            border-top: 1px solid #eee;
+            background: white;
+            z-index: 10;
+        }
+
+        /* --- MOBILE RESPONSIVE STYLES --- */
         @media (max-width: 991px) {
+
+            /* 1. Navbar & Search Adjustments */
             .navbar .container {
                 flex-wrap: wrap;
             }
@@ -524,20 +607,44 @@
                 flex-grow: 0;
             }
 
+            .search-input {
+                font-size: 0.85rem;
+            }
+
             .navbar-toggler {
                 border: none;
                 padding: 0;
                 margin-left: 10px;
             }
 
-            .navbar-toggler:focus {
-                box-shadow: none;
+            .navbar-collapse {
+                order: 4 !important;
+                background: white;
+                position: relative;
+                width: 100%;
+                border-top: 1px solid #eee;
+                margin-top: 10px;
+                padding-left: 10px;
             }
 
-            .search-input {
-                font-size: 0.85rem;
+            /* 2. Hero Text */
+            .hero-caption h1 {
+                font-size: 1.8rem;
             }
 
+            .hero-caption p {
+                font-size: 0.9rem;
+                margin-bottom: 1rem;
+            }
+
+            .btn-hero {
+                padding: 8px 20px;
+                font-size: 0.9rem;
+            }
+
+            /* 3. FILTER & SORT LAYOUT */
+
+            /* CRITICAL: Hide the desktop sidebar on mobile */
             .filter-column {
                 display: none;
             }
@@ -546,6 +653,7 @@
                 display: flex;
                 gap: 10px;
                 justify-content: space-between;
+                margin-bottom: 15px;
             }
 
             .mobile-filter-button,
@@ -562,43 +670,110 @@
                 margin-top: 0;
             }
 
-            .navbar-collapse {
-                order: 4 !important;
-                background: white;
-                position: relative;
-                width: 100%;
-                border-top: 1px solid #eee;
-                margin-top: 10px;
+            /* 4. FIX ADD TO CART (Always Visible) */
+            .product-image-container .add-to-cart-btn {
+                bottom: 0 !important;
+                opacity: 1 !important;
+                padding: 8px 0 !important;
+                font-size: 0.75rem !important;
+                background-color: var(--primary-blue);
             }
 
+            /* 5. Card Adjustments */
+            .product-details {
+                padding: 10px 5px;
+            }
+
+            .product-title {
+                font-size: 0.9rem;
+            }
         }
 
+        /* --- 1. STICKY SIDEBAR (DESKTOP) --- */
         @media (min-width: 992px) {
             .filter-column {
                 position: sticky;
                 top: 110px;
-                height: calc(100vh - 120px);
-                overflow-y: auto;
+                /* CHANGED: Increased 120px to 160px to ensure the bottom button is never cut off */
+                height: calc(100vh - 160px);
+                display: flex;
+                flex-direction: column;
+                background: #fff;
+                border-right: 1px solid #f0f0f0;
                 padding-right: 10px;
             }
 
-            .filter-column::-webkit-scrollbar {
+            /* The area that scrolls (Checkboxes) */
+            .filter-scroll-content {
+                flex: 1;
+                overflow-y: auto;
+                padding-bottom: 10px;
+            }
+
+            /* The Fixed Button Area */
+            .filter-apply-btn-container {
+                display: none !important;
+                /* Completely hide on desktop */
+            }
+
+
+            /* Custom Scrollbar for neatness */
+            .filter-scroll-content::-webkit-scrollbar {
                 width: 4px;
             }
 
-            .filter-column::-webkit-scrollbar-track {
-                background: #f1f1f1;
-            }
-
-            .filter-column::-webkit-scrollbar-thumb {
+            .filter-scroll-content::-webkit-scrollbar-thumb {
                 background: #ccc;
                 border-radius: 4px;
             }
+        }
 
-            .filter-column::-webkit-scrollbar-thumb:hover {
-                background: #999;
-            }
+        /* --- 2. STICKY OFFCANVAS (MOBILE) --- */
+        .offcanvas-body {
+            display: flex;
+            flex-direction: column;
+            padding: 0;
+            /* Remove default padding for full-width button */
+        }
 
+        /* Mobile Scroll Area */
+        #mobileFilterContent {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        /* 3. Mobile Button Width Adjustment */
+        .mobile-sticky-btn {
+            padding: 15px;
+            border-top: 1px solid #eee;
+            background: white;
+            z-index: 10;
+            text-align: center;
+            /* Center the button */
+        }
+
+        .mobile-sticky-btn button {
+            width: 85% !important;
+            /* Reduce width from 100% to 85% */
+            display: inline-block;
+        }
+
+        .show-more-btn {
+            background: none;
+            border: none;
+            color: var(--primary-blue);
+            font-size: 0.85rem;
+            font-weight: 600;
+            padding: 5px 0;
+            cursor: pointer;
+            text-align: left;
+            display: block;
+            margin-top: 5px;
+        }
+
+        .show-more-btn:hover {
+            text-decoration: underline;
         }
     </style>
 </head>
@@ -636,8 +811,9 @@
 
             <div class="search-container order-2 order-lg-3 mx-2 mx-lg-3">
                 <input type="text" id="searchInput" class="search-input" placeholder="Search products..."
-                    onkeyup="handleSearch()">
-                <button class="search-btn" onclick="handleSearch()"><i class="fas fa-search text-muted"></i></button>
+                    autocomplete="off">
+                <button class="search-btn" onclick="performSearch()"><i class="fas fa-search text-muted"></i></button>
+                <div class="search-suggestions" id="searchSuggestions"></div>
             </div>
 
             <div class="d-flex align-items-center order-3 order-lg-4 ms-auto ms-lg-0">
@@ -671,77 +847,86 @@
 
         <div class="row">
             <div class="col-lg-3 filter-column" id="desktopFilters">
-                <div class="filter-group">
-                    <span class="filter-header">Availability</span>
-                    <div class="filter-options">
-                        <ul>
-                            <li>
-                                <label class="filter-checkbox-label">
-                                    <input type="checkbox" onchange="toggleFilter('stock', 'in')"> In Stock
-                                </label>
-                            </li>
-                            <li>
-                                <label class="filter-checkbox-label">
-                                    <input type="checkbox" onchange="toggleFilter('stock', 'out')"> Out of Stock
-                                </label>
-                            </li>
-                        </ul>
+
+                <div class="filter-scroll-content">
+
+                    <div class="filter-group">
+                        <span class="filter-header">Availability</span>
+                        <div class="filter-options">
+                            <ul>
+                                <li><label class="filter-checkbox-label"><input type="checkbox"
+                                            onchange="toggleFilter('stock', 'in')"> In Stock</label></li>
+                                <li><label class="filter-checkbox-label"><input type="checkbox"
+                                            onchange="toggleFilter('stock', 'out')"> Out of Stock</label></li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="filter-group">
+                        <span class="filter-header">Offers & Deals</span>
+                        <div class="filter-options">
+                            <ul id="offersFilterList">
+                                <li>
+                                    <label class="filter-checkbox-label">
+                                        <input type="checkbox" id="offerFilterCheckbox"
+                                            onchange="toggleFilter('offer', 'all')">
+                                        <span>Show All Offers</span>
+                                    </label>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="filter-group">
+                        <span class="filter-header">Category</span>
+                        <div class="filter-options">
+                            <ul id="categoryList"></ul>
+                        </div>
+                    </div>
+
+                    <div class="filter-group">
+                        <span class="filter-header">Team</span>
+                        <div class="filter-options">
+                            <ul id="teamList"></ul>
+                        </div>
+                    </div>
+
+                    <div class="filter-group">
+                        <span class="filter-header">Price Range</span>
+                        <div class="filter-options">
+                            <ul>
+                                <li><label class="filter-checkbox-label"><input type="checkbox"
+                                            onchange="toggleFilter('price', '0-250')"> Under ₹250</label></li>
+                                <li><label class="filter-checkbox-label"><input type="checkbox"
+                                            onchange="toggleFilter('price', '250-350')"> ₹250 - ₹350</label></li>
+                                <li><label class="filter-checkbox-label"><input type="checkbox"
+                                            onchange="toggleFilter('price', '350-500')"> ₹350 - ₹500</label></li>
+                                <li><label class="filter-checkbox-label"><input type="checkbox"
+                                            onchange="toggleFilter('price', '500-above')"> Above ₹500</label></li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="filter-group">
+                        <span class="filter-header">Size</span>
+                        <div class="size-filter-grid">
+                            <label class="size-filter-item"><input type="checkbox"
+                                    onchange="toggleFilter('size', 'S')"><span>S</span></label>
+                            <label class="size-filter-item"><input type="checkbox"
+                                    onchange="toggleFilter('size', 'M')"><span>M</span></label>
+                            <label class="size-filter-item"><input type="checkbox"
+                                    onchange="toggleFilter('size', 'L')"><span>L</span></label>
+                            <label class="size-filter-item"><input type="checkbox"
+                                    onchange="toggleFilter('size', 'XL')"><span>XL</span></label>
+                            <label class="size-filter-item"><input type="checkbox"
+                                    onchange="toggleFilter('size', 'XXL')"><span>XXL</span></label>
+                        </div>
                     </div>
                 </div>
-                <div class="filter-group">
-                    <span class="filter-header">Offers & Deals</span>
-                    <div class="filter-options">
-                        <ul id="offersFilterList">
-                            <li>
-                                <label class="filter-checkbox-label">
-                                    <input type="checkbox" id="offerFilterCheckbox"
-                                        onchange="toggleFilter('offer', 'all')">
-                                    <span>Show All Offers</span>
-                                </label>
-                            </li>
-                        </ul>
-                    </div>
+                <div class="filter-apply-btn-container">
+                    <button class="btn btn-dark btn-apply-custom" onclick="applyFilters()">Apply Filters</button>
                 </div>
-                <div class="filter-group">
-                    <span class="filter-header">Category</span>
-                    <div class="filter-options">
-                        <ul id="categoryList"></ul>
-                    </div>
-                </div>
-                <div class="filter-group">
-                    <span class="filter-header">Team</span>
-                    <div class="filter-options">
-                        <ul id="teamList"></ul>
-                    </div>
-                </div>
-                <div class="filter-group">
-                    <span class="filter-header">Price Range</span>
-                    <div class="filter-options">
-                        <ul>
-                            <li><label class="filter-checkbox-label"><input type="checkbox"
-                                        onchange="toggleFilter('price', '0-250')"> Under ₹250</label></li>
-                            <li><label class="filter-checkbox-label"><input type="checkbox"
-                                        onchange="toggleFilter('price', '250-350')"> ₹250 - ₹350</label></li>
-                            <li><label class="filter-checkbox-label"><input type="checkbox"
-                                        onchange="toggleFilter('price', '350-500')"> ₹350 - ₹500</label></li>
-                        </ul>
-                    </div>
-                </div>
-                <div class="filter-group">
-                    <span class="filter-header">Size</span>
-                    <div class="size-filter-grid">
-                        <label class="size-filter-item"><input type="checkbox"
-                                onchange="toggleFilter('size', 'S')"><span>S</span></label>
-                        <label class="size-filter-item"><input type="checkbox"
-                                onchange="toggleFilter('size', 'M')"><span>M</span></label>
-                        <label class="size-filter-item"><input type="checkbox"
-                                onchange="toggleFilter('size', 'L')"><span>L</span></label>
-                        <label class="size-filter-item"><input type="checkbox"
-                                onchange="toggleFilter('size', 'XL')"><span>XL</span></label>
-                        <label class="size-filter-item"><input type="checkbox"
-                                onchange="toggleFilter('size', 'XXL')"><span>XXL</span></label>
-                    </div>
-                </div>
+
             </div>
 
             <div class="col-lg-9">
@@ -816,12 +1001,44 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // --- 1. GLOBAL VARIABLES ---
-        window.onpageshow = function (event) {
-            if (event.persisted) window.location.reload();
+
+        // --- 0. AUTH INITIALIZATION (Global) ---
+        window.userIsLoggedIn = false; // Default state
+
+        // 1. Define Check Auth Globally
+        window.checkAuth = async function (targetPage) {
+            if (!window.userIsLoggedIn) {
+                // Double check server status (in case of refresh)
+                const stillLoggedIn = await checkLoginStatus();
+                if (stillLoggedIn) {
+                    window.userIsLoggedIn = true;
+                    if (targetPage) window.location.href = targetPage;
+                    return true;
+                }
+
+                // Show Alert
+                Swal.fire({
+                    icon: 'info', title: 'Login Required', text: 'You need to be logged in.',
+                    showCancelButton: true, confirmButtonText: 'Go to Login', confirmButtonColor: '#DB4444'
+                }).then((result) => {
+                    if (result.isConfirmed) window.location.href = 'signup.html';
+                });
+                return false;
+            } else {
+                if (targetPage) window.location.href = targetPage;
+                return true;
+            }
         };
 
+        // 2. Helper to check status
+        async function checkLoginStatus() {
+            try { const res = await fetch('/api/auth/verify-user'); return res.ok; }
+            catch (err) { return false; }
+        }
+        // --- 1. GLOBAL VARIABLES ---
         let allProducts = [];
+        let allCategories = []; // Global store for search
+        let allTeams = [];      // Global store for search
         let filteredProducts = [];
         let activeSaleFilter = null;
         let currentPage = 1;
@@ -841,8 +1058,14 @@
         const modalSizeOptions = document.getElementById('modalSizeOptions');
         const modalError = document.getElementById('modalError');
         const productGrid = document.getElementById('productGrid');
+        const searchInput = document.getElementById('searchInput'); // New
+        const suggestionsBox = document.getElementById('searchSuggestions'); // New
 
         // --- 2. INITIALIZATION ---
+        window.onpageshow = function (event) {
+            if (event.persisted) window.location.reload();
+        };
+
         document.addEventListener('DOMContentLoaded', async () => {
             const isLoggedIn = await checkLoginStatus();
             window.userIsLoggedIn = isLoggedIn;
@@ -851,15 +1074,13 @@
             if (isLoggedIn) await fetchUserWishlist();
 
             await Promise.all([
-                fetchFilterData(),
+                fetchFilterData(), // Now populates globals
                 fetchActiveSales(),
                 fetchProducts()
             ]);
 
             initializeFiltersFromURL();
             applyFilters();
-
-            // *** CRITICAL: START EVENT LISTENERS ***
             setupGridEventListeners();
 
             // Animations
@@ -874,145 +1095,328 @@
             document.querySelectorAll('.reveal-element').forEach(el => observer.observe(el));
         });
 
-        // --- 3. EVENT DELEGATION (THE PERMANENT FIX) ---
+        // ==========================================
+        //  SEARCH SUGGESTION LOGIC (NEW FEATURE)
+        // ==========================================
+
+        searchInput.addEventListener('keyup', function (e) {
+            const query = e.target.value.toLowerCase().trim();
+            if (e.key === 'Enter') { performSearch(); return; }
+
+            if (query.length > 0) {
+                // 1. Filter Categories
+                const catMatches = allCategories.filter(c => c.name.toLowerCase().includes(query))
+                    .slice(0, 2)
+                    .map(c => ({ name: c.name, type: 'category' }));
+
+                // 2. Filter Teams
+                const teamMatches = allTeams.filter(t => t.name.toLowerCase().includes(query))
+                    .slice(0, 2)
+                    .map(t => ({ name: t.name, type: 'team' }));
+
+                // 3. Filter Products
+                const prodMatches = allProducts.filter(p => p.name.toLowerCase().includes(query))
+                    .slice(0, 5)
+                    .map(p => ({ ...p, type: 'product' }));
+
+                // Combine results
+                const combinedResults = [...catMatches, ...teamMatches, ...prodMatches];
+                showSuggestions(combinedResults);
+            } else {
+                // If empty, reset grid filters
+                applyFilters();
+                suggestionsBox.style.display = 'none';
+            }
+        });
+
+        function showSuggestions(items) {
+            if (items.length === 0) { suggestionsBox.style.display = 'none'; return; }
+            suggestionsBox.innerHTML = '';
+
+            items.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'suggestion-item';
+
+                if (item.type === 'category' || item.type === 'team') {
+                    const isTeam = item.type === 'team';
+                    const iconClass = isTeam ? 'fa-users' : 'fa-th-large';
+                    const labelText = isTeam ? 'Team' : 'Category';
+                    const urlParam = isTeam ? 'team' : 'category';
+
+                    // On products page, clicking this simply reloads page with new filter
+                    div.onclick = () => { window.location.href = `products.html?${urlParam}=${encodeURIComponent(item.name)}`; };
+
+                    div.innerHTML = `
+                        <div class="suggestion-img d-flex align-items-center justify-content-center bg-light text-secondary" style="font-size: 1rem; border: 1px solid #eee;">
+                            <i class="fas ${iconClass}"></i>
+                        </div>
+                        <div class="suggestion-info">
+                            <h6 style="margin-bottom: 2px;">${item.name}</h6>
+                            <span class="badge bg-light text-secondary border" style="font-size: 0.65rem; font-weight: 500;">${labelText}</span>
+                        </div>`;
+                } else {
+                    // Product
+                    const img = (item.images && item.images.length > 0) ? item.images[0] : 'https://placehold.co/50x50';
+                    div.onclick = () => { window.location.href = `product-details.html?id=${item._id}`; };
+                    div.innerHTML = `
+                        <img src="${img}" class="suggestion-img">
+                        <div class="suggestion-info">
+                            <h6>${item.name}</h6>
+                            <p class="mb-0 text-muted" style="font-size: 0.75rem;">₹${item.price}</p>
+                        </div>`;
+                }
+                suggestionsBox.appendChild(div);
+            });
+            suggestionsBox.style.display = 'block';
+        }
+
+        // Perform Search (Hide suggestions, run grid filter)
+        function performSearch() {
+            suggestionsBox.style.display = 'none';
+            applyFilters();
+        }
+
+        // Close suggestions on outside click
+        document.addEventListener('click', function (e) {
+            if (suggestionsBox && !searchInput.contains(e.target) && !suggestionsBox.contains(e.target)) {
+                suggestionsBox.style.display = 'none';
+            }
+        });
+
+        // ==========================================
+        //  DATA LOADING (MODIFIED to Store Globals)
+        // ==========================================
+
+        // MODIFIED: Includes "Show More" Logic
+        async function fetchFilterData() {
+            try {
+                // 1. Fetch Teams
+                const teamRes = await fetch('/api/teams');
+                const teamData = await teamRes.json();
+                const teamList = document.getElementById('teamList');
+
+                if (teamData.success) {
+                    allTeams = teamData.data.filter(t => t.status === 'Active');
+                    // Sort teams
+                    allTeams.sort((a, b) => a.name.localeCompare(b.name));
+
+                    // Render with "Show More" limit of 5
+                    renderListWithLimit(allTeams, 'team', teamList, 5);
+                }
+
+                // 2. Fetch Categories
+                const catRes = await fetch('/api/categories');
+                const catData = await catRes.json();
+                const catList = document.getElementById('categoryList');
+                publishedCategoryNames = [];
+
+                if (catData.success) {
+                    allCategories = catData.data.filter(c => c.status === 'Published');
+                    allCategories.sort((a, b) => a.name.localeCompare(b.name));
+
+                    allCategories.forEach(c => publishedCategoryNames.push(c.name));
+
+                    // Render with "Show More" limit of 5
+                    renderListWithLimit(allCategories, 'category', catList, 5);
+                }
+            } catch (err) { console.error(err); }
+        }
+
+        // UPDATED HELPER FUNCTION FOR "SHOW MORE"
+        function renderListWithLimit(data, type, container, limit) {
+            container.innerHTML = ''; // Clear existing content
+
+            // 1. Loop through ALL items
+            data.forEach((item, index) => {
+                const li = document.createElement('li');
+
+                // Add the checkbox HTML
+                li.innerHTML = `<label class="filter-checkbox-label"><input type="checkbox" onchange="toggleFilter('${type}', '${item.name}')"> ${item.name}</label>`;
+
+                // 2. If the item index is greater than or equal to the limit, hide it initially
+                if (index >= limit) {
+                    li.style.display = 'none'; // Hide via CSS
+                    li.classList.add(`hidden-item-${type}`); // Add a specific class so we can find it later
+                }
+
+                container.appendChild(li);
+            });
+
+            // 3. If there are hidden items, add the "+ n more" button
+            if (data.length > limit) {
+                // Create a list item to hold the button (keeps HTML valid inside UL)
+                const btnLi = document.createElement('li');
+
+                const btn = document.createElement('button');
+                btn.className = 'show-more-btn';
+                btn.innerText = `+ ${data.length - limit} more`;
+
+                // Click Handler
+                btn.onclick = function (e) {
+                    e.preventDefault();
+
+                    // Find all hidden items for this specific type using the class we added
+                    const hiddenItems = container.querySelectorAll(`.hidden-item-${type}`);
+
+                    // Loop through and show them
+                    hiddenItems.forEach(item => {
+                        item.style.display = 'block'; // Or 'list-item'
+                        // Optional: Add a small animation class here if you want
+                    });
+
+                    // Remove the "+ n more" button container
+                    btnLi.remove();
+                };
+
+                btnLi.appendChild(btn);
+                container.appendChild(btnLi);
+            }
+        }
+
+        // ==========================================
+        //  STANDARD LOGIC (UNCHANGED)
+        // ==========================================
+
         function setupGridEventListeners() {
             if (!productGrid) return;
-
             productGrid.addEventListener('click', (e) => {
-                // A. Handle "Add To Cart" Button
                 const cartBtn = e.target.closest('.add-to-cart-btn');
                 if (cartBtn) {
-                    e.preventDefault();
-                    e.stopPropagation();
-
+                    e.preventDefault(); e.stopPropagation();
                     if (cartBtn.classList.contains('disabled')) return;
-
-                    // Get the ID securely from the dataset
-                    const id = cartBtn.dataset.id;
-                    openSizeModal(id);
+                    openSizeModal(cartBtn.dataset.id);
                     return;
                 }
-
-                // B. Handle Wishlist Icon
                 const wishIcon = e.target.closest('.control-icon');
                 if (wishIcon) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    const id = wishIcon.dataset.id;
-                    toggleWishlist(wishIcon, id);
+                    e.preventDefault(); e.stopPropagation();
+                    toggleWishlist(wishIcon, wishIcon.dataset.id);
                     return;
                 }
-
-                // C. Handle Card Navigation (only if NOT clicking button/icon)
                 const card = e.target.closest('.product-card');
                 if (card) {
-                    const id = card.getAttribute('data-product-id');
-                    window.location.href = `product-details.html?id=${id}`;
+                    window.location.href = `product-details.html?id=${card.getAttribute('data-product-id')}`;
                 }
             });
         }
 
-        // --- 4. MODAL LOGIC ---
-        function closeSizeModal() {
-            sizeModal.style.display = 'none';
+        // MODIFIED: Auto-applies on Desktop, Waits for button on Mobile
+        function toggleFilter(type, value) {
+            if (type === 'team') toggleArray(selectedTeams, value);
+            else if (type === 'category') toggleArray(selectedCategories, value);
+            else if (type === 'size') toggleArray(selectedSizes, value);
+            else if (type === 'price') toggleArray(selectedPrices, value);
+            else if (type === 'stock') toggleArray(selectedStockStatus, value);
+            else if (type === 'offer' && value === 'all') showAllOffers = !showAllOffers;
+            else if (type === 'sale') toggleArray(selectedSaleIds, value);
+
+            // Sync UI checkmarks immediately
+            if (type !== 'offer' && type !== 'sale') syncFilterUI(type, value);
+
+            // LOGIC CHANGE: 
+            // If screen is Desktop (> 992px), Apply Immediately.
+            // If screen is Mobile (< 992px), Wait for user to click "Apply Filters" button.
+            if (window.innerWidth >= 992) {
+                applyFilters();
+            }
         }
 
-        // Close on outside click
-        sizeModal.addEventListener('click', (e) => {
-            if (e.target === sizeModal) closeSizeModal();
-        });
+        function toggleArray(arr, val) { const idx = arr.indexOf(val); if (idx > -1) arr.splice(idx, 1); else arr.push(val); }
 
-        function openSizeModal(id) {
-            if (!window.userIsLoggedIn) {
-                Swal.fire({ icon: 'info', title: 'Login Required', confirmButtonColor: '#DB4444' })
-                    .then(res => { if (res.isConfirmed) window.location.href = 'signup.html'; });
-                return;
-            }
+        function syncFilterUI(type, value) {
+            let isSelected = false;
+            if (type === 'team') isSelected = selectedTeams.includes(value);
+            else if (type === 'category') isSelected = selectedCategories.includes(value);
+            else if (type === 'size') isSelected = selectedSizes.includes(value);
+            else if (type === 'price') isSelected = selectedPrices.includes(value);
+            else if (type === 'stock') isSelected = selectedStockStatus.includes(value);
+            document.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+                const onchange = cb.getAttribute('onchange');
+                if (onchange && onchange.includes(`'${type}'`) && onchange.includes(`'${value}'`)) cb.checked = isSelected;
+            });
+        }
 
-            const product = allProducts.find(p => p._id === id);
-            if (!product) return;
+        function applyFilters() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
+            const sortType = document.getElementById('sortDropdown').value;
 
-            activeProductId = product._id;
-            activeProductName = product.name;
+            filteredProducts = allProducts.filter(p => {
+                if (publishedCategoryNames.length > 0 && !publishedCategoryNames.includes(p.category)) return false;
 
-            document.getElementById('modalProductName').innerText = `Select Size: ${product.name}`;
-            modalSizeOptions.innerHTML = "";
-            sizeModal.dataset.selectedSize = "";
-            if (modalError) modalError.style.display = 'none';
+                // --- SEARCH LOGIC (Used for Grid Filtering) ---
+                // Does not use 'type' because we are checking the product properties directly
+                const matchesSearch = p.name.toLowerCase().includes(searchTerm) ||
+                    (p.category && p.category.toLowerCase().includes(searchTerm)) ||
+                    (p.team && p.team.toLowerCase().includes(searchTerm));
 
-            if (product.sizes && product.sizes.length > 0) {
-                product.sizes.forEach(s => {
-                    const label = document.createElement('label');
-                    // Ensure CSS class matches your stylesheet
-                    label.className = `filter-checkbox-label size-style ${s.stock <= 0 ? 'disabled' : ''}`;
-                    label.innerHTML = `<input type="radio" name="modalSize" value="${s.size}"><span>${s.size}</span>`;
+                const matchesTeam = selectedTeams.length === 0 || selectedTeams.includes(p.team);
+                const matchesCat = selectedCategories.length === 0 || selectedCategories.includes(p.category);
+                const matchesSize = selectedSizes.length === 0 || (p.sizes && p.sizes.some(s => selectedSizes.includes(s.size) && s.stock > 0));
 
-                    if (s.stock > 0) {
-                        // Handle selection
-                        label.addEventListener('click', (e) => {
-                            // Clear other selections
-                            document.querySelectorAll('#modalSizeOptions .filter-checkbox-label').forEach(b => b.classList.remove('selected'));
-                            // Select this one
-                            label.classList.add('selected');
-                            // Update State
-                            sizeModal.dataset.selectedSize = s.size;
-                            // Check the radio input manually
-                            const input = label.querySelector('input');
-                            if (input) input.checked = true;
-
-                            if (modalError) modalError.style.display = 'none';
-                        });
-                    } else {
-                        label.style.opacity = '0.5';
-                        label.style.cursor = 'not-allowed';
+                let matchesPrice = true;
+                if (selectedPrices.length > 0) matchesPrice = selectedPrices.some(range => {
+                    // Handle "Above 500" case
+                    if (range === '500-above') {
+                        return parseFloat(p.price) > 500;
                     }
-                    modalSizeOptions.appendChild(label);
-                });
-            } else {
-                modalSizeOptions.innerHTML = "<p class='small'>One Size Available</p>";
-                sizeModal.dataset.selectedSize = "One Size";
-            }
-            sizeModal.style.display = 'flex';
-        }
-
-        // Exposed to Window for the Modal "Add to Cart" button onclick
-        window.confirmAddToCart = async function () {
-            const selectedSize = sizeModal.dataset.selectedSize;
-            if (!selectedSize) {
-                if (modalError) modalError.style.display = 'block';
-                return;
-            }
-
-            try {
-                const res = await fetch('/api/cart/add', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ productId: activeProductId, size: selectedSize, quantity: 1 })
+                    // Handle standard ranges "min-max"
+                    const [min, max] = range.split('-').map(Number);
+                    return parseFloat(p.price) >= min && parseFloat(p.price) <= max;
                 });
 
-                const data = await res.json();
-                if (!res.ok) {
-                    if (res.status === 401) window.location.href = 'signup.html';
-                    else Swal.fire({ icon: 'warning', title: 'Cannot Add', text: data.message, confirmButtonColor: '#DB4444' });
-                    return;
+                let matchesStock = true;
+                if (selectedStockStatus.length > 0) {
+                    const stockQty = Number(p.stockQuantity);
+                    const isOutOfStock = stockQty === 0;
+                    const wantInStock = selectedStockStatus.includes('in');
+                    const wantOutOfStock = selectedStockStatus.includes('out');
+                    if (wantInStock && wantOutOfStock) matchesStock = true;
+                    else if (wantInStock) matchesStock = !isOutOfStock;
+                    else if (wantOutOfStock) matchesStock = isOutOfStock;
                 }
-                closeSizeModal();
-                Swal.fire({ icon: 'success', title: 'Added to Cart', toast: true, position: 'top-end', timer: 1000, showConfirmButton: false })
-                    .then(() => window.location.href = 'cart.html');
-            } catch (err) {
-                Swal.fire('Error', 'Server connection failed', 'error');
-            }
+
+                let matchesOffer = true;
+                if (showAllOffers || selectedSaleIds.length > 0 || activeSaleFilter) {
+                    matchesOffer = false;
+                    if (showAllOffers && p.basePrice && Number(p.basePrice) > Number(p.price)) matchesOffer = true;
+
+                    if (!matchesOffer && activeSaleFilter) {
+                        if (activeSaleFilter.appliesTo === 'all') matchesOffer = true;
+                        else if (activeSaleFilter.appliesTo === 'category') matchesOffer = activeSaleFilter.targetIds.includes(p.category);
+                        else if (activeSaleFilter.appliesTo === 'team') matchesOffer = activeSaleFilter.targetIds.includes(p.team);
+                        else if (activeSaleFilter.appliesTo === 'product') matchesOffer = activeSaleFilter.targetIds.includes(p._id);
+                    }
+
+                    if (!matchesOffer && selectedSaleIds.length > 0) {
+                        const inSelectedSale = selectedSaleIds.some(saleId => {
+                            const sale = activeSalesList.find(s => s._id === saleId);
+                            if (!sale) return false;
+                            if (sale.appliesTo === 'all') return true;
+                            if (sale.appliesTo === 'category') return sale.targetIds.includes(p.category);
+                            if (sale.appliesTo === 'team') return sale.targetIds.includes(p.team);
+                            if (sale.appliesTo === 'product') return sale.targetIds.includes(p._id);
+                            return false;
+                        });
+                        if (inSelectedSale) matchesOffer = true;
+                    }
+                }
+
+                return matchesSearch && matchesTeam && matchesCat && matchesSize && matchesPrice && matchesStock && matchesOffer;
+            });
+
+            if (sortType === 'low-high') filteredProducts.sort((a, b) => parseFloat(a.price) - parseFloat(b.price));
+            else if (sortType === 'high-low') filteredProducts.sort((a, b) => parseFloat(b.price) - parseFloat(a.price));
+            else if (sortType === 'newest') filteredProducts.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+            else if (sortType === 'rating') filteredProducts.sort((a, b) => (parseFloat(b.ratings) || 0) - (parseFloat(a.ratings) || 0));
+
+            renderGrid();
+            renderPagination();
         }
 
-        // Exposed to Window for Cancel button
-        window.closeSizeModal = closeSizeModal;
-
-        // --- 5. RENDER GRID (Clean HTML - No OnClick) ---
         function renderGrid() {
-            const grid = document.getElementById('productGrid');
-            grid.innerHTML = "";
+            productGrid.innerHTML = "";
             if (filteredProducts.length === 0) {
-                grid.innerHTML = `<div class="col-12 text-center py-5"><h4>No products found</h4></div>`;
+                productGrid.innerHTML = `<div class="col-12 text-center py-5"><h4>No products found</h4></div>`;
                 return;
             }
             const start = (currentPage - 1) * itemsPerPage;
@@ -1022,57 +1426,36 @@
             pageItems.forEach(p => {
                 const mainImg = (p.images && p.images.length > 0) ? p.images[0] : 'https://placehold.co/300x300';
                 const hoverImg = (p.images && p.images.length > 1) ? p.images[1] : mainImg;
-
                 const isOutOfStock = p.stockQuantity === 0;
                 let badgeHTML = isOutOfStock ? `<span class="product-card-badge" style="background:grey;">Sold Out</span>` : '';
-
                 let priceHTML = `₹${p.price}`;
                 if (p.basePrice && p.basePrice > p.price) {
                     const percent = Math.round(((p.basePrice - p.price) / p.basePrice) * 100);
                     if (!isOutOfStock) badgeHTML = `<span class="product-card-badge">-${percent}%</span>`;
                     priceHTML = `₹${p.price} <span class="original-price" style="color:#999; text-decoration:line-through; font-size:0.9rem;">₹${p.basePrice}</span>`;
                 }
-
                 const rating = parseFloat(p.ratings) || 0;
                 const count = p.numReviews || 0;
-                let starHTML = count === 0 ? '<span class="small text-muted" style="font-size:0.8rem;">No reviews</span>' : '<div class="mb-1 text-warning" style="font-size:0.8rem;">';
+                let starHTML = count === 0 ? '<div class="mb-1"><span class="small text-muted" style="font-size: 0.75rem;">No reviews</span></div>' : '<div class="mb-1 text-warning" style="font-size: 0.8rem;">';
                 if (count > 0) {
-                    for (let i = 1; i <= 5; i++) {
-                        starHTML += rating >= i ? '<i class="fas fa-star"></i>' : rating >= i - 0.5 ? '<i class="fas fa-star-half-alt"></i>' : '<i class="far fa-star" style="color:#ccc;"></i>';
-                    }
-                    starHTML += ` <span class="small text-muted" style="color:#666;">(${count})</span></div>`;
+                    for (let i = 1; i <= 5; i++) starHTML += rating >= i ? '<i class="fas fa-star"></i>' : rating >= i - 0.5 ? '<i class="fas fa-star-half-alt"></i>' : '<i class="far fa-star" style="color: #ccc;"></i>';
+                    starHTML += ` <span class="text-muted small" style="color: #666;">(${count})</span></div>`;
                 }
-
-                const isWishlisted = userWishlistIds.includes(p._id);
-                const heartClass = isWishlisted ? 'fas' : 'far';
-                const heartStyle = isWishlisted ? 'style="color: #DB4444;"' : '';
-
+                const sizesJson = JSON.stringify(p.sizes || []).replace(/"/g, '&quot;');
                 let btnClass = "add-to-cart-btn";
                 let btnText = "Add To Cart";
-
-                // Note: No onclick attribute here! We use data-id
-                if (isOutOfStock) {
-                    btnClass += " disabled";
-                    btnText = "Out of Stock";
-                }
-
-                const sizesJson = JSON.stringify(p.sizes || []).replace(/"/g, '&quot;');
+                if (isOutOfStock) { btnClass += " disabled"; btnText = "Out of Stock"; }
 
                 const card = document.createElement('div');
                 card.className = 'col';
                 card.innerHTML = `
-                    <div class="product-card" 
-                         data-product-id="${p._id}" 
-                         data-product-name="${p.name.replace(/"/g, '&quot;')}"
-                         data-product-sizes="${sizesJson}">
+                    <div class="product-card" data-product-id="${p._id}" data-product-name="${p.name.replace(/"/g, '&quot;')}" data-product-sizes="${sizesJson}">
                         <div class="product-image-container">
                             <img src="${mainImg}" class="product-image main-img">
                             <img src="${hoverImg}" class="product-image hover-img" style="display:none;"> 
                             ${badgeHTML}
                             <div class="product-card-controls">
-                                <span class="control-icon" data-id="${p._id}">
-                                    <i class="${heartClass} fa-heart" ${heartStyle}></i>
-                                </span>
+                                <span class="control-icon" data-id="${p._id}"><i class="${userWishlistIds.includes(p._id) ? 'fas' : 'far'} fa-heart" ${userWishlistIds.includes(p._id) ? 'style="color: #DB4444;"' : ''}></i></span>
                             </div>
                             <button class="${btnClass}" data-id="${p._id}">${btnText}</button>
                         </div>
@@ -1081,10 +1464,8 @@
                             <div class="product-price">${priceHTML}</div>
                             <div class="product-rating">${starHTML}</div>
                         </div>
-                    </div>
-                `;
+                    </div>`;
 
-                // Hover Logic
                 const container = card.querySelector('.product-image-container');
                 const img1 = card.querySelector('.main-img');
                 const img2 = card.querySelector('.hover-img');
@@ -1092,99 +1473,41 @@
                     container.addEventListener('mouseenter', () => { img1.style.display = 'none'; img2.style.display = 'block'; });
                     container.addEventListener('mouseleave', () => { img1.style.display = 'block'; img2.style.display = 'none'; });
                 }
-
-                grid.appendChild(card);
+                productGrid.appendChild(card);
             });
         }
 
-        // --- 6. AUTH & NAVBAR ---
-        // Exposed globally for Navbar onclicks
-        window.checkAuth = async function (targetPage) {
-            if (!window.userIsLoggedIn) {
-                const stillLoggedIn = await checkLoginStatus();
-                if (stillLoggedIn) {
-                    window.userIsLoggedIn = true;
-                    if (targetPage) window.location.href = targetPage;
-                    return true;
-                }
-                Swal.fire({
-                    icon: 'info', title: 'Login Required', text: 'You need to be logged in.',
-                    showCancelButton: true, confirmButtonText: 'Go to Login', confirmButtonColor: '#DB4444'
-                }).then((result) => {
-                    if (result.isConfirmed) window.location.href = 'signup.html';
-                });
-                return false;
-            } else {
-                if (targetPage) window.location.href = targetPage;
-                return true;
-            }
-        };
-
-        async function checkLoginStatus() {
-            try { const res = await fetch('/api/auth/verify-user'); return res.ok; } catch (err) { return false; }
-        }
-
-        function updateNavbar(isLoggedIn) {
-            const signupNavItem = document.getElementById('signupNavItem');
-            const iconContainer = document.querySelector('.d-flex.align-items-center.gap-3');
-            let logoutBtn = document.getElementById('dynamicLogoutBtn');
-
-            if (isLoggedIn) {
-                if (signupNavItem) signupNavItem.style.display = 'none';
-                if (!logoutBtn && iconContainer) {
-                    logoutBtn = document.createElement('a');
-                    logoutBtn.href = "#";
-                    logoutBtn.id = "dynamicLogoutBtn";
-                    logoutBtn.className = "text-danger";
-                    logoutBtn.innerHTML = '<i class="fas fa-sign-out-alt"></i>';
-                    logoutBtn.title = "Logout";
-                    logoutBtn.style.cursor = "pointer";
-                    logoutBtn.onclick = (e) => { e.preventDefault(); handleLogout(); };
-                    iconContainer.appendChild(logoutBtn);
-                }
-            } else {
-                if (signupNavItem) signupNavItem.style.display = 'block';
-                if (logoutBtn) logoutBtn.remove();
+        function renderPagination() {
+            const pagination = document.getElementById('pagination'); pagination.innerHTML = "";
+            const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
+            if (totalPages <= 1) return;
+            for (let i = 1; i <= totalPages; i++) {
+                const li = document.createElement('li'); li.className = `page-item ${i === currentPage ? 'active' : ''}`; li.innerHTML = `<a class="page-link" href="#">${i}</a>`;
+                li.addEventListener('click', (e) => { e.preventDefault(); currentPage = i; renderGrid(); renderPagination(); window.scrollTo(0, 0); });
+                pagination.appendChild(li);
             }
         }
 
-        async function handleLogout() {
-            try {
-                await fetch('/api/auth/logout-user', { method: 'POST' });
-                localStorage.removeItem('user');
-                window.location.href = 'signup.html';
-            } catch (err) { console.error('Logout failed', err); }
+        function initializeFiltersFromURL() {
+            const params = new URLSearchParams(window.location.search);
+            if (params.get('search')) document.getElementById('searchInput').value = decodeURIComponent(params.get('search'));
+            if (params.get('category')) toggleFilter('category', decodeURIComponent(params.get('category')));
+            if (params.get('team')) toggleFilter('team', decodeURIComponent(params.get('team')));
+            if (params.get('filter') === 'offers') { document.getElementById('offerFilterCheckbox').checked = true; showAllOffers = true; }
+            if (params.get('sale_id')) fetchSaleDetails(params.get('sale_id'));
+
+            // NEW: Manually trigger apply once on load
+            applyFilters();
         }
 
-        // --- 7. WISHLIST ---
-        async function toggleWishlist(icon, productId) {
-            if (!window.userIsLoggedIn) {
-                Swal.fire({ icon: 'info', title: 'Login Required', confirmButtonColor: '#DB4444' }).then(res => { if (res.isConfirmed) window.location.href = 'signup.html'; });
-                return;
-            }
-            try {
-                const res = await fetch('/api/wishlist/toggle', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ productId }) });
-                const data = await res.json();
-                if (data.success) {
-                    const Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 1500 });
-                    const iconI = icon.querySelector('i');
-                    if (data.action === 'added') {
-                        iconI.classList.replace('far', 'fas'); iconI.style.color = '#DB4444'; userWishlistIds.push(productId); Toast.fire({ icon: 'success', title: 'Added to Wishlist' });
-                    } else {
-                        iconI.classList.replace('fas', 'far'); iconI.style.color = ''; userWishlistIds = userWishlistIds.filter(id => id !== productId); Toast.fire({ icon: 'info', title: 'Removed from Wishlist' });
-                    }
-                }
-            } catch (err) { console.error(err); }
-        }
-
-        // --- 8. DATA LOADING ---
+        // ==========================================
+        //  REMAINING FETCHERS
+        // ==========================================
         async function fetchProducts() {
             try {
                 const res = await fetch(`/api/products?_t=${Date.now()}`);
                 const json = await res.json();
-                if (json.success) {
-                    allProducts = json.data.filter(p => p.status === 'Active');
-                }
+                if (json.success) allProducts = json.data.filter(p => p.status === 'Active');
             } catch (err) { console.error(err); }
         }
         async function fetchUserWishlist() {
@@ -1208,221 +1531,117 @@
                         li.innerHTML = `<label class="filter-checkbox-label"><input type="checkbox" id="sale-cb-${sale._id}" onchange="toggleFilter('sale', '${sale._id}')"> <span class="ms-1">${sale.name}</span></label>`;
                         list.appendChild(li);
                     });
+
+                    // --- SYNC TO MOBILE ---
                     setTimeout(() => {
-                        const d = document.getElementById('desktopFilters').innerHTML;
-                        const m = d.replace(/id="categoryList"/g, 'id="mCat"').replace(/id="teamList"/g, 'id="mTeam"').replace(/id="offersFilterList"/g, 'id="mOff"').replace(/id="sale-cb-/g, 'id="mSale-');
-                        document.getElementById('mobileFilterBody').innerHTML = m;
+                        const desktopContent = document.getElementById('desktopFilters').innerHTML;
+
+                        // Create IDs for mobile uniqueness
+                        let mobileHTML = desktopContent
+                            .replace(/id="categoryList"/g, 'id="mCat"')
+                            .replace(/id="teamList"/g, 'id="mTeam"')
+                            .replace(/id="offersFilterList"/g, 'id="mOff"')
+                            .replace(/id="sale-cb-/g, 'id="mSale-')
+                        // Remove the desktop "Show More" buttons logic from the string copy so they don't break ID refs, 
+                        // or just let them copy (they might not work perfectly in mobile clone without re-binding events, 
+                        // but for simple display it's usually fine. Ideally, mobile should show all).
+
+                        const mobileBody = document.getElementById('mobileFilterBody');
+
+                        // IMPORTANT: Here is the Mobile Button Container
+                        mobileBody.innerHTML = `
+                    <div id="mobileFilterContent">
+                        ${mobileHTML}
+                    </div>
+                    <div class="mobile-sticky-btn">
+                        <button class="btn btn-dark" data-bs-dismiss="offcanvas" onclick="applyFilters()">Apply Filters</button>
+                    </div>
+                `;
+
+                        // Remove the "Apply" button that might have been copied from desktop HTML
+                        // (Though our CSS hides .filter-apply-btn-container on desktop, the clone might bring it)
+                        const copiedBtnContainer = mobileBody.querySelector('#mobileFilterContent .filter-apply-btn-container');
+                        if (copiedBtnContainer) copiedBtnContainer.remove();
+
                     }, 500);
                 }
             } catch (e) { console.error(e); }
         }
-        async function fetchFilterData() {
-            try {
-                const teamRes = await fetch('/api/teams');
-                const teamData = await teamRes.json();
-                const teamList = document.getElementById('teamList');
-                if (teamData.success) {
-                    teamData.data.sort((a, b) => a.name.localeCompare(b.name)).forEach(t => {
-                        if (t.status === 'Active') teamList.innerHTML += `<li><label class="filter-checkbox-label"><input type="checkbox" onchange="toggleFilter('team', '${t.name}')"> ${t.name}</label></li>`;
-                    });
+        async function fetchSaleDetails(saleId) {
+            const sale = activeSalesList.find(s => s._id === saleId);
+            if (sale) {
+                activeSaleFilter = sale;
+                const cb = document.getElementById(`sale-cb-${saleId}`);
+                if (cb) cb.checked = true;
+                toggleFilter('sale', saleId);
+                applyFilters(); // Trigger for direct URL access
+            }
+        }
+
+        // ==========================================
+        //  AUTH & MODAL UTILS
+        // ==========================================
+        function updateNavbar(isLoggedIn) {
+            const signupNavItem = document.getElementById('signupNavItem');
+            const iconContainer = document.querySelector('.d-flex.align-items-center.gap-3');
+            let logoutBtn = document.getElementById('dynamicLogoutBtn');
+            if (isLoggedIn) {
+                if (signupNavItem) signupNavItem.style.display = 'none';
+                if (!logoutBtn && iconContainer) {
+                    logoutBtn = document.createElement('a'); logoutBtn.href = "#"; logoutBtn.id = "dynamicLogoutBtn"; logoutBtn.className = "text-danger"; logoutBtn.innerHTML = '<i class="fas fa-sign-out-alt"></i>'; logoutBtn.title = "Logout"; logoutBtn.style.cursor = "pointer";
+                    logoutBtn.onclick = (e) => { e.preventDefault(); handleLogout(); };
+                    iconContainer.appendChild(logoutBtn);
                 }
-                const catRes = await fetch('/api/categories');
-                const catData = await catRes.json();
-                const catList = document.getElementById('categoryList');
-                publishedCategoryNames = [];
-                if (catData.success) {
-                    catData.data.sort((a, b) => a.name.localeCompare(b.name)).forEach(c => {
-                        if (c.status === 'Published') {
-                            publishedCategoryNames.push(c.name);
-                            catList.innerHTML += `<li><label class="filter-checkbox-label"><input type="checkbox" onchange="toggleFilter('category', '${c.name}')"> ${c.name}</label></li>`;
-                        }
-                    });
+            } else {
+                if (signupNavItem) signupNavItem.style.display = 'block';
+                if (logoutBtn) logoutBtn.remove();
+            }
+        }
+        async function handleLogout() {
+            try { await fetch('/api/auth/logout-user', { method: 'POST' }); localStorage.removeItem('user'); window.location.href = 'signup.html'; } catch (err) { console.error(err); }
+        }
+        async function toggleWishlist(icon, productId) {
+            if (!window.userIsLoggedIn) { Swal.fire({ icon: 'info', title: 'Login Required', confirmButtonColor: '#DB4444' }).then(res => { if (res.isConfirmed) window.location.href = 'signup.html'; }); return; }
+            try {
+                const res = await fetch('/api/wishlist/toggle', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ productId }) });
+                const data = await res.json();
+                if (data.success) {
+                    const Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 1500 });
+                    const iconI = icon.querySelector('i');
+                    if (data.action === 'added') { iconI.classList.replace('far', 'fas'); iconI.style.color = '#DB4444'; userWishlistIds.push(productId); Toast.fire({ icon: 'success', title: 'Added to Wishlist' }); }
+                    else { iconI.classList.replace('fas', 'far'); iconI.style.color = ''; userWishlistIds = userWishlistIds.filter(id => id !== productId); Toast.fire({ icon: 'info', title: 'Removed from Wishlist' }); }
                 }
             } catch (err) { console.error(err); }
         }
-
-        // --- 9. HELPERS ---
-        function toggleFilter(type, value) {
-            if (type === 'team') toggleArray(selectedTeams, value);
-            else if (type === 'category') toggleArray(selectedCategories, value);
-            else if (type === 'size') toggleArray(selectedSizes, value);
-            else if (type === 'price') toggleArray(selectedPrices, value);
-            else if (type === 'stock') toggleArray(selectedStockStatus, value);
-            else if (type === 'offer' && value === 'all') showAllOffers = !showAllOffers;
-            else if (type === 'sale') toggleArray(selectedSaleIds, value);
-            if (type !== 'offer' && type !== 'sale') syncFilterUI(type, value);
-            currentPage = 1; applyFilters();
-        }
-        function toggleArray(arr, val) { const idx = arr.indexOf(val); if (idx > -1) arr.splice(idx, 1); else arr.push(val); }
-        function syncFilterUI(type, value) {
-            let isSelected = false;
-            if (type === 'team') isSelected = selectedTeams.includes(value);
-            else if (type === 'category') isSelected = selectedCategories.includes(value);
-            else if (type === 'size') isSelected = selectedSizes.includes(value);
-            else if (type === 'price') isSelected = selectedPrices.includes(value);
-            else if (type === 'stock') isSelected = selectedStockStatus.includes(value);
-            document.querySelectorAll('input[type="checkbox"]').forEach(cb => {
-                const onchange = cb.getAttribute('onchange');
-                if (onchange && onchange.includes(`'${type}'`) && onchange.includes(`'${value}'`)) cb.checked = isSelected;
-            });
-        }
-        function applyFilters() {
-            // 1. Get Search Term
-            const searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
-            const sortType = document.getElementById('sortDropdown').value;
-
-            filteredProducts = allProducts.filter(p => {
-                // A. Filter by Published Categories (Backend safety check)
-                if (publishedCategoryNames.length > 0 && !publishedCategoryNames.includes(p.category)) return false;
-
-                // --- NEW SEARCH LOGIC (Name OR Category OR Team) ---
-                let matchesSearch = false;
-                if (searchTerm === "") {
-                    matchesSearch = true;
-                } else {
-                    // Check Name
-                    const nameMatch = p.name.toLowerCase().includes(searchTerm);
-
-                    // Check Category (Handle string or object)
-                    let catMatch = false;
-                    if (p.category) {
-                        const catName = typeof p.category === 'object' ? p.category.name : p.category;
-                        catMatch = String(catName).toLowerCase().includes(searchTerm);
-                    }
-
-                    // Check Team (Handle string or object)
-                    let teamMatch = false;
-                    if (p.team) {
-                        const teamName = typeof p.team === 'object' ? p.team.name : p.team;
-                        teamMatch = String(teamName).toLowerCase().includes(searchTerm);
-                    }
-
-                    matchesSearch = nameMatch || catMatch || teamMatch;
-                }
-                // ---------------------------------------------------
-
-                // B. Filter by Checkboxes (Team)
-                const matchesTeam = selectedTeams.length === 0 || selectedTeams.includes(p.team);
-
-                // C. Filter by Checkboxes (Category)
-                const matchesCat = selectedCategories.length === 0 || selectedCategories.includes(p.category);
-
-                // D. Filter by Size
-                const matchesSize = selectedSizes.length === 0 || (p.sizes && p.sizes.some(s => selectedSizes.includes(s.size) && s.stock > 0));
-
-                // E. Filter by Price
-                let matchesPrice = true;
-                if (selectedPrices.length > 0) matchesPrice = selectedPrices.some(range => {
-                    const [min, max] = range.split('-').map(Number);
-                    return p.price >= min && p.price <= max;
+        function closeSizeModal() { sizeModal.style.display = 'none'; }
+        function openSizeModal(id) {
+            if (!window.userIsLoggedIn) { Swal.fire({ icon: 'info', title: 'Login Required', confirmButtonColor: '#DB4444' }).then(res => { if (res.isConfirmed) window.location.href = 'signup.html'; }); return; }
+            const product = allProducts.find(p => p._id === id); if (!product) return;
+            activeProductId = product._id; activeProductName = product.name;
+            document.getElementById('modalProductName').innerText = `Select Size: ${product.name}`;
+            modalSizeOptions.innerHTML = ""; sizeModal.dataset.selectedSize = ""; if (modalError) modalError.style.display = 'none';
+            if (product.sizes && product.sizes.length > 0) {
+                product.sizes.forEach(s => {
+                    const label = document.createElement('label'); label.className = `filter-checkbox-label size-style ${s.stock <= 0 ? 'disabled' : ''}`;
+                    label.innerHTML = `<input type="radio" name="modalSize" value="${s.size}"><span>${s.size}</span>`;
+                    if (s.stock > 0) {
+                        label.addEventListener('click', () => { document.querySelectorAll('#modalSizeOptions .filter-checkbox-label').forEach(b => b.classList.remove('selected')); label.classList.add('selected'); sizeModal.dataset.selectedSize = s.size; label.querySelector('input').checked = true; if (modalError) modalError.style.display = 'none'; });
+                    } else { label.style.opacity = '0.5'; label.style.cursor = 'not-allowed'; }
+                    modalSizeOptions.appendChild(label);
                 });
-
-                // F. Filter by Stock
-                let matchesStock = true;
-                if (selectedStockStatus.length > 0) {
-                    const stockQty = Number(p.stockQuantity);
-                    const isOutOfStock = stockQty === 0;
-                    const wantInStock = selectedStockStatus.includes('in');
-                    const wantOutOfStock = selectedStockStatus.includes('out');
-                    if (wantInStock && wantOutOfStock) matchesStock = true;
-                    else if (wantInStock) matchesStock = !isOutOfStock;
-                    else if (wantOutOfStock) matchesStock = isOutOfStock;
-                }
-
-                // G. Filter by Offers/Sales
-                let matchesOffer = true;
-                if (showAllOffers || selectedSaleIds.length > 0 || activeSaleFilter) {
-                    matchesOffer = false;
-                    // Check generic "Show All Offers" (Base Price > Price)
-                    if (showAllOffers && p.basePrice && Number(p.basePrice) > Number(p.price)) matchesOffer = true;
-
-                    // Check Sale from URL (?sale_id=...)
-                    if (!matchesOffer && activeSaleFilter) {
-                        if (activeSaleFilter.appliesTo === 'all') matchesOffer = true;
-                        else if (activeSaleFilter.appliesTo === 'category') matchesOffer = activeSaleFilter.targetIds.includes(p.category);
-                        else if (activeSaleFilter.appliesTo === 'team') matchesOffer = activeSaleFilter.targetIds.includes(p.team);
-                        else if (activeSaleFilter.appliesTo === 'product') matchesOffer = activeSaleFilter.targetIds.includes(p._id);
-                    }
-
-                    // Check Specific Sale Checkboxes
-                    if (!matchesOffer && selectedSaleIds.length > 0) {
-                        const inSelectedSale = selectedSaleIds.some(saleId => {
-                            const sale = activeSalesList.find(s => s._id === saleId);
-                            if (!sale) return false;
-                            if (sale.appliesTo === 'all') return true;
-                            if (sale.appliesTo === 'category') return sale.targetIds.includes(p.category);
-                            if (sale.appliesTo === 'team') return sale.targetIds.includes(p.team);
-                            if (sale.appliesTo === 'product') return sale.targetIds.includes(p._id);
-                            return false;
-                        });
-                        if (inSelectedSale) matchesOffer = true;
-                    }
-                }
-
-                return matchesSearch && matchesTeam && matchesCat && matchesSize && matchesPrice && matchesStock && matchesOffer;
-            });
-
-            // Sorting
-            if (sortType === 'low-high') filteredProducts.sort((a, b) => parseFloat(a.price) - parseFloat(b.price));
-            else if (sortType === 'high-low') filteredProducts.sort((a, b) => parseFloat(b.price) - parseFloat(a.price));
-            else if (sortType === 'newest') filteredProducts.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-            else if (sortType === 'rating') filteredProducts.sort((a, b) => (parseFloat(b.ratings) || 0) - (parseFloat(a.ratings) || 0));
-
-            renderGrid();
-            renderPagination();
+            } else { modalSizeOptions.innerHTML = "<p class='small'>One Size Available</p>"; sizeModal.dataset.selectedSize = "One Size"; }
+            sizeModal.style.display = 'flex';
         }
-
-
-        function renderPagination() {
-            const pagination = document.getElementById('pagination'); pagination.innerHTML = "";
-            const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
-            if (totalPages <= 1) return;
-            for (let i = 1; i <= totalPages; i++) {
-                const li = document.createElement('li'); li.className = `page-item ${i === currentPage ? 'active' : ''}`; li.innerHTML = `<a class="page-link" href="#">${i}</a>`;
-                li.addEventListener('click', (e) => { e.preventDefault(); currentPage = i; renderGrid(); renderPagination(); window.scrollTo(0, 0); }); pagination.appendChild(li);
-            }
+        window.confirmAddToCart = async function () {
+            const selectedSize = sizeModal.dataset.selectedSize; if (!selectedSize) { if (modalError) modalError.style.display = 'block'; return; }
+            try {
+                const res = await fetch('/api/cart/add', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ productId: activeProductId, size: selectedSize, quantity: 1 }) });
+                const data = await res.json();
+                if (!res.ok) { if (res.status === 401) window.location.href = 'signup.html'; else Swal.fire({ icon: 'warning', title: 'Cannot Add', text: data.message, confirmButtonColor: '#DB4444' }); return; }
+                closeSizeModal(); Swal.fire({ icon: 'success', title: 'Added to Cart', toast: true, position: 'top-end', timer: 1000, showConfirmButton: false }).then(() => window.location.href = 'cart.html');
+            } catch (err) { Swal.fire('Error', 'Server connection failed', 'error'); }
         }
-        function initializeFiltersFromURL() {
-            const params = new URLSearchParams(window.location.search);
-
-            // 1. Handle Search Text
-            if (params.get('search')) {
-                document.getElementById('searchInput').value = decodeURIComponent(params.get('search'));
-            }
-
-            // 2. Handle Category Redirect (Fixes the index.html issue)
-            if (params.get('category')) {
-                const categoryName = decodeURIComponent(params.get('category'));
-                toggleFilter('category', categoryName);
-                // toggleFilter automatically calls applyFilters(), so we see results immediately
-            }
-
-            // 3. Handle Team Redirect
-            if (params.get('team')) {
-                const teamName = decodeURIComponent(params.get('team'));
-                toggleFilter('team', teamName);
-            }
-
-            // 4. Handle Offers
-            if (params.get('filter') === 'offers') {
-                document.getElementById('offerFilterCheckbox').checked = true;
-                showAllOffers = true;
-            }
-
-            // 5. Handle Sales
-            if (params.get('sale_id')) {
-                fetchSaleDetails(params.get('sale_id'));
-            }
-        }
-
-        
-        async function fetchSaleDetails(saleId) {
-            const sale = activeSalesList.find(s => s._id === saleId);
-            if (sale) { activeSaleFilter = sale; const cb = document.getElementById(`sale-cb-${saleId}`); if (cb) cb.checked = true; toggleFilter('sale', saleId); }
-        }
-        function handleSearch() { currentPage = 1; applyFilters(); }
-        const searchInput = document.getElementById('searchInput');
-        if (searchInput) searchInput.addEventListener('keyup', (e) => { if (e.key === 'Enter') handleSearch(); });
+        window.closeSizeModal = closeSizeModal;
     </script>
 </body>
 
