@@ -746,11 +746,13 @@
 
         /* GREY BUTTON STYLE FOR OUT OF STOCK */
         .add-to-cart-btn.disabled {
-            background-color: #6c757d !important; /* Bootstrap Grey */
+            background-color: #6c757d !important;
+            /* Bootstrap Grey */
             border-color: #6c757d !important;
             color: white !important;
             cursor: not-allowed !important;
-            pointer-events: none; /* Prevents clicking */
+            pointer-events: none;
+            /* Prevents clicking */
         }
 
         .product-image-container-card {
@@ -801,6 +803,131 @@
             color: var(--primary-red);
             font-weight: 600;
             font-size: 0.95rem;
+        }
+
+        /* --- LIGHTBOX (FULL SCREEN IMAGE) STYLES --- */
+        .lightbox-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 10000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
+
+        .lightbox-img-wrapper {
+            position: relative;
+            width: 100%;
+            height: 80%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .lightbox-img {
+            max-width: 90%;
+            max-height: 100%;
+            object-fit: contain;
+            user-select: none;
+        }
+
+        .lightbox-close {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            color: white;
+            font-size: 2rem;
+            cursor: pointer;
+            z-index: 10001;
+            background: none;
+            border: none;
+        }
+
+        .lightbox-nav {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: none;
+            font-size: 2rem;
+            padding: 10px 15px;
+            cursor: pointer;
+            border-radius: 50%;
+            z-index: 10001;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.3s;
+        }
+
+        .lightbox-nav:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .lightbox-prev {
+            left: 20px;
+        }
+
+        .lightbox-next {
+            right: 20px;
+        }
+
+        .lightbox-counter {
+            color: white;
+            margin-top: 10px;
+            font-size: 1rem;
+            letter-spacing: 1px;
+        }
+
+        /* --- FIX FOR ACTION ROW ON IPHONE 14 PRO & SMALL SCREENS --- */
+        @media (max-width: 450px) {
+            .action-row {
+                flex-wrap: nowrap !important;
+                /* Force single line */
+                gap: 8px !important;
+                /* Reduce gap */
+            }
+
+            .quantity-wrapper {
+                height: 40px;
+                /* Slightly smaller height */
+                flex-shrink: 0;
+                /* Don't shrink */
+            }
+
+            .qty-input {
+                width: 35px;
+                /* Narrower input */
+                font-size: 0.9rem;
+            }
+
+            .qty-btn {
+                padding: 0 10px;
+            }
+
+            .btn-buy-now {
+                height: 40px;
+                font-size: 0.85rem;
+                padding: 0 10px;
+                white-space: nowrap;
+                /* Prevent text wrapping */
+                flex-grow: 1;
+                /* Fill remaining space */
+                max-width: unset;
+                /* Remove max-width limit */
+            }
+
+            .wishlist-box {
+                width: 40px;
+                height: 40px;
+                flex-shrink: 0;
+            }
         }
 
         @media (max-width: 991px) {
@@ -1039,6 +1166,20 @@
             </div>
         </div>
     </footer>
+
+    <div class="lightbox-overlay" id="lightbox">
+        <button class="lightbox-close" onclick="closeLightbox()">&times;</button>
+
+        <button class="lightbox-nav lightbox-prev" onclick="changeLightboxImage(-1)">&#10094;</button>
+
+        <div class="lightbox-img-wrapper" id="lightboxSwipeArea">
+            <img src="" alt="Full View" class="lightbox-img" id="lightboxImg">
+        </div>
+
+        <button class="lightbox-nav lightbox-next" onclick="changeLightboxImage(1)">&#10095;</button>
+
+        <div class="lightbox-counter" id="lightboxCounter">1 / 1</div>
+    </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
@@ -1415,13 +1556,21 @@
                 selectedSizeStock = p.stockQuantity;
             }
 
-            // 7. Images Gallery
+            // 7. Images Gallery & Lightbox
             const mainImg = document.getElementById('mainProductImage');
             const thumbCont = document.getElementById('thumbnailContainer');
             thumbCont.innerHTML = "";
 
             if (p.images && p.images.length > 0) {
+                // A. Init Lightbox Array
+                initLightbox(p.images);
+
+                // B. Set Main Image and Click Event
                 mainImg.src = p.images[0];
+                mainImg.style.cursor = "zoom-in";
+                mainImg.onclick = () => openLightbox(); // <--- This triggers the popup
+
+                // C. Render Thumbnails
                 p.images.forEach((url, idx) => {
                     const thumb = document.createElement('div');
                     thumb.className = `thumb-img-wrapper ${idx === 0 ? 'active' : ''}`;
@@ -1429,16 +1578,21 @@
                     thumb.onclick = () => {
                         document.querySelectorAll('.thumb-img-wrapper').forEach(t => t.classList.remove('active'));
                         thumb.classList.add('active');
+
+                        // Update Main Image
                         mainImg.classList.add('fade-out');
                         setTimeout(() => {
                             mainImg.src = url;
+                            currentImgIndex = idx; // Sync lightbox index with clicked thumbnail
                             mainImg.classList.remove('fade-out');
                         }, 300);
                     };
                     thumbCont.appendChild(thumb);
                 });
             } else {
-                mainImg.src = "https://placehold.co/500";
+                mainImg.src = "./Images/placeholder.png";
+                initLightbox(["./Images/placeholder.png"]);
+                mainImg.onclick = () => openLightbox();
             }
         }
 
@@ -1640,13 +1794,13 @@
 
                     related.forEach(p => {
                         const img = (p.images && p.images.length > 0) ? p.images[0] : './Images/placeholder.png';
-                        
+
                         // --- STOCK LOGIC START ---
                         const isOutOfStock = p.stockQuantity <= 0;
-                        
+
                         // Default state (In Stock)
                         let badgeHTML = '';
-                        let btnClass = "add-to-cart-btn"; 
+                        let btnClass = "add-to-cart-btn";
                         let btnText = "View Details";
 
                         // If Out of Stock
@@ -1654,7 +1808,7 @@
                             badgeHTML = `<span class="product-card-badge" style="background-color: #6c757d;">Out of Stock</span>`;
                             btnClass += " disabled"; // <--- Adds the 'disabled' class for GREY color
                             btnText = "Sold Out";
-                        } 
+                        }
                         // If On Sale (only show if in stock)
                         else if (p.basePrice && p.basePrice > p.price) {
                             badgeHTML = `<span class="product-card-badge">Sale</span>`;
@@ -1696,6 +1850,89 @@
                 }
             } catch (err) { console.error(err); }
         }
+
+        // ==========================================
+        //  LIGHTBOX & SWIPE LOGIC
+        // ==========================================
+        let currentImgIndex = 0;
+        let productImages = [];
+
+        // 1. Initialize Lightbox Data (Call this inside renderDetails)
+        function initLightbox(images) {
+            productImages = images;
+            currentImgIndex = 0;
+        }
+
+        // 2. Open Lightbox
+        function openLightbox() {
+            if (!productImages || productImages.length === 0) return;
+
+            const lightbox = document.getElementById('lightbox');
+            lightbox.style.display = 'flex';
+            document.body.style.overflow = 'hidden'; // Disable background scrolling
+            updateLightboxImage();
+        }
+
+        // 3. Close Lightbox
+        function closeLightbox() {
+            document.getElementById('lightbox').style.display = 'none';
+            document.body.style.overflow = 'auto'; // Enable scrolling
+        }
+
+        // 4. Navigation
+        function changeLightboxImage(dir) {
+            currentImgIndex += dir;
+
+            // Loop navigation
+            if (currentImgIndex < 0) currentImgIndex = productImages.length - 1;
+            if (currentImgIndex >= productImages.length) currentImgIndex = 0;
+
+            updateLightboxImage();
+        }
+
+        // 5. Update Image Source
+        function updateLightboxImage() {
+            const img = document.getElementById('lightboxImg');
+            const counter = document.getElementById('lightboxCounter');
+
+            img.src = productImages[currentImgIndex];
+            counter.innerText = `${currentImgIndex + 1} / ${productImages.length}`;
+        }
+
+        // 6. Bind Click Event to Main Image
+        // Find your existing renderDetails() function and add the onclick handler 
+        // to the main image element inside it. (See Step 4 below)
+
+        // 7. Touch Swipe Logic
+        const swipeArea = document.getElementById('lightboxSwipeArea');
+        let touchStartX = 0;
+        let touchEndX = 0;
+
+        swipeArea.addEventListener('touchstart', e => {
+            touchStartX = e.changedTouches[0].screenX;
+        });
+
+        swipeArea.addEventListener('touchend', e => {
+            touchEndX = e.changedTouches[0].screenX;
+            handleSwipe();
+        });
+
+        function handleSwipe() {
+            const threshold = 50; // Min distance to be considered a swipe
+            if (touchEndX < touchStartX - threshold) {
+                changeLightboxImage(1); // Swipe Left -> Next
+            }
+            if (touchEndX > touchStartX + threshold) {
+                changeLightboxImage(-1); // Swipe Right -> Prev
+            }
+        }
+
+        // Close on background click (optional)
+        document.getElementById('lightbox').addEventListener('click', (e) => {
+            if (e.target.id === 'lightbox' || e.target.classList.contains('lightbox-img-wrapper')) {
+                closeLightbox();
+            }
+        });
     </script>
 </body>
 
