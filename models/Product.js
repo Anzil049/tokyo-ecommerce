@@ -5,7 +5,7 @@ const productSchema = new mongoose.Schema({
         type: String,
         required: true,
         trim: true,
-        unique: true 
+        unique: true
     },
     preSaleSnapshot: {
         price: Number,
@@ -15,16 +15,14 @@ const productSchema = new mongoose.Schema({
     sku: {
         type: String,
         unique: true,
-        required: function() { return this.status === 'Active'; },
+        required: function () { return this.status === 'Active'; },
     },
-    category: {
-        type: String,
-        required: function() { return this.status === 'Active'; },
-
-    },
+    category: { type: [String],
+         required: true },
+    // OR simply type: Array,
     team: {
         type: String,
-        required: function() { return this.status === 'Active'; },
+        required: function () { return this.status === 'Active'; },
 
     },
     description: {
@@ -34,7 +32,7 @@ const productSchema = new mongoose.Schema({
     // Pricing
     price: {
         type: Number,
-        required: function() { return this.status === 'Active'; },
+        required: function () { return this.status === 'Active'; },
     },
     basePrice: {
         type: Number,
@@ -42,7 +40,7 @@ const productSchema = new mongoose.Schema({
     },
     discountType: {
         type: String,
-        enum: ['percent', 'fixed'], 
+        enum: ['percent', 'fixed'],
         default: 'percent'
     },
     discountValue: {
@@ -53,7 +51,7 @@ const productSchema = new mongoose.Schema({
     // Inventory
     stockQuantity: {
         type: Number,
-        required: true, 
+        required: true,
         min: 0
     },
     sizes: [{
@@ -75,7 +73,7 @@ const productSchema = new mongoose.Schema({
     },
     status: {
         type: String,
-        enum: ["Active", "Draft"], 
+        enum: ["Active", "Draft"],
         default: "Draft"
     },
 

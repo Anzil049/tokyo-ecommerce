@@ -38,11 +38,24 @@
             font-family: 'Inter', sans-serif;
         }
 
+        html,
+        body {
+            overflow-x: hidden;
+            /* CRITICAL: Prevent horizontal scroll globally */
+            width: 100%;
+        }
+
         body {
             background: var(--bg);
             display: flex;
             min-height: 100vh;
-            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* --- CLASS TO LOCK SCROLLING WHEN MODAL IS OPEN --- */
+        body.body-no-scroll {
+            overflow: hidden !important;
+            height: 100vh;
         }
 
         a {
@@ -172,8 +185,58 @@
             color: var(--dark);
             background: #fff;
             min-width: 150px;
+            height: 45px;
+            /* Fixed height for exact match */
         }
 
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            backdrop-filter: blur(2px);
+        }
+
+        .modal {
+            background: white;
+            width: 600px;
+            max-width: 90%;
+            border-radius: 16px;
+            padding: 25px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+            animation: slideDown 0.3s ease;
+            max-height: 90vh;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        /* Sidebar Overlay for Mobile */
+        .sidebar-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 900;
+            display: none;
+            opacity: 0;
+            transition: 0.3s;
+        }
+
+        .sidebar-overlay.active {
+            display: block;
+            opacity: 1;
+        }
+
+        /* Desktop Defaults */
         table {
             width: 100%;
             border-collapse: separate;
@@ -203,19 +266,6 @@
             font-size: 14px;
         }
 
-        /* Status Select Styling */
-        .status-select {
-            padding: 6px 10px;
-            border-radius: 6px;
-            border: 1px solid #eee;
-            font-size: 12px;
-            font-weight: 600;
-            cursor: pointer;
-            outline: none;
-            min-width: 120px;
-        }
-
-        /* View Button */
         .view-btn {
             width: 32px;
             height: 32px;
@@ -236,40 +286,11 @@
             color: white;
         }
 
-        /* Modal Styles */
-        .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            display: none;
-            justify-content: center;
-            align-items: center;
-            z-index: 2000;
-            backdrop-filter: blur(2px);
-        }
-
-        .modal {
-            background: white;
-            width: 600px;
-            max-width: 90%;
-            border-radius: 16px;
-            padding: 25px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
-            animation: slideDown 0.3s ease;
-            max-height: 90vh;
-            overflow-y: auto;
-        }
-
-        /* --- DESKTOP DEFAULT STYLES --- */
         .customer-info {
             display: flex;
             flex-direction: column;
             justify-content: center;
             text-align: left;
-            /* Default: Left align for table */
         }
 
         .action-wrapper {
@@ -277,7 +298,6 @@
             gap: 8px;
             align-items: center;
             justify-content: flex-start;
-            /* Default: Left align actions */
         }
 
         @keyframes slideDown {
@@ -305,8 +325,7 @@
             transform: rotate(90deg);
         }
 
-        /* Responsive */
-        /* Responsive */
+        /* --- RESPONSIVE / MOBILE STYLES --- */
         @media (max-width: 991px) {
             .sidebar {
                 transform: translateX(-100%);
@@ -324,6 +343,47 @@
 
             .menu-toggle {
                 display: block;
+            }
+
+            /* FIX 1: Search & Filter Reorder */
+            .table-head {
+                flex-direction: column;
+                align-items: flex-start;
+                width: 100%;
+            }
+
+            .filter-group {
+                width: 100%;
+                flex-direction: column;
+                gap: 12px;
+            }
+
+            /* --- CRITICAL FIX: SEARCH BAR ABOVE DROPDOWN --- */
+            /* Using flex order to move search to top */
+            #searchInput {
+                order: -1;
+                width: 100% !important;
+                margin-bottom: 0px;
+                height: 45px;
+            }
+
+            /* Ensure Select and Date Range are also full width */
+            .filter-group select {
+                width: 100% !important;
+                height: 45px;
+            }
+
+            #customDateRange {
+                width: 100%;
+                display: flex;
+                gap: 10px;
+                order: 2;
+                /* Ensure date is last if open */
+            }
+
+            #customDateRange input {
+                width: 100% !important;
+                height: 45px;
             }
 
             /* Card View for Mobile */
@@ -348,7 +408,6 @@
                 border-radius: 12px;
                 padding: 20px;
                 position: relative;
-                /* Essential for absolute positioning of children */
                 box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
             }
 
@@ -360,6 +419,7 @@
                 border-bottom: 1px solid #f9f9f9;
                 padding: 12px 0;
                 position: relative;
+                word-break: break-word;
             }
 
             td:last-child {
@@ -373,9 +433,10 @@
                 color: var(--grey);
                 font-size: 13px;
                 text-align: left;
+                min-width: 100px;
             }
 
-            /* --- MOBILE ACTION BUTTONS FIX (MATCHING CUSTOMERS) --- */
+            /* Action Buttons Mobile Fix */
             td[data-label="Action"] {
                 position: absolute;
                 top: 20px;
@@ -389,16 +450,13 @@
 
             td[data-label="Action"]::before {
                 display: none;
-                /* Hide the label "Action" */
             }
 
-            /* Optional: Make Order ID bold and larger like Customer Name */
             td[data-label="Order ID"] {
                 font-weight: 700;
                 color: var(--primary);
                 font-size: 16px;
                 padding-right: 80px;
-                /* Space for the buttons */
                 justify-content: flex-start;
                 border-bottom: 1px solid #eee;
                 margin-bottom: 10px;
@@ -409,18 +467,14 @@
                 display: none;
             }
 
-            /* --- MOBILE OVERRIDES --- */
             .customer-info {
                 text-align: right;
-                /* Mobile: Right align */
                 align-items: flex-end;
-                /* Align flex items to the right */
                 width: 100%;
             }
 
             .action-wrapper {
                 justify-content: flex-end;
-                /* Mobile: Push icons to the right corner */
             }
         }
     </style>
@@ -442,6 +496,7 @@
             </div>
         </div>
     </div>
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
 
     <aside class="sidebar" id="sidebar">
         <img src="../Images/Logo text.png" class="logo-img">
@@ -525,7 +580,20 @@
             }
         };
 
-        function toggleSidebar() { document.getElementById('sidebar').classList.toggle('active'); }
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+
+            sidebar.classList.toggle('active');
+
+            if (overlay) {
+                if (sidebar.classList.contains('active')) {
+                    overlay.classList.add('active');
+                } else {
+                    overlay.classList.remove('active');
+                }
+            }
+        }
 
         let allOrders = [];
         let currentUserRole = '';
@@ -537,12 +605,14 @@
 
             const startInput = document.getElementById('startDate');
             const endInput = document.getElementById('endDate');
-            startInput.addEventListener('change', function () {
-                endInput.min = this.value;
-                if (endInput.value && endInput.value < this.value) {
-                    endInput.value = "";
-                }
-            });
+            if (startInput) {
+                startInput.addEventListener('change', function () {
+                    endInput.min = this.value;
+                    if (endInput.value && endInput.value < this.value) {
+                        endInput.value = "";
+                    }
+                });
+            }
         });
 
         // --- 3. AUTH CHECK ---
@@ -572,10 +642,16 @@
                 const res = await fetch('/api/orders/admin/all');
                 const json = await res.json();
                 if (json.success) {
-                    allOrders = json.data;
+                    // Safety check if data is null
+                    allOrders = json.data || [];
                     handleDateFilter();
+                } else {
+                    document.getElementById('ordersTable').innerHTML = `<tr><td colspan="7" style="text-align:center;">${json.message || 'Failed to load'}</td></tr>`;
                 }
-            } catch (err) { console.error(err); }
+            } catch (err) {
+                console.error(err);
+                document.getElementById('ordersTable').innerHTML = `<tr><td colspan="7" style="text-align:center;">Connection Error</td></tr>`;
+            }
         }
 
         // --- 5. RENDER TABLE ---
@@ -583,7 +659,7 @@
             const tbody = document.getElementById('ordersTable');
             tbody.innerHTML = '';
 
-            if (orders.length === 0) {
+            if (!orders || orders.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">No orders found.</td></tr>';
                 return;
             }
@@ -641,48 +717,31 @@
             });
         }
 
-        // --- RENDER STATUS COLUMN (Updated to show 'Completed' for Rejections) ---
+        // --- RENDER STATUS COLUMN ---
         function renderStatusColumn(order) {
-
-            // 1. High Priority: Return Requested (Action Needed)
             if (order.orderStatus === 'Return Requested') {
                 return `<span style="background:#FFF4E5; color:#FF9F43; padding:6px 12px; border-radius:6px; font-size:12px; font-weight:700;">Return Requested</span>`;
             }
-
-            // 2. Completed (Includes Delivered, Cancelled, Returned, AND Return Rejected)
             if (order.orderStatus === 'Completed') {
                 return `<span style="background:#E6F7F5; color:#00B69B; padding:6px 12px; border-radius:6px; font-size:12px; font-weight:700;">Completed</span>`;
             }
-
-            // 3. Cancelled (Specific global state)
             if (order.orderStatus === 'Cancelled') {
                 return `<span style="background:#FEECEB; color:#EF3826; padding:6px 12px; border-radius:6px; font-size:12px; font-weight:700;">Cancelled</span>`;
             }
-
-            // 4. Default / Pending / Processing
             return `<span style="background:#FFF8E7; color:#FFB536; padding:6px 12px; border-radius:6px; font-size:12px; font-weight:700;">${order.orderStatus}</span>`;
         }
 
-        // --- 9. VIEW MODAL (Complete Version with Rejection Reason Display) ---
-        // --- 9. VIEW MODAL (Fixed Price/Refund Logic) ---
+        // --- 9. VIEW MODAL ---
         function viewOrder(id) {
             const order = allOrders.find(o => o._id === id);
-            const content = document.getElementById('modalContent');
+            if (!order) return;
 
+            const content = document.getElementById('modalContent');
             let itemsHtml = '';
 
-            // Logic to calculate original prices if a coupon was used
-            // We assume the discount was distributed proportionally to item prices
-            // item.price in DB is ALREADY discounted. We need to reverse-engineer original price for display.
             const totalDiscount = order.discountAmount || 0;
-            const subtotalPaid = order.subtotal - totalDiscount; // This should match sum of item.price * qty
-
-            // Calculate Original Subtotal (Before Coupon) based on DB
-            // Note: If you don't store originalPrice in DB, we estimate it
-            // Or if order.subtotal IS the original subtotal (which is standard), we use that.
             let originalSubtotal = order.subtotal;
 
-            // Logic for 7-day return window
             let daysPassed = 0;
             if (order.deliveredAt) {
                 const deliveryDate = new Date(order.deliveredAt);
@@ -698,7 +757,6 @@
                 'changed_mind': 'Changed Mind'
             };
 
-            // --- ITEM LIST GENERATION ---
             if (order.items && order.items.length > 0) {
                 order.items.forEach(item => {
                     const img = item.image || 'https://placehold.co/50';
@@ -713,15 +771,13 @@
                         if (currentStatus === 'Returned') label = "Return Approved";
                         optionsHtml = `<option value="${currentStatus}" selected>${label}</option>`;
                         isDropdownDisabled = true;
-                    }
-                    else if (currentStatus === 'Return Requested') {
+                    } else if (currentStatus === 'Return Requested') {
                         optionsHtml = `
                             <option value="Return Requested" selected>Return Requested</option>
                             <option value="Returned">Approve Return (Refund)</option>
                             <option value="Return Rejected">Reject Return</option>
                         `;
-                    }
-                    else {
+                    } else {
                         const flow = ['Pending', 'Processing', 'Shipped', 'Out for Delivery', 'Delivered'];
                         const currentIndex = flow.indexOf(currentStatus);
 
@@ -745,6 +801,7 @@
                         }
                     }
 
+                    // --- REPLACEMENT CODE START ---
                     let statusControl = '';
                     if (currentUserRole !== 'viewer') {
                         let statusColor = '#333';
@@ -763,12 +820,29 @@
                         <select onchange="updateItemStatus('${order._id}', '${item._id}', this.value)" 
                                 ${isDropdownDisabled ? 'disabled' : ''}
                                 title="${title}"
-                                style="padding:4px; border-radius:4px; font-size:12px; border:1px solid #ddd; color:${statusColor}; font-weight:600; max-width: 130px; ${extraStyle}">
+                                style="
+                                    appearance: none; 
+                                    -webkit-appearance: none; 
+                                    -moz-appearance: none; 
+                                    padding: 4px 8px; 
+                                    border-radius: 4px; 
+                                    font-size: 12px; 
+                                    border: 1px solid #ddd; 
+                                    color: ${statusColor}; 
+                                    font-weight: 600; 
+                                    width: auto; 
+                                    background: transparent; 
+                                    text-align: center;
+                                    text-align-last: center;
+                                    cursor: pointer;
+                                    ${extraStyle}
+                                ">
                             ${optionsHtml}
                         </select>`;
                     } else {
                         statusControl = `<span style="font-size:12px; font-weight:bold; color:#666">${currentStatus}</span>`;
                     }
+                    // --- REPLACEMENT CODE END ---
 
                     let rejectionHtml = '';
                     if (item.status === 'Return Rejected' && item.rejectionReason) {
@@ -778,14 +852,7 @@
                         </div>`;
                     }
 
-                    // --- PRICE DISPLAY LOGIC (FIXED) ---
-                    // If coupon exists, show original price crossed out
                     let priceDisplay = `₹${item.price}`;
-
-                    // Note: Ideally, you should store 'originalPrice' in item schema.
-                    // If not, we can infer it approximately if we know the discount logic, 
-                    // OR just display the paid price cleanly.
-                    // Assuming item.price IS the final discounted price paid.
 
                     itemsHtml += `
                     <div style="display:flex; align-items:center; justify-content:space-between; gap:15px; margin-bottom:15px; border-bottom:1px solid #f9f9f9; padding-bottom:10px;">
@@ -812,27 +879,19 @@
             }
             if (order.paymentStatus === 'Refunded') displayPayStatus = 'Refunded';
 
-            // --- SHIPPING LOGIC ---
             let standardShipping = (order.subtotal > 600) ? 0 : 50;
             const isFreeShippingCoupon = (order.couponCode && order.discountAmount === 0 && order.subtotal < 600);
             if (isFreeShippingCoupon) standardShipping = 0;
 
             let shippingHtml = '';
-            // Case 1: Free Shipping
             if (standardShipping === 0) {
                 shippingHtml = '<span style="color:#00B69B; font-weight:600;">Free</span>';
-            }
-            // Case 2: Shipping Refunded (Order Cancelled/Returned)
-            else if (order.shippingCost === 0 && standardShipping > 0) {
-                // FIXED: Display as "Refunded (50)" instead of strikethrough
+            } else if (order.shippingCost === 0 && standardShipping > 0) {
                 shippingHtml = `<span style="color: #EF3826; font-weight:600;">Refunded <span style="color:#888; font-weight:400; font-size:0.9em;">(₹${standardShipping})</span></span>`;
-            }
-            // Case 3: Paid Shipping
-            else {
+            } else {
                 shippingHtml = `<span>₹${order.shippingCost}</span>`;
             }
 
-            // --- COUPON LOGIC ---
             let couponHtml = '';
             if (order.couponCode) {
                 let discountText = '';
@@ -848,18 +907,13 @@
                 </div>`;
             }
 
-            // --- TOTAL REFUND CALCULATION ---
-            // Calculate how much should have been paid originally
             let expectedTotal = (originalSubtotal - (order.discountAmount || 0));
-            // Add original shipping if it wasn't free
             if (standardShipping > 0) expectedTotal += standardShipping;
 
-            // Refund is the difference between what was expected and what is currently the order total
             let totalRefunded = expectedTotal - order.totalAmount;
             totalRefunded = Math.round(totalRefunded * 100) / 100;
             if (totalRefunded < 0) totalRefunded = 0;
 
-            // --- RETURN REASON HTML ---
             let returnReasonHtml = '';
             const returnedItems = order.items.filter(i => ['Return Requested', 'Returned', 'Return Rejected'].includes(i.status));
 
@@ -951,9 +1005,21 @@
             </div>`;
 
             document.getElementById('orderModal').style.display = 'flex';
+            // LOCK BODY SCROLL
+            document.body.classList.add('body-no-scroll');
         }
 
-        // --- 10. UPDATE ITEM STATUS (Updated with Rejection Reason Logic) ---
+        function closeModal() {
+            document.getElementById('orderModal').style.display = 'none';
+            // UNLOCK BODY SCROLL
+            document.body.classList.remove('body-no-scroll');
+        }
+
+        window.onclick = function (e) {
+            if (e.target.classList.contains('modal-overlay')) closeModal();
+        }
+
+        // --- 10. UPDATE ITEM STATUS ---
         async function updateItemStatus(orderId, itemId, newStatus) {
             let title = `Update status?`;
             let text = `Change status to ${newStatus}`;
@@ -961,7 +1027,6 @@
 
             // --- A. SPECIAL LOGIC FOR "RETURN REJECTED" ---
             if (newStatus === 'Return Rejected') {
-                // Show Dropdown for Reason using SweetAlert2
                 const { value: reason } = await Swal.fire({
                     title: 'Reject Return Request',
                     text: 'Please select a reason for rejection:',
@@ -983,12 +1048,11 @@
                     }
                 });
 
-                // If user cancelled the popup, stop and reset UI
                 if (!reason) {
                     viewOrder(orderId); // Reset dropdown
                     return;
                 }
-                rejectionReason = reason; // Store selected reason
+                rejectionReason = reason;
             }
 
             // --- B. STANDARD LOGIC FOR OTHER STATUSES ---
@@ -1025,7 +1089,7 @@
                         orderId,
                         itemId,
                         status: newStatus,
-                        rejectionReason: rejectionReason // Send reason if exists
+                        rejectionReason: rejectionReason
                     })
                 });
 
@@ -1041,7 +1105,6 @@
                     });
                     loadOrders(); // Refresh Main Table
 
-                    // Force refresh modal data to show new status/calculations
                     const updatedRes = await fetch('/api/orders/admin/all');
                     const updatedJson = await updatedRes.json();
                     if (updatedJson.success) {
@@ -1059,7 +1122,7 @@
             }
         }
 
-        // --- 7. DATE FILTERING (Keep existing functions) ---
+        // --- 7. DATE FILTERING ---
         function handleDateFilter() {
             const filterType = document.getElementById('dateFilter').value;
             const customRangeDiv = document.getElementById('customDateRange');
@@ -1074,6 +1137,8 @@
             const now = new Date();
             let filtered = [];
             const startOfDay = (d) => { d.setHours(0, 0, 0, 0); return d; };
+
+            if (!allOrders) allOrders = [];
 
             if (filterType === 'all') {
                 filtered = allOrders;
@@ -1152,9 +1217,6 @@
                 } catch (err) { Swal.fire('Error', 'Server connection failed', 'error'); }
             }
         }
-
-        function closeModal() { document.getElementById('orderModal').style.display = 'none'; }
-        window.onclick = function (e) { if (e.target.classList.contains('modal-overlay')) closeModal(); }
 
         async function logoutUser() {
             try {

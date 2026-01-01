@@ -10,6 +10,11 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <style>
+        /* Force SweetAlert to top */
+        .swal2-container {
+            z-index: 10000 !important;
+        }
+
         /* Base CSS */
         :root {
             --primary: #4880FF;
@@ -26,10 +31,6 @@
             --warning-light: #FFF8E7;
         }
 
-        .swal2-container {
-            z-index: 10000 !important;
-        }
-
         * {
             margin: 0;
             padding: 0;
@@ -37,11 +38,24 @@
             font-family: 'Inter', sans-serif;
         }
 
+        /* Prevent Horizontal Scroll */
+        html,
+        body {
+            overflow-x: hidden;
+            width: 100%;
+        }
+
         body {
             background: var(--bg);
             display: flex;
             min-height: 100vh;
-            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* --- LOCK SCROLLING WHEN MODAL IS OPEN --- */
+        body.body-no-scroll {
+            overflow: hidden !important;
+            height: 100vh;
         }
 
         a {
@@ -109,11 +123,6 @@
             font-weight: 600;
         }
 
-        .logout:hover {
-            background: var(--danger);
-            color: var(--white);
-        }
-
         /* Main Content */
         .main-content {
             margin-left: 260px;
@@ -166,6 +175,8 @@
             border-radius: 8px;
             outline: none;
             width: 250px;
+            height: 45px;
+            /* Unified height */
             font-size: 13px;
         }
 
@@ -173,7 +184,7 @@
             background: var(--primary);
             color: white;
             border: none;
-            padding: 10px 20px;
+            padding: 0 20px;
             border-radius: 8px;
             font-weight: 600;
             cursor: pointer;
@@ -182,6 +193,7 @@
             gap: 8px;
             font-size: 13px;
             transition: 0.2s;
+            height: 45px;
         }
 
         .add-btn:hover {
@@ -203,14 +215,6 @@
             border-bottom: 1px solid #eee;
         }
 
-        td {
-            padding: 15px;
-            border-bottom: 1px solid #f5f5f5;
-            vertical-align: middle;
-            color: var(--dark);
-            font-size: 14px;
-        }
-
         tbody tr {
             transition: background 0.2s;
             cursor: pointer;
@@ -218,6 +222,14 @@
 
         tbody tr:hover {
             background-color: #f8f9fa;
+        }
+
+        td {
+            padding: 15px;
+            border-bottom: 1px solid #f5f5f5;
+            vertical-align: middle;
+            color: var(--dark);
+            font-size: 14px;
         }
 
         /* Admin Profile Cell */
@@ -232,6 +244,7 @@
             height: 40px;
             border-radius: 50%;
             object-fit: cover;
+            border: 1px solid #eee;
         }
 
         .admin-info {
@@ -289,12 +302,12 @@
         }
 
         .edit-btn {
-            background: var(--primary-light);
-            color: var(--primary);
+            background: var(--warning-light);
+            color: var(--warning);
         }
 
         .edit-btn:hover {
-            background: var(--primary);
+            background: #FFB536;
             color: white;
         }
 
@@ -308,7 +321,26 @@
             color: white;
         }
 
-        /* Modal Styles */
+        /* Sidebar Overlay */
+        .sidebar-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 900;
+            display: none;
+            opacity: 0;
+            transition: 0.3s;
+        }
+
+        .sidebar-overlay.active {
+            display: block;
+            opacity: 1;
+        }
+
+        /* --- MODAL STYLES --- */
         .modal-overlay {
             position: fixed;
             top: 0;
@@ -331,6 +363,8 @@
             padding: 25px;
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
             animation: slideDown 0.3s ease;
+            max-height: 90vh;
+            overflow-y: auto;
         }
 
         @keyframes slideDown {
@@ -455,7 +489,7 @@
             font-weight: 600;
         }
 
-        /* Mobile */
+        /* --- MOBILE RESPONSIVE --- */
         @media (max-width: 991px) {
             .sidebar {
                 transform: translateX(-100%);
@@ -475,27 +509,34 @@
                 display: block;
             }
 
+            /* Stack Header Items */
             .table-head {
                 flex-direction: column;
-                align-items: flex-start;
+                align-items: stretch;
+                gap: 15px;
             }
 
             .action-group {
                 width: 100%;
-                flex-direction: column-reverse;
-                align-items: stretch;
+                flex-direction: column;
+                gap: 10px;
             }
 
             .search-input {
-                width: 100%;
+                width: 100% !important;
+                height: 45px;
+                order: 1;
+                /* Top */
             }
 
             .add-btn {
                 width: 100%;
                 justify-content: center;
-                margin-bottom: 10px;
+                order: 2;
+                /* Bottom */
             }
 
+            /* Mobile Card View */
             table,
             thead,
             tbody,
@@ -514,10 +555,15 @@
                 background: #fff;
                 margin-bottom: 20px;
                 border: 1px solid #eee;
-                border-radius: 12px;
+                border-radius: 16px;
                 padding: 20px;
+                padding-top: 0px;
+                /* Remove top padding so header hits top */
                 position: relative;
-                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+                box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+                overflow: hidden;
+                display: flex;
+                flex-direction: column;
             }
 
             td {
@@ -540,23 +586,35 @@
                 color: var(--grey);
                 font-size: 13px;
                 text-align: left;
+                min-width: 100px;
             }
 
+            /* Admin Name as Header */
             td[data-label="Name"] {
-                font-weight: 700;
-                color: var(--primary);
-                font-size: 16px;
-                border-bottom: 1px solid #eee;
-                margin-bottom: 10px;
+                flex-direction: column;
+                align-items: flex-start;
+                padding-top: 20px;
                 padding-bottom: 15px;
+                margin-bottom: 10px;
+                border-bottom: 1px solid #eee;
+                width: 100%;
                 padding-right: 90px;
-                justify-content: flex-start;
+                /* Space for buttons */
+                background: transparent;
             }
 
             td[data-label="Name"]::before {
                 display: none;
             }
 
+            .admin-cell {
+                width: 100%;
+                display: flex;
+                align-items: center;
+                gap: 15px;
+            }
+
+            /* Actions top right */
             td[data-label="Action"] {
                 position: absolute;
                 top: 20px;
@@ -627,6 +685,8 @@
         </div>
     </div>
 
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
     <aside class="sidebar" id="sidebar">
         <img src="../Images/Logo text.png" class="logo-img">
         <p class="menu-cat">Main menu</p>
@@ -687,37 +747,46 @@
 
     <script>
         // --- 1. PREVENT BACK BUTTON CACHING ---
-        
-        // Force reload if page is loaded from cache (Back button fix)
         window.onpageshow = function (event) {
             if (event.persisted || (window.performance && window.performance.navigation.type === 2)) {
                 window.location.reload();
             }
         };
 
+        // --- UPDATED SIDEBAR LOGIC ---
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+
+            sidebar.classList.toggle('active');
+
+            if (overlay) {
+                if (sidebar.classList.contains('active')) {
+                    overlay.classList.add('active');
+                } else {
+                    overlay.classList.remove('active');
+                }
+            }
+        }
+
         const API_URL = '/api/admin';
         let allUsers = [];
 
+        // --- 2. AUTH & LOAD LOGIC ---
         document.addEventListener('DOMContentLoaded', async () => {
             await checkAuthAndLoad();
         });
 
-        function toggleSidebar() { document.getElementById('sidebar').classList.toggle('active'); }
-
-        // --- 2. AUTH & LOAD LOGIC COMBINED ---
         async function checkAuthAndLoad() {
             try {
-                // A. Check Authentication
                 const authRes = await fetch('/api/auth/verify-admin');
                 const authData = await authRes.json();
 
-                // 1. Not Logged In -> Go to Login
                 if (!authRes.ok || !authData.success) {
                     window.location.replace('admin-login.html');
                     return;
                 }
 
-                // 2. Logged In BUT Not Super Admin -> Show Alert & Go to Dashboard
                 if (authData.user.role !== 'superadmin') {
                     await Swal.fire({
                         icon: 'error',
@@ -728,11 +797,9 @@
                         allowOutsideClick: false,
                         allowEscapeKey: false
                     });
-                    window.location.replace('dashboard.html'); // Redirect to safe zone
+                    window.location.replace('dashboard.html');
                     return;
                 }
-
-                // 3. If Super Admin -> Load Data
                 loadUsers();
 
             } catch (err) {
@@ -743,25 +810,17 @@
         async function loadUsers() {
             try {
                 const res = await fetch(`${API_URL}/users`);
-
-                // Double Check Security (Backend should also block this)
                 if (res.status === 403) {
                     Swal.fire('Error', 'Permission Denied', 'error');
                     return;
                 }
-
                 const data = await res.json();
-
                 if (res.ok) {
                     allUsers = data.filter(u => u.role !== 'user');
                     renderTable(allUsers);
                 }
-            } catch (err) {
-                console.error("Error loading users", err);
-            }
+            } catch (err) { console.error("Error loading users", err); }
         }
-
-        // ... (Keep renderTable, openFormModal, openEditModal, saveAdmin, deleteUser, openDetails, closeModal, filterTable as they were) ...
 
         function renderTable(users) {
             const tbody = document.getElementById('adminTableBody');
@@ -817,6 +876,7 @@
             document.getElementById('pass-group').style.display = 'block';
 
             document.getElementById('adminFormModal').style.display = 'flex';
+            document.body.classList.add('body-no-scroll');
         }
 
         function openEditModal(userId) {
@@ -837,6 +897,7 @@
             document.getElementById('pass-group').style.display = 'none';
 
             document.getElementById('adminFormModal').style.display = 'flex';
+            document.body.classList.add('body-no-scroll');
         }
 
         async function saveAdmin() {
@@ -864,9 +925,7 @@
                         Swal.fire('Updated', data.message, 'success');
                         closeModal('adminFormModal');
                         loadUsers();
-                    } else {
-                        throw new Error(data.message);
-                    }
+                    } else { throw new Error(data.message); }
 
                 } else {
                     const name = document.getElementById('adm-name').value;
@@ -888,9 +947,7 @@
                         Swal.fire('Created', data.message, 'success');
                         closeModal('adminFormModal');
                         loadUsers();
-                    } else {
-                        throw new Error(data.message);
-                    }
+                    } else { throw new Error(data.message); }
                 }
             } catch (err) {
                 Swal.fire('Error', err.message, 'error');
@@ -922,12 +979,8 @@
                     if (res.ok) {
                         Swal.fire('Deleted!', 'Admin has been removed.', 'success');
                         loadUsers();
-                    } else {
-                        Swal.fire('Error', data.message, 'error');
-                    }
-                } catch (err) {
-                    Swal.fire('Error', 'Delete failed', 'error');
-                }
+                    } else { Swal.fire('Error', data.message, 'error'); }
+                } catch (err) { Swal.fire('Error', 'Delete failed', 'error'); }
             }
         }
 
@@ -957,13 +1010,20 @@
             </div>
         `;
             document.getElementById('detailsModal').style.display = 'flex';
+            document.body.classList.add('body-no-scroll');
         }
 
-        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+        function closeModal(id) {
+            document.getElementById(id).style.display = 'none';
+            document.body.classList.remove('body-no-scroll');
+        }
 
+        // Updated Window Click Logic
         window.onclick = function (event) {
+            if (event.target.classList.contains('sidebar-overlay')) toggleSidebar();
             if (event.target.classList.contains('modal-overlay')) {
                 event.target.style.display = 'none';
+                document.body.classList.remove('body-no-scroll');
             }
         }
 
@@ -978,15 +1038,9 @@
 
         async function logoutUser() {
             try {
-                // CHANGED: Use '/api/auth/logout-admin'
-                await fetch('/api/auth/logout-admin', { method: 'POST' }); 
-                
-                // Use REPLACE to kill history
+                await fetch('/api/auth/logout-admin', { method: 'POST' });
                 window.location.replace('admin-login.html');
-            } catch (err) {
-                console.error("Logout failed", err);
-                window.location.replace('admin-login.html');
-            }
+            } catch (err) { window.location.replace('admin-login.html'); }
         }
     </script>
 </body>

@@ -22,6 +22,7 @@
             --success: #00B69B;
             --success-light: #E6F7F5;
             --warning: #FFB536;
+            --warning-light: #FFF8E7;
         }
 
         * {
@@ -31,11 +32,24 @@
             font-family: 'Inter', sans-serif;
         }
 
+        /* Prevent Horizontal Scroll */
+        html,
+        body {
+            overflow-x: hidden;
+            width: 100%;
+        }
+
         body {
             background: var(--bg);
             display: flex;
             min-height: 100vh;
-            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* --- LOCK SCROLLING WHEN MODAL IS OPEN --- */
+        body.body-no-scroll {
+            overflow: hidden !important;
+            height: 100vh;
         }
 
         a {
@@ -80,6 +94,7 @@
             font-size: 14px;
             transition: 0.3s;
             font-weight: 500;
+            cursor: pointer;
         }
 
         .menu-link i {
@@ -162,13 +177,18 @@
             outline: none;
             font-size: 13px;
             color: var(--dark);
+            height: 45px;
+        }
+
+        .search-input {
+            width: 250px;
         }
 
         .export-btn {
             background: var(--white);
             color: var(--dark);
             border: 1px solid #e0e0e0;
-            padding: 10px 20px;
+            padding: 0 20px;
             border-radius: 8px;
             font-weight: 600;
             cursor: pointer;
@@ -177,6 +197,7 @@
             gap: 8px;
             font-size: 13px;
             transition: 0.2s;
+            height: 45px;
         }
 
         .export-btn:hover {
@@ -251,6 +272,25 @@
             color: var(--danger);
         }
 
+        /* Sidebar Overlay for Mobile */
+        .sidebar-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 900;
+            display: none;
+            opacity: 0;
+            transition: 0.3s;
+        }
+
+        .sidebar-overlay.active {
+            display: block;
+            opacity: 1;
+        }
+
         /* --- MODAL STYLES --- */
         .modal-overlay {
             position: fixed;
@@ -274,6 +314,8 @@
             padding: 25px;
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
             animation: slideDown 0.3s ease;
+            max-height: 90vh;
+            overflow-y: auto;
         }
 
         @keyframes slideDown {
@@ -401,21 +443,29 @@
                 display: block;
             }
 
+            /* Header & Action Group Stack */
             .table-head {
                 flex-direction: column;
-                align-items: flex-start;
+                align-items: stretch;
+                gap: 15px;
             }
 
             .action-group {
                 width: 100%;
-                display: grid;
-                grid-template-columns: 1fr 1fr;
+                flex-direction: column;
                 gap: 10px;
             }
 
             .search-input {
-                grid-column: span 2;
+                width: 100% !important;
+                order: -1;
+                /* Puts search at the top */
+            }
+
+            .sort-select,
+            .export-btn {
                 width: 100%;
+                justify-content: center;
             }
 
             /* Mobile Table to Card Transformation */
@@ -463,6 +513,8 @@
                 color: var(--grey);
                 font-size: 13px;
                 text-align: left;
+                min-width: 100px;
+                /* Aligns values cleanly */
             }
 
             /* Transaction ID Row (Hero) */
@@ -485,7 +537,6 @@
             .icon-text-wrap {
                 text-align: right;
                 justify-content: flex-end;
-                /* Pushes flex items (icon+text) to the right */
             }
         }
     </style>
@@ -508,6 +559,8 @@
         </div>
     </div>
 
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
     <aside class="sidebar" id="sidebar">
         <img src="../Images/Logo text.png" class="logo-img">
         <p class="menu-cat">Main menu</p>
@@ -525,7 +578,7 @@
         <a href="reviews.html" class="menu-link"><i class='bx bx-message-square-detail'></i> Reviews</a>
         <p class="menu-cat">Admin</p>
         <a href="admin.html" class="menu-link"><i class='bx bx-user-circle'></i> Admin Role</a>
-        <a href="#" class="menu-link logout"><i class='bx bx-log-out'></i> Log Out</a>
+        <a onclick="logoutUser()" class="menu-link logout"><i class='bx bx-log-out'></i> Log Out</a>
     </aside>
 
     <main class="main-content">
@@ -578,7 +631,7 @@
                 </thead>
                 <tbody id="transactionTable">
                     <tr>
-                        <td colspan="6" style="text-align:center; padding: 20px;">Loading transactions...</td>
+                        <td colspan="8" style="text-align:center; padding: 20px;">Loading transactions...</td>
                     </tr>
                 </tbody>
             </table>
@@ -593,12 +646,23 @@
             }
         };
 
-        function toggleSidebar() { document.getElementById('sidebar').classList.toggle('active'); }
+        // --- UPDATED SIDEBAR LOGIC ---
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            sidebar.classList.toggle('active');
+
+            if (overlay) {
+                if (sidebar.classList.contains('active')) {
+                    overlay.classList.add('active');
+                } else {
+                    overlay.classList.remove('active');
+                }
+            }
+        }
 
         let allTransactions = [];
         let filteredTransactions = [];
-
-        // GLOBAL VARIABLE TO STORE CURRENT RECEIPT DATA
         let currentTrxData = null;
 
         // --- 2. INITIALIZATION ---
@@ -669,7 +733,7 @@
 
                             if (showCredit && hasShipping && !shippingAddedToCredit) {
                                 creditAmount += historicShipping;
-                                creditLabel += ` (+ Shipping)`; // Removed HTML tags for PDF safety
+                                creditLabel += ` (+ Shipping)`;
                                 shippingAddedToCredit = true;
                             }
 
@@ -679,7 +743,7 @@
                                     type: 'Credit',
                                     date: new Date(order.createdAt),
                                     customer: order.shippingAddress.fullName,
-                                    itemDisplay: creditLabel, // Plain text is better for filtering/PDF
+                                    itemDisplay: creditLabel,
                                     method: order.paymentMethod,
                                     amount: creditAmount,
                                     status: creditStatus
@@ -752,7 +816,7 @@
                 if (trx.method === 'Razorpay' || trx.method === 'Online') methodIcon = 'bx-globe';
 
                 const tr = document.createElement('tr');
-                tr.onclick = () => openDetails(trx); // Pass object reference
+                tr.onclick = () => openDetails(trx);
 
                 tr.innerHTML = `
                     <td data-label="Trx ID" style="font-weight:600; color:var(--primary); font-size:13px;">${trx.trxId}</td>
@@ -824,7 +888,6 @@
 
         // --- 9. MODAL & PDF LOGIC ---
 
-        // Helper: Convert Image URL to Base64
         function getBase64ImageFromURL(url) {
             return new Promise((resolve, reject) => {
                 var img = new Image();
@@ -843,10 +906,8 @@
             });
         }
 
-        // Open Modal and Store Data
         function openDetails(trx) {
-            currentTrxData = trx; // Store globally for PDF download
-
+            currentTrxData = trx;
             const content = document.getElementById('modalContent');
             let color = trx.type === 'Credit' ? '#00B69B' : '#EF3826';
             let sign = trx.type === 'Credit' ? '+' : '-';
@@ -864,12 +925,19 @@
                 <div class="detail-row"><span class="detail-label">Type</span><span class="detail-val">${trx.type}</span></div>
             `;
             document.getElementById('trxModal').style.display = 'flex';
+            document.body.classList.add('body-no-scroll');
         }
 
-        function closeModal() { document.getElementById('trxModal').style.display = 'none'; }
-        window.onclick = function (event) { if (event.target.classList.contains('modal-overlay')) closeModal(); }
+        function closeModal() {
+            document.getElementById('trxModal').style.display = 'none';
+            document.body.classList.remove('body-no-scroll');
+        }
 
-        // --- GENERATE PDF ---
+        // Window onclick handled by specific overlay now
+        window.onclick = function (event) {
+            if (event.target.classList.contains('modal-overlay')) closeModal();
+        }
+
         async function downloadPDF() {
             if (!currentTrxData) return;
 
@@ -881,25 +949,21 @@
                 const { jsPDF } = window.jspdf;
                 const doc = new jsPDF();
 
-                // 1. Add Logo (Load it first)
                 try {
                     const logoData = await getBase64ImageFromURL('../Images/logo white.png');
-                    doc.addImage(logoData, 'PNG', 15, 5, 37, 28); // x, y, width, height
+                    doc.addImage(logoData, 'PNG', 15, 5, 37, 28);
                 } catch (e) {
-                    console.warn("Logo not found, skipping");
                     doc.setFontSize(16);
                     doc.text("TOKYO SPORTS", 15, 20);
                 }
 
-                // 2. Header
                 doc.setFont("helvetica", "bold");
                 doc.setFontSize(18);
                 doc.text("TRANSACTION RECEIPT", 195, 20, { align: "right" });
 
                 doc.setDrawColor(200, 200, 200);
-                doc.line(15, 30, 195, 30); // Horizontal Line
+                doc.line(15, 30, 195, 30);
 
-                // 3. Receipt Details
                 const trx = currentTrxData;
                 let startY = 45;
                 const lineHeight = 10;
@@ -907,7 +971,6 @@
                 doc.setFont("helvetica", "normal");
                 doc.setFontSize(12);
 
-                // Helper to add rows
                 const addRow = (label, value) => {
                     doc.setTextColor(100);
                     doc.text(label, 15, startY);
@@ -921,9 +984,8 @@
                 addRow("Customer Name:", trx.customer);
                 addRow("Payment Method:", trx.method);
                 addRow("Transaction Type:", trx.type);
-                addRow("Item Details:", trx.itemDisplay); // Ensure this is plain text
+                addRow("Item Details:", trx.itemDisplay);
 
-                // 4. Amount Section
                 startY += 5;
                 doc.line(15, startY, 195, startY);
                 startY += 15;
@@ -933,27 +995,24 @@
                 doc.text("TOTAL AMOUNT", 15, startY);
 
                 const sign = trx.type === 'Credit' ? '+' : '-';
-                doc.setTextColor(trx.type === 'Credit' ? 0 : 200, trx.type === 'Credit' ? 100 : 0, 0); // Greenish or Redish
+                doc.setTextColor(trx.type === 'Credit' ? 0 : 200, trx.type === 'Credit' ? 100 : 0, 0);
                 doc.text(`${sign} Rs. ${trx.amount.toFixed(2)}`, 195, startY, { align: "right" });
 
-                doc.setTextColor(0); // Reset color
+                doc.setTextColor(0);
                 startY += 10;
                 doc.setFontSize(12);
                 doc.setFont("helvetica", "normal");
                 doc.text(`Status: ${trx.status.toUpperCase()}`, 195, startY, { align: "right" });
 
-                // 5. Footer
                 startY += 30;
                 doc.setFontSize(10);
                 doc.setTextColor(150);
                 doc.text("Thank you for shopping with Tokyo Sports!", 105, startY, { align: "center" });
                 doc.text("www.tokyosports.com", 105, startY + 5, { align: "center" });
 
-                // 6. Save
                 doc.save(`Receipt_${trx.trxId}.pdf`);
 
             } catch (err) {
-                console.error(err);
                 alert("Error generating PDF");
             } finally {
                 btn.innerHTML = oldText;
@@ -966,8 +1025,6 @@
                 window.location.replace('admin-login.html');
             } catch (err) { window.location.replace('admin-login.html'); }
         }
-
-
     </script>
 </body>
 

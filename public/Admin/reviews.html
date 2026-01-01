@@ -38,11 +38,24 @@
             font-family: 'Inter', sans-serif;
         }
 
+        /* Prevent Horizontal Scroll */
+        html,
+        body {
+            overflow-x: hidden;
+            width: 100%;
+        }
+
         body {
             background: var(--bg);
             display: flex;
             min-height: 100vh;
-            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* --- LOCK SCROLLING WHEN MODAL IS OPEN --- */
+        body.body-no-scroll {
+            overflow: hidden !important;
+            height: 100vh;
         }
 
         a {
@@ -110,11 +123,6 @@
             font-weight: 600;
         }
 
-        .logout:hover {
-            background: var(--danger);
-            color: var(--white);
-        }
-
         /* Main Content */
         .main-content {
             margin-left: 260px;
@@ -167,9 +175,11 @@
             border-radius: 8px;
             outline: none;
             width: 250px;
+            height: 45px;
             font-size: 13px;
         }
 
+        /* Table Styles */
         table {
             width: 100%;
             border-collapse: separate;
@@ -183,7 +193,6 @@
             border-bottom: 1px solid #eee;
         }
 
-        /* Table Row Click Effect */
         tbody tr {
             transition: background 0.2s;
             cursor: pointer;
@@ -281,6 +290,25 @@
             color: white;
         }
 
+        /* Sidebar Overlay */
+        .sidebar-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 900;
+            display: none;
+            opacity: 0;
+            transition: 0.3s;
+        }
+
+        .sidebar-overlay.active {
+            display: block;
+            opacity: 1;
+        }
+
         /* --- MODAL STYLES --- */
         .modal-overlay {
             position: fixed;
@@ -304,6 +332,8 @@
             padding: 25px;
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
             animation: slideDown 0.3s ease;
+            max-height: 90vh;
+            overflow-y: auto;
         }
 
         @keyframes slideDown {
@@ -337,12 +367,6 @@
             cursor: pointer;
             font-size: 24px;
             color: var(--grey);
-        }
-
-        .close-modal:hover {
-            color: var(--danger);
-            transform: rotate(90deg);
-            transition: 0.2s;
         }
 
         .review-header {
@@ -392,6 +416,16 @@
             font-weight: 600;
         }
 
+        .save-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 25px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
         /* --- MOBILE RESPONSIVE --- */
         @media (max-width: 991px) {
             .sidebar {
@@ -412,17 +446,25 @@
                 display: block;
             }
 
+            /* Stack Header Items */
             .table-head {
                 flex-direction: column;
-                align-items: flex-start;
+                align-items: stretch;
+                gap: 15px;
             }
 
-            .action-group,
-            .search-input {
+            .action-group {
                 width: 100%;
+                flex-direction: column;
+                gap: 10px;
             }
 
-            /* Mobile Table to Card */
+            .search-input {
+                width: 100% !important;
+                height: 45px;
+            }
+
+            /* Mobile Card View */
             table,
             thead,
             tbody,
@@ -467,31 +509,36 @@
                 color: var(--grey);
                 font-size: 13px;
                 text-align: left;
+                min-width: 100px;
             }
 
-            td[data-label="Product"] {
+            /* Reviewer as Header */
+            td[data-label="Reviewer"] {
                 font-weight: 700;
                 color: var(--primary);
                 font-size: 16px;
                 border-bottom: 1px solid #eee;
                 margin-bottom: 10px;
                 padding-bottom: 15px;
-                padding-right: 120px;
                 justify-content: flex-start;
+                padding-right: 120px;
+                /* Space for buttons */
             }
 
-            td[data-label="Product"]::before {
+            td[data-label="Reviewer"]::before {
                 display: none;
             }
 
+            /* Rating Align */
             .rating-wrap {
                 justify-content: flex-end;
             }
 
+            /* Actions top right */
             td[data-label="Action"] {
                 position: absolute;
-                top: 15px;
-                right: 15px;
+                top: 20px;
+                right: 20px;
                 padding: 0;
                 border: none;
                 width: auto;
@@ -514,11 +561,12 @@
             </div>
             <div id="modalContent"></div>
             <div style="margin-top: 20px; text-align: right;">
-                <button onclick="closeModal()"
-                    style="background: var(--primary); color: white; border: none; padding: 10px 25px; border-radius: 8px; cursor: pointer; font-weight: 600;">Close</button>
+                <button onclick="closeModal()" class="save-btn">Close</button>
             </div>
         </div>
     </div>
+
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
 
     <aside class="sidebar" id="sidebar">
         <img src="../Images/Logo text.png" class="logo-img">
@@ -559,8 +607,8 @@
             <table>
                 <thead>
                     <tr>
-                        <th>Product</th>
                         <th>Reviewer</th>
+                        <th>Product</th>
                         <th>Rating</th>
                         <th>Comment</th>
                         <th>Status</th>
@@ -584,18 +632,29 @@
             }
         };
 
+        // --- UPDATED SIDEBAR LOGIC ---
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            sidebar.classList.toggle('active');
+
+            if (overlay) {
+                if (sidebar.classList.contains('active')) {
+                    overlay.classList.add('active');
+                } else {
+                    overlay.classList.remove('active');
+                }
+            }
+        }
+
         let allReviews = [];
         let currentUserRole = '';
 
         // --- 2. INITIALIZATION ---
         document.addEventListener('DOMContentLoaded', async () => {
             await checkAuth(); // First verify admin access
-            loadReviews();     // Then load data
+            loadReviews();     // Then load data
         });
-
-        function toggleSidebar() {
-            document.getElementById('sidebar').classList.toggle('active');
-        }
 
         // --- 3. AUTH & RBAC CHECK ---
         async function checkAuth() {
@@ -640,7 +699,7 @@
             }
         }
 
-        // --- 6. RENDER DATA (WITH RBAC) ---
+        // --- 6. RENDER DATA ---
         function renderReviewTable(reviews) {
             const tbody = document.getElementById('reviewsTableBody');
             tbody.innerHTML = '';
@@ -652,14 +711,11 @@
 
             reviews.forEach(rev => {
                 const tr = document.createElement('tr');
-
-                // Safe values handling for function arguments
                 const safeComment = rev.comment.replace(/'/g, "\\'").replace(/"/g, '&quot;');
                 const productName = rev.product ? rev.product.name : '<span style="color:#EF3826;">Deleted Product</span>';
 
                 tr.onclick = () => openDetails(productName, rev.userName, rev.rating, safeComment, rev.status);
 
-                // RBAC Logic: Only Editors and Superadmins see action buttons
                 let actionButtonsHtml = '';
                 if (currentUserRole !== 'viewer') {
                     actionButtonsHtml = `
@@ -670,12 +726,12 @@
                         </div>
                     `;
                 } else {
-                    actionButtonsHtml= `<span style="font-size:12px; color:var(--grey);">View Only</span>`;
+                    actionButtonsHtml = `<span style="font-size:12px; color:var(--grey);">View Only</span>`;
                 }
 
                 tr.innerHTML = `
-                    <td data-label="Product">${productName}</td>
                     <td data-label="Reviewer">${rev.userName}</td>
+                    <td data-label="Product">${productName}</td>
                     <td data-label="Rating">
                         <div class="rating-wrap">
                             <i class='bx bxs-star' style="color:#FFB536"></i> ${rev.rating}.0
@@ -693,10 +749,10 @@
             });
         }
 
-        // --- 7. APPROVE / REJECT (Requires RBAC) ---
+        // --- 7. APPROVE / REJECT ---
         async function updateReviewStatus(event, id, newStatus) {
             event.stopPropagation();
-            if (currentUserRole === 'viewer') return; // Double check
+            if (currentUserRole === 'viewer') return;
 
             try {
                 const res = await fetch(`/api/reviews/admin/status/${id}`, {
@@ -715,7 +771,7 @@
             } catch (err) { console.error(err); }
         }
 
-        // --- 8. DELETE (Requires RBAC) ---
+        // --- 8. DELETE ---
         async function deleteReview(event, id) {
             event.stopPropagation();
             if (currentUserRole === 'viewer') return;
@@ -779,10 +835,18 @@
                 <div class="modal-row" style="margin-top:15px;"><span class="modal-label">Status</span><span class="modal-val" style="color:${statusColor}">${status}</span></div>
             `;
             document.getElementById('reviewModal').style.display = 'flex';
+            document.body.classList.add('body-no-scroll');
         }
 
-        function closeModal() { document.getElementById('reviewModal').style.display = 'none'; }
-        window.onclick = (e) => { if (e.target == document.getElementById('reviewModal')) closeModal(); }
+        function closeModal() {
+            document.getElementById('reviewModal').style.display = 'none';
+            document.body.classList.remove('body-no-scroll');
+        }
+
+        // Window onclick logic - ONLY for modal background click
+        window.onclick = function (event) {
+            if (event.target.classList.contains('modal-overlay')) closeModal();
+        }
     </script>
 </body>
 

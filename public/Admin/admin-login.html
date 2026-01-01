@@ -7,7 +7,8 @@
     <title>Admin Login - Tokyo Sports</title>
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
@@ -51,13 +52,28 @@
             justify-content: center;
         }
 
+        /* --- Image Side Container (Desktop) --- */
         .auth-image-side {
             width: 50%;
-            background-image: url('../Images/LOGO.jpg'); /* Ensure this path is correct */
+            background-color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+
+        /* --- Circular Image Container (Desktop) --- */
+        .image-circle-container {
+            width: 100%;
+            max-width: 450px;
+            aspect-ratio: 1 / 1;
+            background-image: url('../Images/LOGO.jpg');
             background-size: cover;
             background-position: center;
-            border-radius: 25px;
+            border-radius: 50%;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
         }
+
 
         /* --- BRANDING --- */
         .brand-pill {
@@ -137,6 +153,15 @@
             box-shadow: 0 10px 20px rgba(67, 131, 255, 0.2);
         }
 
+        /* --- MOBILE LOGO CONTAINER (Hidden on Desktop) --- */
+        .mobile-logo {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 2rem;
+        }
+
         /* --- RESPONSIVE --- */
         @media (max-width: 991px) {
             .auth-card {
@@ -144,12 +169,36 @@
                 min-height: auto;
                 flex-direction: column;
             }
+
+            /* Hide the right-side image section on mobile */
             .auth-image-side {
                 display: none;
             }
+
             .auth-form-side {
                 width: 100%;
                 padding: 3rem 2rem;
+            }
+
+            /* Show Mobile Logo Container */
+            .mobile-logo {
+                display: flex;
+            }
+
+            /* Style the new round icon image for mobile */
+            .mobile-icon-img {
+                width: 90px;
+                height: 90px;
+                object-fit: cover;
+                border-radius: 50%;
+                /* Makes it round */
+                box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            }
+
+            /* Style the existing text logo image for mobile */
+            .mobile-text-img {
+                max-height: 40px;
+                width: auto;
             }
         }
     </style>
@@ -160,6 +209,11 @@
     <div class="container d-flex justify-content-center">
         <div class="auth-card">
             <div class="auth-form-side">
+
+                <div class="mobile-logo">
+                    <img src="../Images/LOGO.jpg" alt="Tokyo Sports Icon" class="mobile-icon-img">
+                </div>
+
                 <div>
                     <span class="brand-pill">ADMIN PORTAL</span>
                     <h2 class="auth-title">Welcome Back</h2>
@@ -169,7 +223,7 @@
                         <div class="input-group-custom">
                             <input type="email" id="email" class="custom-input" placeholder="Admin Email" required>
                         </div>
-                        
+
                         <div class="input-group-custom">
                             <input type="password" id="password" class="custom-input" placeholder="Password" required>
                             <i class="fas fa-eye toggle-password" onclick="togglePassword()"></i>
@@ -181,14 +235,16 @@
                     </form>
 
                     <div class="mt-4 text-center">
-                        <a href="index.html" class="text-muted text-decoration-none small">
-                            <i class="fas fa-arrow-left me-1"></i> Back to Website
+                        <a href="../User/index.html" class="text-muted text-decoration-none small">
+                            <i class="fas fa-arrow-left me-1"></i> Back to Shop Website
                         </a>
                     </div>
                 </div>
             </div>
 
-            <div class="auth-image-side"></div>
+            <div class="auth-image-side">
+                <div class="image-circle-container"></div>
+            </div>
         </div>
     </div>
 
@@ -214,7 +270,7 @@
         // 3. Handle Login Logic
         async function handleAdminLogin(e) {
             e.preventDefault();
-            
+
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
             const btn = document.getElementById('loginBtn');
@@ -223,7 +279,6 @@
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verifying...';
 
             try {
-                // Call the standard Login API
                 const res = await fetch('/api/auth/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -236,26 +291,23 @@
                     throw new Error(data.message || 'Login failed');
                 }
 
-                // --- CRITICAL SECURITY STEP: Check Role ---
                 const allowedRoles = ['superadmin', 'editor', 'viewer'];
-                
+
                 if (!allowedRoles.includes(data.user.role)) {
-                    // Standard user trying to login
                     await fetch('/api/auth/logout-user', { method: 'POST' });
-                    
+
                     Swal.fire({
                         icon: 'error',
                         title: 'Access Denied',
                         text: 'This account does not have administrative privileges.',
                         confirmButtonColor: '#4383FF'
                     });
-                    
+
                     btn.disabled = false;
                     btn.innerText = "Sign In";
                     return;
                 }
 
-                // Success
                 localStorage.setItem('user', JSON.stringify(data.user));
 
                 const Toast = Swal.mixin({
@@ -271,7 +323,6 @@
                     title: 'Signed in successfully'
                 });
 
-                // Redirect to Dashboard
                 setTimeout(() => {
                     window.location.href = 'dashboard.html';
                 }, 1000);
@@ -289,4 +340,5 @@
         }
     </script>
 </body>
+
 </html>

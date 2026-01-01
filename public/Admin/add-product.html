@@ -40,6 +40,13 @@
             display: flex;
             min-height: 100vh;
             overflow-x: hidden;
+            position: relative;
+        }
+
+        /* --- LOCK SCROLLING WHEN MODAL IS OPEN --- */
+        body.body-no-scroll {
+            overflow: hidden !important;
+            height: 100vh;
         }
 
         a {
@@ -241,9 +248,8 @@
 
         .thumb-item {
             width: 60px;
-            /* Narrower */
             height: 80px;
-            /* Taller to match 3:4 ratio */
+            /* 3:4 ratio */
             border-radius: 8px;
             border: 1px solid var(--border);
             display: flex;
@@ -331,6 +337,25 @@
             color: white;
         }
 
+        /* Sidebar Overlay */
+        .sidebar-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 900;
+            display: none;
+            opacity: 0;
+            transition: 0.3s;
+        }
+
+        .sidebar-overlay.active {
+            display: block;
+            opacity: 1;
+        }
+
         /* --- CROPPER MODAL STYLES --- */
         .image-cropper-modal {
             position: fixed;
@@ -339,17 +364,10 @@
             display: none;
             justify-content: center;
             align-items: center;
-        }
-
-        .image-cropper-modal::before {
-            content: "";
-            position: absolute;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.8);
+            background: rgba(0, 0, 0, 0.85);
         }
 
         .cropper-content {
-            position: relative;
             background: #ffffff;
             padding: 20px;
             border-radius: 12px;
@@ -358,7 +376,7 @@
             display: flex;
             flex-direction: column;
             gap: 15px;
-            z-index: 1;
+            position: relative;
         }
 
         .crop-container {
@@ -366,6 +384,7 @@
             width: 100%;
             background: #f0f0f0;
             overflow: hidden;
+            border-radius: 8px;
         }
 
         .crop-container img {
@@ -378,6 +397,92 @@
             gap: 10px;
         }
 
+        /* --- MULTI-SELECT STYLES (Shared Style) --- */
+        .multi-select-container {
+            position: relative;
+            width: 100%;
+        }
+
+        .multi-select-box {
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: #fcfcfc;
+            padding: 8px 15px;
+            min-height: 42px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+        }
+
+        .multi-select-box:hover {
+            border-color: var(--primary);
+        }
+
+        .selected-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+
+        .cat-tag {
+            background: var(--primary-light);
+            color: var(--primary);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .placeholder-text {
+            color: #757575;
+            font-size: 14px;
+        }
+
+        .multi-options {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            width: 100%;
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            z-index: 100;
+            display: none;
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 5px;
+        }
+
+        .multi-options.show {
+            display: block;
+        }
+
+        .multi-option-item {
+            padding: 10px 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            transition: 0.2s;
+            font-size: 14px;
+            color: var(--dark);
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .multi-option-item:hover {
+            background: #f9f9f9;
+        }
+
+        .multi-option-item input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            accent-color: var(--primary);
+        }
+
+        /* --- MOBILE RESPONSIVE --- */
         @media (max-width: 991px) {
             .sidebar {
                 transform: translateX(-100%);
@@ -390,7 +495,9 @@
             .main-content {
                 margin-left: 0;
                 width: 100%;
+                padding: 20px;
                 padding-bottom: 90px;
+                /* Space for fixed bottom bar */
             }
 
             .menu-toggle {
@@ -426,6 +533,8 @@
 </head>
 
 <body>
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
     <aside class="sidebar" id="sidebar">
         <img src="../Images/Logo text.png" class="logo-img">
         <p class="menu-cat">Main menu</p>
@@ -556,7 +665,7 @@
                     <div class="image-uploader">
                         <img id="mainPreview" class="main-preview">
                         <div id="uploadPlaceholder">
-                            <i class='bx bx-image-add'></i>
+                            <i class='bx bx-image-add' style="font-size: 40px; color: #ccc;"></i>
                             <p>Click + below to add images</p>
                         </div>
                         <input type="file" id="imageInput" hidden accept="image/*" onchange="handleFileSelect(this)">
@@ -569,18 +678,37 @@
 
                 <div class="section">
                     <h3>Organization</h3>
+
                     <div class="form-group">
-                        <label>Category <span style="color:red; display:none;" id="req-cat">*</span></label>
-                        <select id="product-category">
-                            <option value="">Loading Categories...</option>
-                        </select>
+                        <label>Categories <span style="color:red; display:none;" id="req-cat">*</span></label>
+                        <div class="multi-select-container" id="cat-wrapper">
+                            <div class="multi-select-box" onclick="toggleMultiSelect()">
+                                <div class="selected-tags" id="selected-cats-display">
+                                    <span class="placeholder-text">Select Categories...</span>
+                                </div>
+                                <i class='bx bx-chevron-down'></i>
+                            </div>
+                            <div class="multi-options" id="cat-options-list">
+                                <div style="padding:10px;">Loading...</div>
+                            </div>
+                        </div>
                     </div>
+
                     <div class="form-group">
-                        <label>Team <span style="color:red; display:none;" id="req-team">*</span></label>
-                        <select id="product-team">
-                            <option value="">Loading Teams...</option>
-                        </select>
+                        <label>Teams <span style="color:red; display:none;" id="req-team">*</span></label>
+                        <div class="multi-select-container" id="team-wrapper">
+                            <div class="multi-select-box" onclick="toggleTeamMultiSelect()">
+                                <div class="selected-tags" id="selected-teams-display">
+                                    <span class="placeholder-text">Select One Team...</span>
+                                </div>
+                                <i class='bx bx-chevron-down'></i>
+                            </div>
+                            <div class="multi-options" id="team-options-list">
+                                <div style="padding:10px;">Loading...</div>
+                            </div>
+                        </div>
                     </div>
+
                 </div>
             </div>
         </div>
@@ -602,15 +730,31 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
     <script>
         // --- 1. SETUP & INIT ---
-        // CRITICAL: Force reload if page is loaded from cache (Back button fix)
         window.onpageshow = function (event) {
             if (event.persisted || (window.performance && window.performance.navigation.type === 2)) {
                 window.location.reload();
             }
         };
-        function toggleSidebar() { document.getElementById('sidebar').classList.toggle('active'); }
+
+        // --- UPDATED SIDEBAR LOGIC ---
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+
+            sidebar.classList.toggle('active');
+
+            if (overlay) {
+                if (sidebar.classList.contains('active')) {
+                    overlay.classList.add('active');
+                } else {
+                    overlay.classList.remove('active');
+                }
+            }
+        }
 
         let editingProductId = null;
+        let selectedCategories = [];
+        let selectedTeams = []; // Only holds 1 item max for Team
         let existingImages = [];
         let newFiles = [];
         let currentCropper = null;
@@ -648,22 +792,17 @@
             }
         }
 
-        // --- 3. IMAGE CROPPING FIX ---
+        // --- 3. IMAGE CROPPING LOGIC ---
         function handleFileSelect(input) {
             if (input.files && input.files.length > 0) {
-                // Check Max Limit (5)
                 if (existingImages.length + newFiles.length >= 5) {
                     Swal.fire({ icon: 'warning', title: 'Limit Reached', text: 'You can upload a maximum of 5 images.' });
                     input.value = '';
                     return;
                 }
-
                 const file = input.files[0];
                 const reader = new FileReader();
-                reader.onload = (e) => {
-                    openCropper(e.target.result);
-                    input.value = '';
-                };
+                reader.onload = (e) => { openCropper(e.target.result); input.value = ''; };
                 reader.readAsDataURL(file);
             }
         }
@@ -671,18 +810,15 @@
         function openCropper(imageSrc) {
             const imageElement = document.getElementById('cropImageSrc');
             const modal = document.getElementById('cropperModal');
-
-            // 1. Show modal first so dimensions are calculated correctly
             modal.style.display = 'flex';
+            document.body.classList.add('body-no-scroll');
 
-            // 2. CRITICAL FIX: If cropper exists, use replace() instead of destroying/recreating.
-            // This prevents the "old image ghosting" bug.
             if (currentCropper) {
                 currentCropper.replace(imageSrc);
             } else {
                 imageElement.src = imageSrc;
                 currentCropper = new Cropper(imageElement, {
-                    aspectRatio: 3 / 4, // Portrait 3:4
+                    aspectRatio: 3 / 4,
                     viewMode: 1,
                     autoCropArea: 1
                 });
@@ -691,32 +827,22 @@
 
         function closeCropper() {
             document.getElementById('cropperModal').style.display = 'none';
-            // We destroy the instance to ensure fresh state next time
-            if (currentCropper) {
-                currentCropper.destroy();
-                currentCropper = null;
-            }
+            document.body.classList.remove('body-no-scroll');
+            if (currentCropper) { currentCropper.destroy(); currentCropper = null; }
         }
 
         function confirmCrop() {
             if (!currentCropper) return;
-
             const canvas = currentCropper.getCroppedCanvas({
                 width: 1200,
-                height: 1600, // 3:4 Ratio
+                height: 1600,
                 fillColor: '#fff',
                 imageSmoothingEnabled: true,
                 imageSmoothingQuality: 'high'
             });
-
             canvas.toBlob((blob) => {
                 if (!blob) { Swal.fire('Error', 'Cropping failed', 'error'); return; }
-
-                // CRITICAL FIX: Add unique timestamp + random to filename to ensure uniqueness
-                // This stops the server from overwriting "image.webp" with the next "image.webp"
                 const uniqueName = `product_img_${Date.now()}_${Math.floor(Math.random() * 1000)}.webp`;
-
-                // Compression logic
                 if (blob.size > 1048576) {
                     canvas.toBlob((blob2) => { addFileToList(blob2, uniqueName); }, 'image/webp', 0.6);
                 } else {
@@ -727,10 +853,7 @@
 
         function addFileToList(blob, fileName) {
             const file = new File([blob], fileName, { type: 'image/webp' });
-
-            // Attach the object URL to the file object so we don't recreate it repeatedly
             file.previewUrl = URL.createObjectURL(file);
-
             newFiles.push(file);
             renderAllThumbnails();
             closeCropper();
@@ -738,13 +861,11 @@
 
         function renderAllThumbnails(latestNewUrl = null) {
             const container = document.getElementById('thumbList');
-            // Clear existing content
             container.innerHTML = `<div class="thumb-item add-thumb" onclick="document.getElementById('imageInput').click()"><i class='bx bx-plus'></i></div>`;
 
             let hasImages = false;
             let lastPreviewUrl = null;
 
-            // Render Existing (Server) Images
             existingImages.forEach((url, index) => {
                 const div = document.createElement('div');
                 div.className = 'thumb-item';
@@ -756,23 +877,17 @@
                 hasImages = true;
             });
 
-            // Render New (Upload) Images
             newFiles.forEach((file, index) => {
                 const div = document.createElement('div');
                 div.className = 'thumb-item';
                 div.title = "Click to remove";
                 div.onclick = () => removeNewFile(index);
-
-                // Use the stored previewUrl
                 div.innerHTML = `<img src="${file.previewUrl}">`;
                 container.insertBefore(div, container.lastChild);
-
-                // Update preview with the LATEST added image
                 lastPreviewUrl = file.previewUrl;
                 hasImages = true;
             });
 
-            // Update Main Preview
             if (hasImages && lastPreviewUrl) {
                 updateMainPreview(lastPreviewUrl);
             } else {
@@ -794,10 +909,7 @@
         }
 
         function removeNewFile(index) {
-            // Revoke URL to prevent memory leak
-            if (newFiles[index].previewUrl) {
-                URL.revokeObjectURL(newFiles[index].previewUrl);
-            }
+            if (newFiles[index].previewUrl) URL.revokeObjectURL(newFiles[index].previewUrl);
             newFiles.splice(index, 1);
             renderAllThumbnails();
         }
@@ -830,16 +942,13 @@
 
         // --- 5. SAVE PRODUCT ---
         async function saveProduct(statusType) {
-            // Logic to prevent Viewers
-            // if (currentUserRole === 'viewer') return; 
-
             const name = document.getElementById('product-name').value.trim();
             let sku = document.getElementById('product-sku').value.trim();
             let price = document.getElementById('basePrice').value;
-            const category = document.getElementById('product-category').value;
-            const team = document.getElementById('product-team').value;
 
-            // --- 5a. NAME VALIDATION ---
+            // Get Single Team String (or empty)
+            const team = selectedTeams.length > 0 ? selectedTeams[0] : '';
+
             const nameRegex = /^[a-zA-Z0-9][a-zA-Z0-9\s\-\_\&]*$/;
 
             if (!name || name.length < 3 || name.length > 100) {
@@ -851,24 +960,20 @@
                 return;
             }
 
-            // --- 5b. SKU VALIDATION ---
             const skuRegex = /^[a-zA-Z0-9-_]+$/;
             if (sku && !skuRegex.test(sku)) {
                 Swal.fire({ icon: 'warning', title: 'Invalid SKU', text: 'SKU: Letters, numbers, hyphens only.' });
                 return;
             }
 
-            // --- 5c. DRAFT SKU AUTO-GEN ---
             if (statusType === 'Draft') {
                 if (!sku) sku = "DRAFT-" + Date.now();
                 if (!price) price = 0;
             }
 
-            // --- 5d. PUBLISH VALIDATION ---
             let sizesArray = [];
             document.querySelectorAll('.size-qty-input').forEach(input => {
                 const val = input.value === "" ? 0 : parseInt(input.value);
-                // Allow 0 stock, just ensure it's a valid number >= 0
                 if (!isNaN(val) && val >= 0) {
                     sizesArray.push({ size: input.getAttribute('data-size'), stock: val });
                 }
@@ -878,11 +983,8 @@
                 if (!sku) return Swal.fire('Warning', 'SKU required to publish', 'warning');
                 if (!price || parseFloat(price) <= 0) return Swal.fire('Warning', 'Price required to publish', 'warning');
                 if (existingImages.length === 0 && newFiles.length === 0) return Swal.fire('Warning', 'Image required to publish', 'warning');
-                if (!category) return Swal.fire('Warning', 'Category required', 'warning');
-                if (!team) return Swal.fire('Warning', 'Team required', 'warning');
-                
-                // --- CHANGE: REMOVED STOCK > 0 CHECK ---
-                // We now allow 0 stock (Out of Stock products)
+                if (selectedCategories.length === 0) return Swal.fire('Warning', 'Select at least one category', 'warning');
+                if (!team) return Swal.fire('Warning', 'Select at least one team', 'warning');
             }
 
             if (existingImages.length + newFiles.length > 5) {
@@ -897,14 +999,18 @@
             formData.append('basePrice', price);
             formData.append('discountType', document.getElementById('discountType').value);
             formData.append('discountValue', document.getElementById('discountValue').value);
-            formData.append('category', category);
+
+            // Send array for categories
+            formData.append('category', JSON.stringify(selectedCategories));
+            // Send single string for team
             formData.append('team', team);
+
             formData.append('description', document.getElementById('product-desc').value);
             formData.append('status', statusType);
             formData.append('stockQuantity', document.getElementById('product-stock').value || 0);
             formData.append('sizes', JSON.stringify(sizesArray));
             formData.append('existingImages', JSON.stringify(existingImages));
-            
+
             newFiles.forEach(file => formData.append('productImages', file));
 
             try {
@@ -917,24 +1023,21 @@
 
                 Swal.fire({ title: 'Saving...', didOpen: () => Swal.showLoading() });
                 const response = await fetch(url, { method: method, body: formData });
-                
-                if (response.status === 401 || response.status === 403) { 
-                    window.location.replace('admin-login.html'); return; 
+
+                if (response.status === 401 || response.status === 403) {
+                    window.location.replace('admin-login.html'); return;
                 }
-                
+
                 const result = await response.json();
 
                 if (result.success) {
                     Swal.fire('Success', 'Product saved!', 'success').then(() => { window.location.href = "product-list.html"; });
                 } else {
-                    // --- ERROR HANDLING FOR DUPLICATES ---
-                    // This logic catches the error message sent from your controller
                     if (result.error && (result.error.includes('E11000') || result.error.includes('duplicate'))) {
                         if (result.error.includes('sku')) {
                             Swal.fire('Duplicate SKU', `The SKU "${sku}" is already taken.`, 'error');
                         } else if (result.error.includes('name')) {
-                             // This catches the Name duplicate
-                             Swal.fire('Duplicate Name', `The product name "${name}" already exists.`, 'error');
+                            Swal.fire('Duplicate Name', `The product name "${name}" already exists.`, 'error');
                         } else {
                             Swal.fire('Duplicate Error', 'A product with this Name or SKU already exists.', 'error');
                         }
@@ -959,25 +1062,147 @@
             document.getElementById('finalPrice').value = final.toFixed(2);
         }
 
+        // --- CATEGORY MULTI-SELECT ---
         async function fetchCategories() {
-            const res = await fetch('/api/categories');
-            const json = await res.json();
-            if (json.success) {
-                const sel = document.getElementById('product-category');
-                sel.innerHTML = '<option value="">Select Category</option>';
-                json.data.forEach(c => sel.innerHTML += `<option value="${c.name}">${c.name}</option>`);
-            }
-        }
-        async function fetchTeams() {
-            const res = await fetch('/api/teams');
-            const json = await res.json();
-            if (json.success) {
-                const sel = document.getElementById('product-team');
-                sel.innerHTML = '<option value="">Select Team</option>';
-                json.data.forEach(t => sel.innerHTML += `<option value="${t.name}">${t.name}</option>`);
-            }
+            try {
+                const res = await fetch('/api/categories');
+                const json = await res.json();
+                const listContainer = document.getElementById('cat-options-list');
+                listContainer.innerHTML = '';
+
+                if (json.success) {
+                    json.data.forEach(c => {
+                        const itemDiv = document.createElement('div');
+                        itemDiv.className = 'multi-option-item';
+                        itemDiv.onclick = (e) => {
+                            if (e.target !== itemDiv.querySelector('input')) itemDiv.querySelector('input').click();
+                        };
+                        const checkbox = document.createElement('input');
+                        checkbox.type = 'checkbox';
+                        checkbox.value = c.name;
+                        checkbox.onchange = (e) => handleCategoryChange(e.target);
+                        const span = document.createElement('span');
+                        span.innerText = c.name;
+                        itemDiv.appendChild(checkbox);
+                        itemDiv.appendChild(span);
+                        listContainer.appendChild(itemDiv);
+                    });
+                }
+            } catch (err) { console.error(err); }
         }
 
+        function toggleMultiSelect() {
+            document.getElementById('cat-options-list').classList.toggle('show');
+            document.getElementById('team-options-list').classList.remove('show');
+        }
+
+        function handleCategoryChange(checkbox) {
+            const val = checkbox.value;
+            if (checkbox.checked) {
+                if (!selectedCategories.includes(val)) selectedCategories.push(val);
+            } else {
+                selectedCategories = selectedCategories.filter(item => item !== val);
+            }
+            renderSelectedTags();
+        }
+
+        function renderSelectedTags() {
+            const display = document.getElementById('selected-cats-display');
+            if (selectedCategories.length === 0) {
+                display.innerHTML = '<span class="placeholder-text">Select Categories...</span>';
+                return;
+            }
+            display.innerHTML = '';
+            selectedCategories.forEach(cat => {
+                const tag = document.createElement('span');
+                tag.className = 'cat-tag';
+                tag.innerText = cat;
+                display.appendChild(tag);
+            });
+        }
+
+        // --- TEAM SINGLE-SELECT (Styled as Multi) ---
+        async function fetchTeams() {
+            try {
+                const res = await fetch('/api/teams');
+                const json = await res.json();
+                const listContainer = document.getElementById('team-options-list');
+                listContainer.innerHTML = '';
+
+                if (json.success) {
+                    json.data.forEach(t => {
+                        const itemDiv = document.createElement('div');
+                        itemDiv.className = 'multi-option-item';
+                        itemDiv.onclick = (e) => {
+                            if (e.target !== itemDiv.querySelector('input')) itemDiv.querySelector('input').click();
+                        };
+                        const checkbox = document.createElement('input');
+                        checkbox.type = 'checkbox'; // Kept as checkbox for visual consistency
+                        checkbox.value = t.name;
+                        checkbox.onchange = (e) => handleTeamChange(e.target);
+                        const span = document.createElement('span');
+                        span.innerText = t.name;
+                        itemDiv.appendChild(checkbox);
+                        itemDiv.appendChild(span);
+                        listContainer.appendChild(itemDiv);
+                    });
+                }
+            } catch (err) { console.error(err); }
+        }
+
+        function toggleTeamMultiSelect() {
+            document.getElementById('team-options-list').classList.toggle('show');
+            document.getElementById('cat-options-list').classList.remove('show');
+        }
+
+        function handleTeamChange(checkbox) {
+            const val = checkbox.value;
+
+            // 1. Uncheck all other checkboxes visually
+            const allTeamCheckboxes = document.querySelectorAll('#team-options-list input[type="checkbox"]');
+            allTeamCheckboxes.forEach(cb => {
+                if (cb !== checkbox) cb.checked = false;
+            });
+
+            // 2. Update Single State
+            if (checkbox.checked) {
+                selectedTeams = [val];
+            } else {
+                selectedTeams = [];
+            }
+            renderSelectedTeamTags();
+        }
+
+        function renderSelectedTeamTags() {
+            const display = document.getElementById('selected-teams-display');
+            if (selectedTeams.length === 0) {
+                display.innerHTML = '<span class="placeholder-text">Select One Team...</span>';
+                return;
+            }
+            display.innerHTML = '';
+            selectedTeams.forEach(team => {
+                const tag = document.createElement('span');
+                tag.className = 'cat-tag';
+                tag.innerText = team;
+                display.appendChild(tag);
+            });
+        }
+
+        // Close dropdowns when clicking outside
+        document.addEventListener('click', function (event) {
+            const catContainer = document.getElementById('cat-wrapper');
+            const teamContainer = document.getElementById('team-wrapper');
+
+            if (catContainer && !catContainer.contains(event.target)) {
+                document.getElementById('cat-options-list').classList.remove('show');
+            }
+            if (teamContainer && !teamContainer.contains(event.target)) {
+                document.getElementById('team-options-list').classList.remove('show');
+            }
+        });
+
+
+        // --- LOAD DATA ---
         async function loadProductData(id) {
             try {
                 const res = await fetch(`/api/products/${id}?t=${new Date().getTime()}`);
@@ -992,8 +1217,45 @@
                     if (p.discountType) document.getElementById('discountType').value = p.discountType;
                     if (p.discountValue) document.getElementById('discountValue').value = p.discountValue;
                     calculatePrice();
-                    document.getElementById('product-category').value = p.category || '';
-                    document.getElementById('product-team').value = p.team || '';
+
+                    // --- Pre-select Categories ---
+                    if (p.category) {
+                        let cats = [];
+                        if (Array.isArray(p.category)) cats = p.category;
+                        else if (typeof p.category === 'string') {
+                            if (p.category.startsWith('[')) {
+                                try { cats = JSON.parse(p.category); } catch (e) { cats = [p.category]; }
+                            } else { cats = [p.category]; }
+                        }
+                        selectedCategories = cats;
+                        renderSelectedTags();
+                        document.querySelectorAll('#cat-options-list input').forEach(cb => {
+                            if (selectedCategories.includes(cb.value)) cb.checked = true;
+                        });
+                    }
+
+                    // --- Pre-select Team ---
+                    if (p.team) {
+                        let teams = [];
+                        // Handle legacy data or new single string
+                        if (Array.isArray(p.team)) teams = [p.team[0]];
+                        else if (typeof p.team === 'string') {
+                            // If JSON array string
+                            if (p.team.startsWith('[')) {
+                                try {
+                                    let parsed = JSON.parse(p.team);
+                                    teams = parsed.length > 0 ? [parsed[0]] : [];
+                                } catch (e) { teams = [p.team]; }
+                            } else {
+                                teams = [p.team];
+                            }
+                        }
+                        selectedTeams = teams;
+                        renderSelectedTeamTags();
+                        document.querySelectorAll('#team-options-list input').forEach(cb => {
+                            if (selectedTeams.includes(cb.value)) cb.checked = true;
+                        });
+                    }
 
                     document.querySelectorAll('.size-qty-input').forEach(i => i.value = 0);
                     if (p.sizes && p.sizes.length > 0) {
@@ -1016,6 +1278,13 @@
             }
         }
 
+        // Overlay onclick logic
+        window.onclick = function (event) {
+            if (event.target.classList.contains('sidebar-overlay')) {
+                toggleSidebar();
+            }
+        };
+
         async function logoutUser() {
             try {
                 await fetch('/api/auth/logout-admin', { method: 'POST' });
@@ -1025,8 +1294,6 @@
             }
         }
     </script>
-
-
 </body>
 
 </html>

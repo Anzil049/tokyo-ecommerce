@@ -24,12 +24,11 @@ async function syncCounts() {
 }
 
 // 1. Create Product
-// 1. Create Product
 exports.createProduct = async (req, res) => {
     try {
         let sizes = [];
 
-        // --- FIX: Explicitly handle 0 stock ---
+        // Fix: Explicitly handle 0 stock
         if (req.body.sizes) {
             const parsedSizes = JSON.parse(req.body.sizes);
             sizes = parsedSizes.map(s => ({
@@ -43,8 +42,28 @@ exports.createProduct = async (req, res) => {
             imagePaths = req.files.map(file => `/uploads/products/${file.filename}`);
         }
 
+        // --- NEW CHANGE: Parse Category String to Array ---
+        let categories = req.body.category;
+        if (categories) {
+            if (typeof categories === 'string') {
+                try {
+                    // Try to parse JSON string (e.g. "['Men', 'Sale']")
+                    const parsed = JSON.parse(categories);
+                    if (Array.isArray(parsed)) {
+                        categories = parsed;
+                    } else {
+                        categories = [categories]; // Handle single string legacy
+                    }
+                } catch (e) {
+                    categories = [categories]; // Handle plain string "Men"
+                }
+            }
+        }
+        // --------------------------------------------------
+
         const productData = {
             ...req.body,
+            category: categories, // <--- Use the parsed categories array
             price: parseFloat(req.body.price),
             basePrice: parseFloat(req.body.basePrice) || 0,
             discountValue: parseFloat(req.body.discountValue) || 0,
@@ -60,24 +79,15 @@ exports.createProduct = async (req, res) => {
 
         res.status(201).json({ success: true, data: newProduct });
     } catch (error) {
-        // --- CUSTOM ERROR HANDLING FOR DUPLICATES ---
+        // ... (Keep your existing error handling) ...
         if (error.code === 11000) {
-            const field = Object.keys(error.keyPattern)[0]; // 'sku' or 'name'
+            // ... error handling code ...
+            const field = Object.keys(error.keyPattern)[0];
             const value = error.keyValue[field];
-
-            // Return specific message for name or sku
-            if (field === 'name') {
-                return res.status(400).json({
-                    success: false,
-                    error: `E11000 duplicate key error: name "${value}" already exists.`
-                });
-            }
-            if (field === 'sku') {
-                return res.status(400).json({
-                    success: false,
-                    error: `E11000 duplicate key error: sku "${value}" already exists.`
-                });
-            }
+            return res.status(400).json({
+                success: false,
+                error: `E11000 duplicate key error: ${field} "${value}" already exists.`
+            });
         }
         res.status(400).json({ success: false, error: error.message });
     }
@@ -106,13 +116,12 @@ exports.getSingleProduct = async (req, res) => {
     }
 };
 
-// 4. Update Product (FIXED LOGIC)
-// 4. Update Product (FIXED LOGIC)
+// 4. Update Product
 exports.updateProduct = async (req, res) => {
     try {
         let updateData = { ...req.body };
 
-        // --- FIX: Explicitly handle 0 stock during update ---
+        // Fix: Explicitly handle 0 stock during update
         if (req.body.sizes) {
             const parsedSizes = JSON.parse(req.body.sizes);
             updateData.sizes = parsedSizes.map(s => ({
@@ -120,6 +129,25 @@ exports.updateProduct = async (req, res) => {
                 stock: (s.stock !== undefined && s.stock !== null && s.stock !== "") ? parseInt(s.stock) : 0
             }));
         }
+
+        // --- NEW CHANGE: Parse Category String to Array ---
+        if (req.body.category) {
+            let categories = req.body.category;
+            if (typeof categories === 'string') {
+                try {
+                    const parsed = JSON.parse(categories);
+                    if (Array.isArray(parsed)) {
+                        categories = parsed;
+                    } else {
+                        categories = [categories];
+                    }
+                } catch (e) {
+                    categories = [categories];
+                }
+            }
+            updateData.category = categories; // <--- Update the data object
+        }
+        // --------------------------------------------------
 
         // Ensure numbers
         if (updateData.price) updateData.price = parseFloat(updateData.price);
@@ -149,24 +177,14 @@ exports.updateProduct = async (req, res) => {
 
         res.status(200).json({ success: true, data: updatedProduct });
     } catch (error) {
-        // --- CUSTOM ERROR HANDLING FOR DUPLICATES ---
+        // ... (Keep your existing error handling) ...
         if (error.code === 11000) {
-            const field = Object.keys(error.keyPattern)[0]; // 'sku' or 'name'
+            const field = Object.keys(error.keyPattern)[0];
             const value = error.keyValue[field];
-
-            // Return specific message for name or sku
-            if (field === 'name') {
-                return res.status(400).json({
-                    success: false,
-                    error: `E11000 duplicate key error: name "${value}" already exists.`
-                });
-            }
-            if (field === 'sku') {
-                return res.status(400).json({
-                    success: false,
-                    error: `E11000 duplicate key error: sku "${value}" already exists.`
-                });
-            }
+            return res.status(400).json({
+                success: false,
+                error: `E11000 duplicate key error: ${field} "${value}" already exists.`
+            });
         }
         res.status(400).json({ success: false, error: error.message });
     }

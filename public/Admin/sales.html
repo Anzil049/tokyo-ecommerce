@@ -11,11 +11,12 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" rel="stylesheet">
 
     <style>
-        /* Force SweetAlert Z-Index */
+        /* --- 1. CRITICAL: FORCE SWEETALERT TO TOP --- */
         .swal2-container {
             z-index: 10000 !important;
         }
 
+        /* --- 2. GLOBAL VARIABLES & RESET --- */
         :root {
             --primary: #4880FF;
             --primary-light: #E8F0FE;
@@ -38,18 +39,31 @@
             font-family: 'Inter', sans-serif;
         }
 
+        /* Prevent Horizontal Scroll */
+        html,
+        body {
+            overflow-x: hidden;
+            width: 100%;
+        }
+
         body {
             background: var(--bg);
             display: flex;
             min-height: 100vh;
-            overflow: hidden;
+            position: relative;
+        }
+
+        /* --- LOCK SCROLLING WHEN MODAL IS OPEN --- */
+        body.body-no-scroll {
+            overflow: hidden !important;
+            height: 100vh;
         }
 
         a {
             text-decoration: none;
         }
 
-        /* Sidebar */
+        /* --- 3. SIDEBAR & LAYOUT --- */
         .sidebar {
             width: 260px;
             background: var(--white);
@@ -122,8 +136,6 @@
             padding: 30px;
             width: calc(100% - 260px);
             transition: 0.3s;
-            height: 100vh;
-            overflow-y: auto;
         }
 
         .header {
@@ -140,7 +152,7 @@
             margin-right: 15px;
         }
 
-        /* Table Styles */
+        /* Table Box */
         .table-box {
             background: var(--white);
             border-radius: 16px;
@@ -169,6 +181,7 @@
             border-radius: 8px;
             outline: none;
             width: 250px;
+            height: 45px;
             font-size: 13px;
         }
 
@@ -176,7 +189,7 @@
             background: var(--primary);
             color: white;
             border: none;
-            padding: 10px 20px;
+            padding: 0 20px;
             border-radius: 8px;
             font-weight: 600;
             cursor: pointer;
@@ -185,6 +198,7 @@
             gap: 8px;
             font-size: 13px;
             transition: 0.2s;
+            height: 45px;
         }
 
         .add-btn:hover {
@@ -205,6 +219,7 @@
             border-bottom: 1px solid #eee;
             font-size: 13px;
             font-weight: 600;
+            white-space: nowrap;
         }
 
         td {
@@ -213,6 +228,11 @@
             vertical-align: middle;
             color: var(--dark);
             font-size: 14px;
+        }
+
+        tbody tr {
+            transition: background 0.2s;
+            cursor: pointer;
         }
 
         tbody tr:hover {
@@ -303,7 +323,7 @@
             display: none;
         }
 
-        /* Modal Base */
+        /* Modal Styles */
         .modal-overlay {
             position: fixed;
             top: 0;
@@ -328,6 +348,7 @@
             animation: slideDown 0.3s ease;
             max-height: 90vh;
             overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
         }
 
         @keyframes slideDown {
@@ -398,6 +419,7 @@
             font-weight: 700;
             margin-top: 20px;
             margin-bottom: 10px;
+            letter-spacing: 0.5px;
             border-bottom: 1px solid #f0f0f0;
             padding-bottom: 5px;
         }
@@ -433,6 +455,25 @@
 
         .hidden {
             display: none;
+        }
+
+        /* Sidebar Overlay for Mobile */
+        .sidebar-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 900;
+            display: none;
+            opacity: 0;
+            transition: 0.3s;
+        }
+
+        .sidebar-overlay.active {
+            display: block;
+            opacity: 1;
         }
 
         /* Cropper */
@@ -504,6 +545,7 @@
             font-weight: 600;
         }
 
+        /* --- MOBILE RESPONSIVE (MATCHING COUPONS STYLE) --- */
         @media (max-width: 991px) {
             .sidebar {
                 transform: translateX(-100%);
@@ -523,6 +565,31 @@
                 display: block;
             }
 
+            /* Stack Header Items */
+            .table-head {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 15px;
+            }
+
+            .action-group {
+                width: 100%;
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            /* Full width inputs on mobile */
+            .search-input {
+                width: 100% !important;
+                order: -1;
+            }
+
+            .add-btn {
+                width: 100%;
+                justify-content: center;
+            }
+
+            /* Card View for Mobile */
             table,
             thead,
             tbody,
@@ -541,10 +608,16 @@
                 background: #fff;
                 margin-bottom: 20px;
                 border: 1px solid #eee;
-                border-radius: 12px;
+                border-radius: 16px;
                 padding: 20px;
+                padding-top: 0px;
+                /* Remove top padding so banner hits top */
                 position: relative;
-                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+                box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+                overflow: hidden;
+                /* Ensure banner corners clip */
+                display: flex;
+                flex-direction: column;
             }
 
             td {
@@ -554,6 +627,8 @@
                 text-align: right;
                 border-bottom: 1px solid #f9f9f9;
                 padding: 12px 0;
+                word-break: break-word;
+                width: 100%;
             }
 
             td:last-child {
@@ -567,12 +642,55 @@
                 color: var(--grey);
                 font-size: 13px;
                 text-align: left;
+                min-width: 100px;
             }
 
+            /* --- 1. BANNER (Image at Top) --- */
             td[data-label="Banner"] {
-                justify-content: flex-end;
+                order: -2;
+                /* Force to top */
+                width: calc(100% + 40px);
+                /* Negative margin compensation */
+                margin-left: -20px;
+                margin-right: -20px;
+                padding: 0;
+                border-bottom: none;
+                display: block;
             }
 
+            td[data-label="Banner"]::before {
+                display: none;
+                /* Hide label */
+            }
+
+            .table-banner-img {
+                width: 100%;
+                height: 160px;
+                object-fit: cover;
+                border: none;
+                border-radius: 0;
+            }
+
+            /* --- 2. SALE NAME (Title below Banner) --- */
+            td[data-label="Sale Name"] {
+                order: -1;
+                /* Force below banner */
+                display: block;
+                text-align: left;
+                font-size: 20px;
+                font-weight: 700;
+                color: var(--dark);
+                padding-top: 15px;
+                padding-bottom: 5px;
+                border-bottom: none;
+            }
+
+            td[data-label="Sale Name"]::before {
+                display: none;
+                /* Hide label */
+            }
+
+            /* --- 3. ACTIONS (Float Top Right) --- */
             td[data-label="Action"] {
                 position: absolute;
                 top: 15px;
@@ -581,6 +699,11 @@
                 border: none;
                 width: auto;
                 z-index: 5;
+                background: rgba(255, 255, 255, 0.9);
+                /* Slight bg to make buttons pop on image */
+                padding: 5px;
+                border-radius: 30px;
+                backdrop-filter: blur(4px);
             }
 
             td[data-label="Action"]::before {
@@ -683,16 +806,15 @@
                 </div>
 
                 <div class="form-section-title">Schedule</div>
-                <div class="form-grid">
-                    <div>
-                        <label class="form-label">Start Date <span style="color:red">*</span></label>
-                        <input type="date" id="s-start" class="form-input">
-                    </div>
-                    <div>
-                        <label class="form-label">End Date <span style="color:red">*</span></label>
-                        <input type="date" id="s-end" class="form-input">
-                    </div>
+                <div class="form-group">
+                    <label class="form-label">Start Date <span style="color:red">*</span></label>
+                    <input type="date" id="s-start" class="form-input">
                 </div>
+                <div class="form-group">
+                    <label class="form-label">End Date <span style="color:red">*</span></label>
+                    <input type="date" id="s-end" class="form-input">
+                </div>
+
                 <div class="form-group">
                     <label class="form-label">Status</label>
                     <select id="s-status" class="form-input">
@@ -708,6 +830,8 @@
             </div>
         </div>
     </div>
+
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
 
     <aside class="sidebar" id="sidebar">
         <img src="../Images/Logo text.png" class="logo-img" alt="Logo">
@@ -755,7 +879,8 @@
                         <th>Sale Name</th>
                         <th>Offer</th>
                         <th>Target</th>
-                        <th>Duration</th>
+                        <th>Start Date</th>
+                        <th>End Date</th>
                         <th>Status</th>
                         <th>Action</th>
                     </tr>
@@ -773,7 +898,21 @@
     <script>
         // --- 1. SETUP ---
         window.onpageshow = function (event) { if (event.persisted) window.location.reload(); };
-        function toggleSidebar() { document.getElementById('sidebar').classList.toggle('active'); }
+
+        // Updated Sidebar Toggle Logic with Overlay
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            sidebar.classList.toggle('active');
+
+            if (overlay) {
+                if (sidebar.classList.contains('active')) {
+                    overlay.classList.add('active');
+                } else {
+                    overlay.classList.remove('active');
+                }
+            }
+        }
 
         let allSales = [];
         let isEditing = false;
@@ -872,7 +1011,10 @@
                 // Safe date formatting
                 const sDate = new Date(sale.startDate);
                 const eDate = new Date(sale.endDate);
-                const dateRange = !isNaN(sDate) && !isNaN(eDate) ? `${sDate.toLocaleDateString()} - ${eDate.toLocaleDateString()}` : 'Invalid Date';
+
+                // Keep dates separate strings
+                const startStr = !isNaN(sDate) ? sDate.toLocaleDateString() : 'N/A';
+                const endStr = !isNaN(eDate) ? eDate.toLocaleDateString() : 'N/A';
 
                 const dataStr = encodeURIComponent(JSON.stringify(sale));
 
@@ -893,7 +1035,8 @@
                     <td data-label="Sale Name" style="font-weight:600">${sale.name}</td>
                     <td data-label="Offer" style="color:var(--primary); font-weight:600">${offerDisplay}</td>
                     <td data-label="Target" style="text-transform:capitalize">${sale.appliesTo}</td>
-                    <td data-label="Duration" style="font-size:12px;">${dateRange}</td>
+                    <td data-label="Start Date" style="font-size:13px;">${startStr}</td>
+                    <td data-label="End Date" style="font-size:13px;">${endStr}</td>
                     <td data-label="Status"><span class="status-badge ${statusClass}">${statusText}</span></td>
                     <td data-label="Action"><div class="action-btns">${actions}</div></td>
                 `;
@@ -912,6 +1055,7 @@
             resetForm();
             document.getElementById('formTitle').innerText = "Create Sale";
             document.getElementById('saleFormModal').style.display = 'flex';
+            document.body.classList.add('body-no-scroll');
         }
 
         // --- FIXED OPEN EDIT MODAL ---
@@ -973,6 +1117,7 @@
                 });
 
                 document.getElementById('saleFormModal').style.display = 'flex';
+                document.body.classList.add('body-no-scroll');
 
             } catch (err) {
                 console.error("Edit Error:", err);
@@ -1128,11 +1273,23 @@
                     <div class="detail-row"><span class="detail-label">End</span><span class="detail-val">${endText}</span></div>
                 `;
                 document.getElementById('detailsModal').style.display = 'flex';
+                document.body.classList.add('body-no-scroll');
             } catch (e) { console.error(e); }
         }
 
-        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-        window.onclick = function (e) { if (e.target.classList.contains('modal-overlay')) e.target.style.display = 'none'; }
+        function closeModal(id) {
+            document.getElementById(id).style.display = 'none';
+            document.body.classList.remove('body-no-scroll');
+        }
+
+        // Window onclick logic
+        window.onclick = function (e) {
+            if (e.target.classList.contains('modal-overlay')) {
+                e.target.style.display = 'none';
+                document.body.classList.remove('body-no-scroll');
+            }
+        }
+
         async function logoutUser() { await fetch('/api/auth/logout-admin', { method: 'POST' }); window.location.replace('admin-login.html'); }
     </script>
 </body>

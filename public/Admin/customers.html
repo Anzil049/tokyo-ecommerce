@@ -39,11 +39,24 @@
             font-family: 'Inter', sans-serif;
         }
 
+        /* Prevent Horizontal Scroll */
+        html,
+        body {
+            overflow-x: hidden;
+            width: 100%;
+        }
+
         body {
             background: var(--bg);
             display: flex;
             min-height: 100vh;
-            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* --- LOCK SCROLLING WHEN MODAL IS OPEN --- */
+        body.body-no-scroll {
+            overflow: hidden !important;
+            height: 100vh;
         }
 
         a {
@@ -144,7 +157,6 @@
             border-radius: 16px;
             padding: 20px;
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
-            overflow-x: auto;
         }
 
         .table-head {
@@ -152,6 +164,8 @@
             justify-content: space-between;
             align-items: center;
             margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
         }
 
         .filter-group input {
@@ -161,6 +175,7 @@
             outline: none;
             width: 250px;
             font-size: 14px;
+            height: 45px;
         }
 
         table {
@@ -228,11 +243,10 @@
             border: 1px solid #D5D5D5;
         }
 
-        /* --- 6. ACTION BUTTONS (MATCHING TEAMS.HTML) --- */
+        /* --- 6. ACTION BUTTONS --- */
         .action-btns {
             display: flex;
             gap: 8px;
-            /* Default alignment is left, matching Header */
         }
 
         .icon-btn {
@@ -293,6 +307,9 @@
             padding: 25px;
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
             animation: slideDown 0.3s ease;
+            max-height: 90vh;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
         }
 
         @keyframes slideDown {
@@ -365,6 +382,25 @@
             font-weight: 600;
         }
 
+        /* Sidebar Overlay for Mobile */
+        .sidebar-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 900;
+            display: none;
+            opacity: 0;
+            transition: 0.3s;
+        }
+
+        .sidebar-overlay.active {
+            display: block;
+            opacity: 1;
+        }
+
         /* --- 8. MOBILE RESPONSIVE --- */
         @media (max-width: 991px) {
             .sidebar {
@@ -383,6 +419,21 @@
 
             .menu-toggle {
                 display: block;
+            }
+
+            /* Table Head Adjustments */
+            .table-head {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+            }
+
+            .filter-group {
+                width: 100%;
+            }
+
+            .filter-group input {
+                width: 100% !important;
             }
 
             /* Card View for Mobile */
@@ -417,6 +468,7 @@
                 text-align: right;
                 border-bottom: 1px solid #f9f9f9;
                 padding: 12px 0;
+                word-break: break-word;
             }
 
             td:last-child {
@@ -430,9 +482,10 @@
                 color: var(--grey);
                 font-size: 13px;
                 text-align: left;
+                min-width: 100px;
             }
 
-            /* Mobile Adjustments */
+            /* Mobile Action Buttons */
             td[data-label="Action"] {
                 position: absolute;
                 top: 20px;
@@ -441,6 +494,7 @@
                 border: none;
                 width: auto;
                 background: transparent;
+                justify-content: flex-end;
             }
 
             td[data-label="Action"]::before {
@@ -451,7 +505,7 @@
                 font-weight: 700;
                 color: var(--primary);
                 font-size: 16px;
-                padding-right: 60px;
+                padding-right: 80px;
                 justify-content: flex-start;
                 border-bottom: 1px solid #eee;
                 margin-bottom: 10px;
@@ -479,6 +533,8 @@
             </div>
         </div>
     </div>
+
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
 
     <aside class="sidebar" id="sidebar">
         <img src="../Images/Logo text.png" class="logo-img">
@@ -511,8 +567,9 @@
         <div class="table-box">
             <div class="table-head">
                 <h3>Customer List</h3>
-                <div class="filter-group"><input type="text" id="searchInput" placeholder="Search customers..."
-                        onkeyup="filterCustomers()"></div>
+                <div class="filter-group">
+                    <input type="text" id="searchInput" placeholder="Search customers..." onkeyup="filterCustomers()">
+                </div>
             </div>
             <table>
                 <thead>
@@ -534,14 +591,27 @@
     </main>
 
     <script>
-        // --- 1. CRITICAL: PREVENT BACK BUTTON CACHING ---
+        // --- 1. PREVENT BACK BUTTON CACHING ---
         window.onpageshow = function (event) {
             if (event.persisted || (window.performance && window.performance.navigation.type === 2)) {
                 window.location.reload();
             }
         };
 
-        function toggleSidebar() { document.getElementById('sidebar').classList.toggle('active'); }
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+
+            sidebar.classList.toggle('active');
+
+            if (overlay) {
+                if (sidebar.classList.contains('active')) {
+                    overlay.classList.add('active');
+                } else {
+                    overlay.classList.remove('active');
+                }
+            }
+        }
 
         let allCustomers = [];
         let currentUserRole = ''; // Track role for permission logic
@@ -603,7 +673,6 @@
             }
         }
 
-        // --- 5. RENDER TABLE ---
         // --- 5. RENDER TABLE ---
         function renderCustomers(customers) {
             const tbody = document.getElementById('customerTableBody');
@@ -760,19 +829,24 @@
                 <div class="modal-row"><span class="modal-label">Status</span><span class="modal-val" style="color:${statusColor}">${status}</span></div>
             `;
             modal.style.display = 'flex';
+
+            // LOCK BODY SCROLL
+            document.body.classList.add('body-no-scroll');
         }
 
-        function closeModal() { document.getElementById('customerModal').style.display = 'none'; }
+        function closeModal() {
+            document.getElementById('customerModal').style.display = 'none';
+            // UNLOCK BODY SCROLL
+            document.body.classList.remove('body-no-scroll');
+        }
+
         window.onclick = function (event) {
-            if (event.target == document.getElementById('customerModal')) closeModal();
+            if (event.target.classList.contains('modal-overlay')) closeModal();
         }
 
         async function logoutUser() {
             try {
-                // CHANGED: Use '/api/auth/logout-admin'
-                await fetch('/api/auth/logout-admin', { method: 'POST' }); 
-                
-                // Use REPLACE to prevent back navigation
+                await fetch('/api/auth/logout-admin', { method: 'POST' });
                 window.location.replace('admin-login.html');
             } catch (err) {
                 console.error("Logout failed", err);

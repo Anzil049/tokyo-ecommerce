@@ -39,11 +39,24 @@
             font-family: 'Inter', sans-serif;
         }
 
+        /* Prevent Horizontal Scroll */
+        html,
+        body {
+            overflow-x: hidden;
+            width: 100%;
+        }
+
         body {
             background: var(--bg);
             display: flex;
             min-height: 100vh;
-            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* --- LOCK SCROLLING WHEN MODAL IS OPEN --- */
+        body.body-no-scroll {
+            overflow: hidden !important;
+            height: 100vh;
         }
 
         a {
@@ -162,13 +175,15 @@
             border-radius: 8px;
             outline: none;
             width: 250px;
+            height: 45px;
+            font-size: 13px;
         }
 
         .add-btn {
             background: var(--primary);
             color: white;
             border: none;
-            padding: 10px 20px;
+            padding: 0 20px;
             border-radius: 8px;
             font-weight: 600;
             cursor: pointer;
@@ -177,6 +192,7 @@
             gap: 8px;
             font-size: 13px;
             transition: 0.2s;
+            height: 45px;
         }
 
         .add-btn:hover {
@@ -296,6 +312,25 @@
             color: white;
         }
 
+        /* Sidebar Overlay for Mobile */
+        .sidebar-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 900;
+            display: none;
+            opacity: 0;
+            transition: 0.3s;
+        }
+
+        .sidebar-overlay.active {
+            display: block;
+            opacity: 1;
+        }
+
         /* Modals */
         .modal-overlay {
             position: fixed;
@@ -319,6 +354,8 @@
             padding: 25px;
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
             animation: slideDown 0.3s ease;
+            max-height: 90vh;
+            overflow-y: auto;
         }
 
         @keyframes slideDown {
@@ -506,6 +543,7 @@
             font-weight: 600;
         }
 
+        /* --- MOBILE RESPONSIVE --- */
         @media (max-width: 991px) {
             .sidebar {
                 transform: translateX(-100%);
@@ -525,22 +563,34 @@
                 display: block;
             }
 
+            /* Stack Header Items */
             .table-head {
                 flex-direction: column;
-                align-items: flex-start;
+                align-items: stretch;
+                gap: 15px;
             }
 
             .action-group {
                 width: 100%;
-                flex-direction: column-reverse;
+                flex-direction: column;
+                gap: 10px;
             }
 
-            .search-input,
+            /* Full width inputs on mobile */
+            .search-input {
+                width: 100% !important;
+                order: -1;
+                /* Puts search at the top */
+                height: 45px;
+            }
+
             .add-btn {
                 width: 100%;
                 justify-content: center;
+                height: 45px;
             }
 
+            /* Card View for Mobile */
             table,
             thead,
             tbody,
@@ -585,36 +635,28 @@
                 color: var(--grey);
                 font-size: 13px;
                 text-align: left;
+                min-width: 100px;
             }
 
+            /* Team Cell (Header of Card) */
             td[data-label="Team"] {
-                flex-direction: column;
-                align-items: flex-start;
+                flex-direction: row;
+                justify-content: flex-start;
                 padding-top: 0;
                 padding-bottom: 15px;
                 margin-bottom: 10px;
                 border-bottom: 1px solid #eee;
                 width: 100%;
                 padding-right: 80px;
+                /* Space for action buttons */
             }
 
             td[data-label="Team"]::before {
                 display: none;
+                /* Hide label */
             }
 
-            .team-cell {
-                justify-content: flex-start;
-                text-align: left;
-                width: 100%;
-            }
-
-            .team-cell>div {
-                display: flex;
-                flex-direction: column;
-                align-items: flex-start;
-                text-align: left;
-            }
-
+            /* Action buttons on top right */
             td[data-label="Action"] {
                 position: absolute;
                 top: 20px;
@@ -702,6 +744,8 @@
         </div>
     </div>
 
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
     <aside class="sidebar" id="sidebar">
         <img src="../Images/Logo text.png" class="logo-img">
         <p class="menu-cat">Main menu</p>
@@ -765,7 +809,20 @@
             }
         };
 
-        function toggleSidebar() { document.getElementById('sidebar').classList.toggle('active'); }
+        // --- UPDATED SIDEBAR LOGIC ---
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            sidebar.classList.toggle('active');
+
+            if (overlay) {
+                if (sidebar.classList.contains('active')) {
+                    overlay.classList.add('active');
+                } else {
+                    overlay.classList.remove('active');
+                }
+            }
+        }
 
         // --- GLOBAL VARS ---
         let editingTeamId = null;
@@ -820,11 +877,8 @@
                 const result = await response.json();
                 if (result.success) {
                     allTeams = result.data;
-                    // --- ADD THIS BLOCK TO SORT A-Z ---
-                    allTeams.sort((a, b) => {
-                        // Use localeCompare for correct string sorting (handling case sensitivity)
-                        return a.name.localeCompare(b.name);
-                    });
+                    // --- SORT A-Z ---
+                    allTeams.sort((a, b) => a.name.localeCompare(b.name));
                     renderTeams(allTeams);
                 }
             } catch (err) { console.error("Fetch error:", err); }
@@ -891,27 +945,22 @@
         }
 
         // --- SAVE TEAM ---
-        // --- SAVE TEAM ---
         async function saveTeam() {
             if (currentUserRole === 'viewer') return;
 
-            // 1. Get and Trim Input
             const nameInput = document.getElementById('t-name').value.trim();
             const typeInput = document.getElementById('t-type').value;
             const statusInput = document.getElementById('t-status').value;
             const fileInput = document.getElementById('t-logo-file');
 
-            // 2. Basic Validation
             if (!nameInput) {
                 Swal.fire({ icon: 'warning', title: 'Required', text: 'Team Name is required!' });
                 return;
             }
 
-            // 3. FRONTEND DUPLICATE CHECK (Case-Insensitive)
-            // Check if name exists in allTeams AND ensure we are not editing the same team
             const isDuplicate = allTeams.some(team =>
                 team.name.toLowerCase() === nameInput.toLowerCase() &&
-                team._id !== editingTeamId // Ignore self if editing
+                team._id !== editingTeamId
             );
 
             if (isDuplicate) {
@@ -920,7 +969,7 @@
                     title: 'Duplicate Team',
                     text: `The team "${nameInput}" already exists. Please choose a different name.`
                 });
-                return; // Stop execution
+                return;
             }
 
             const formData = new FormData();
@@ -928,7 +977,6 @@
             formData.append('type', typeInput);
             formData.append('status', statusInput);
 
-            // Append cropped blob if it exists
             if (croppedImageBlob) {
                 formData.append('teamLogo', croppedImageBlob, 'team_logo.png');
             }
@@ -957,7 +1005,6 @@
                     loadTeams();
                     Swal.fire({ icon: 'success', title: 'Success', text: 'Team saved successfully!' });
                 } else {
-                    // 4. BACKEND ERROR HANDLING (Catch E11000)
                     if (result.error && result.error.includes('E11000') || result.error.includes('duplicate')) {
                         Swal.fire({
                             icon: 'error',
@@ -1021,7 +1068,6 @@
         function confirmCrop() {
             if (!currentCropper) return;
 
-            // 1. Get Square Canvas
             const squareCanvas = currentCropper.getCroppedCanvas({
                 width: 300,
                 height: 300,
@@ -1030,7 +1076,6 @@
                 imageSmoothingQuality: 'high',
             });
 
-            // 2. Create Circle Canvas (Masking)
             const circleCanvas = document.createElement('canvas');
             circleCanvas.width = 300;
             circleCanvas.height = 300;
@@ -1039,11 +1084,10 @@
             ctx.beginPath();
             ctx.arc(150, 150, 150, 0, 2 * Math.PI);
             ctx.closePath();
-            ctx.clip(); // Clip to circle
+            ctx.clip();
 
-            ctx.drawImage(squareCanvas, 0, 0); // Draw image inside clip
+            ctx.drawImage(squareCanvas, 0, 0);
 
-            // 3. Save as Blob
             circleCanvas.toBlob((blob) => {
                 croppedImageBlob = blob;
                 const previewUrl = URL.createObjectURL(blob);
@@ -1088,7 +1132,6 @@
         }
 
         function openFormModal(event = null, id = null, name = '', type = 'Club', status = 'Active', logo = '') {
-            // Reset blob
             croppedImageBlob = null;
 
             if (event) event.stopPropagation();
@@ -1117,6 +1160,7 @@
                 currentImgSrc = "https://placehold.co/100x100?text=Upload";
             }
             modal.style.display = 'flex';
+            document.body.classList.add('body-no-scroll');
         }
 
         function openDetails(name, type, count, status, img) {
@@ -1131,10 +1175,21 @@
                 <div class="modal-row"><span class="modal-label">Status</span><span class="modal-val" style="color:${status === 'Active' ? '#00B69B' : '#EF3826'}">${status}</span></div>
             `;
             document.getElementById('detailsModal').style.display = 'flex';
+            document.body.classList.add('body-no-scroll');
         }
 
-        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-        window.onclick = function (event) { if (event.target.classList.contains('modal-overlay')) event.target.style.display = 'none'; }
+        function closeModal(id) {
+            document.getElementById(id).style.display = 'none';
+            document.body.classList.remove('body-no-scroll');
+        }
+
+        // Window onclick logic
+        window.onclick = function (event) {
+            if (event.target.classList.contains('modal-overlay')) {
+                event.target.style.display = 'none';
+                document.body.classList.remove('body-no-scroll');
+            }
+        }
 
         async function logoutUser() {
             try {

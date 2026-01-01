@@ -9,10 +9,12 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
+        /* --- 1. CRITICAL: FORCE SWEETALERT TO TOP --- */
         .swal2-container {
             z-index: 10000 !important;
         }
 
+        /* --- 2. GLOBAL VARIABLES & RESET --- */
         :root {
             --primary: #4880FF;
             --primary-light: #E8F0FE;
@@ -26,6 +28,7 @@
             --success-light: #E6F7F5;
             --warning: #FFB536;
             --warning-light: #FFF8E7;
+            --border: #e0e0e0;
         }
 
         * {
@@ -35,18 +38,31 @@
             font-family: 'Inter', sans-serif;
         }
 
+        /* Prevent Horizontal Scroll */
+        html,
+        body {
+            overflow-x: hidden;
+            width: 100%;
+        }
+
         body {
             background: var(--bg);
             display: flex;
             min-height: 100vh;
-            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* --- LOCK SCROLLING WHEN MODAL IS OPEN --- */
+        body.body-no-scroll {
+            overflow: hidden !important;
+            height: 100vh;
         }
 
         a {
             text-decoration: none;
         }
 
-        /* Sidebar */
+        /* --- 3. SIDEBAR & LAYOUT --- */
         .sidebar {
             width: 260px;
             background: var(--white);
@@ -164,13 +180,14 @@
             border-radius: 8px;
             outline: none;
             width: 250px;
+            height: 45px;
         }
 
         .add-btn {
             background: var(--primary);
             color: white;
             border: none;
-            padding: 10px 20px;
+            padding: 0 20px;
             border-radius: 8px;
             font-weight: 600;
             cursor: pointer;
@@ -179,6 +196,7 @@
             gap: 8px;
             font-size: 13px;
             transition: 0.2s;
+            height: 45px;
         }
 
         .add-btn:hover {
@@ -197,6 +215,7 @@
             padding: 15px;
             color: var(--grey);
             border-bottom: 1px solid #eee;
+            white-space: nowrap;
         }
 
         td {
@@ -287,6 +306,7 @@
             animation: slideDown 0.3s ease;
             max-height: 90vh;
             overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
         }
 
         @keyframes slideDown {
@@ -350,7 +370,6 @@
             font-size: 14px;
         }
 
-        /* NEW SECTION TITLE FOR NEAT MODAL */
         .form-section-title {
             font-size: 12px;
             text-transform: uppercase;
@@ -437,6 +456,26 @@
             font-weight: 600;
         }
 
+        /* Sidebar Overlay for Mobile */
+        .sidebar-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 900;
+            display: none;
+            opacity: 0;
+            transition: 0.3s;
+        }
+
+        .sidebar-overlay.active {
+            display: block;
+            opacity: 1;
+        }
+
+        /* --- 8. MOBILE RESPONSIVE --- */
         @media (max-width: 991px) {
             .sidebar {
                 transform: translateX(-100%);
@@ -456,6 +495,32 @@
                 display: block;
             }
 
+            /* Stack Header Items */
+            .table-head {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 15px;
+            }
+
+            .action-group {
+                width: 100%;
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            /* Full width inputs on mobile */
+            .search-input {
+                width: 100% !important;
+                order: -1;
+                /* Search bar on top */
+            }
+
+            .add-btn {
+                width: 100%;
+                justify-content: center;
+            }
+
+            /* Card View for Mobile */
             table,
             thead,
             tbody,
@@ -487,6 +552,7 @@
                 text-align: right;
                 border-bottom: 1px solid #f9f9f9;
                 padding: 12px 0;
+                word-break: break-word;
             }
 
             td:last-child {
@@ -500,6 +566,7 @@
                 color: var(--grey);
                 font-size: 13px;
                 text-align: left;
+                min-width: 100px;
             }
 
             td[data-label="Code"] {
@@ -521,6 +588,7 @@
                 border: none;
                 width: auto;
                 z-index: 5;
+                justify-content: flex-end;
             }
 
             td[data-label="Action"]::before {
@@ -618,20 +686,21 @@
                 </div>
 
                 <div class="form-section-title">Validity & Status</div>
-                <div class="form-grid">
-                    <div>
-                        <label class="form-label">Start Date <span style="color:red">*</span></label>
-                        <input type="date" id="cp-start" class="form-input">
-                    </div>
-                    <div>
-                        <label class="form-label">End Date</label>
-                        <input type="date" id="cp-end" class="form-input">
-                        <div class="form-check mt-1" style="display:flex; gap:5px; align-items:center;">
-                            <input type="checkbox" id="cp-no-expiry" onchange="toggleExpiryDate()">
-                            <label style="font-size: 12px; cursor:pointer;" for="cp-no-expiry">Never Expires</label>
-                        </div>
+
+                <div class="form-group">
+                    <label class="form-label">Start Date <span style="color:red">*</span></label>
+                    <input type="date" id="cp-start" class="form-input">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">End Date</label>
+                    <input type="date" id="cp-end" class="form-input">
+                    <div class="form-check mt-1" style="display:flex; gap:5px; align-items:center; margin-top: 8px;">
+                        <input type="checkbox" id="cp-no-expiry" onchange="toggleExpiryDate()">
+                        <label style="font-size: 12px; cursor:pointer;" for="cp-no-expiry">Never Expires</label>
                     </div>
                 </div>
+
                 <div class="form-group">
                     <label class="form-label">Status</label>
                     <select id="cp-status" class="form-input">
@@ -647,6 +716,8 @@
             </div>
         </div>
     </div>
+
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
 
     <aside class="sidebar" id="sidebar">
         <img src="../Images/Logo text.png" class="logo-img" alt="Logo">
@@ -710,12 +781,27 @@
     </main>
 
     <script>
-        // --- 1. CRITICAL: PREVENT BACK BUTTON CACHING ---
+        // --- 1. PREVENT BACK BUTTON CACHING ---
         window.onpageshow = function (event) {
             if (event.persisted || (window.performance && window.performance.navigation.type === 2)) {
                 window.location.reload();
             }
         };
+
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+
+            sidebar.classList.toggle('active');
+
+            if (overlay) {
+                if (sidebar.classList.contains('active')) {
+                    overlay.classList.add('active');
+                } else {
+                    overlay.classList.remove('active');
+                }
+            }
+        }
 
         let allCoupons = [];
         let isEditing = false;
@@ -758,18 +844,16 @@
             }
         }
 
-        function toggleSidebar() { document.getElementById('sidebar').classList.toggle('active'); }
-
-        // --- DATE LOGIC (Updated) ---
+        // --- DATE LOGIC ---
         function setupDateLogic() {
             const startInput = document.getElementById('cp-start');
             const endInput = document.getElementById('cp-end');
 
             startInput.addEventListener('change', function () {
-                // 1. Ensure End Date cannot be before Start Date
+                // Ensure End Date cannot be before Start Date
                 endInput.min = this.value;
 
-                // 2. If existing End Date is invalid relative to new Start Date, clear it
+                // If existing End Date is invalid relative to new Start Date, clear it
                 if (endInput.value && endInput.value < this.value) {
                     endInput.value = '';
                 }
@@ -777,7 +861,6 @@
         }
 
         function resetForm() {
-            // ... [Keep your existing reset fields] ...
             document.getElementById('cp-code').value = '';
             document.getElementById('cp-desc').value = '';
             document.getElementById('cp-type').value = 'percentage';
@@ -786,14 +869,14 @@
             document.getElementById('cp-usage-limit').value = '';
             document.getElementById('cp-min-qty').value = 0;
             document.getElementById('cp-min-val').value = 0;
+            document.getElementById('cp-status').value = 'true';
 
             // --- DATE FIX START ---
             const today = new Date().toISOString().split('T')[0];
-
             const startInput = document.getElementById('cp-start');
             const endInput = document.getElementById('cp-end');
 
-            // Set Min Date to Today
+            // Set Min Date to Today (Prevent past dates for new coupons)
             startInput.setAttribute('min', today);
             endInput.setAttribute('min', today);
 
@@ -802,7 +885,6 @@
             endInput.value = '';
             // --- DATE FIX END ---
 
-            document.getElementById('cp-status').value = 'true';
             document.getElementById('cp-no-expiry').checked = false;
             document.getElementById('cp-end').disabled = false;
 
@@ -880,7 +962,6 @@
                 const tr = document.createElement('tr');
                 tr.onclick = () => openDetails(dataStr);
 
-                // Added Used Count Column
                 tr.innerHTML = `
                     <td data-label="Code">${cp.code}</td>
                     <td data-label="Type">${formatType(cp.discountType)}</td>
@@ -913,6 +994,7 @@
             editingId = null;
             document.getElementById('formTitle').innerText = "Add Coupon";
             document.getElementById('couponFormModal').style.display = 'flex';
+            document.body.classList.add('body-no-scroll');
         }
 
         async function openEditModal(dataStr, event) {
@@ -920,8 +1002,7 @@
 
             const cp = JSON.parse(decodeURIComponent(dataStr));
 
-            // 1. Reset form first
-            resetForm();
+            resetForm(); // Reset first to clear previous state
 
             isEditing = true;
             editingId = cp._id;
@@ -944,9 +1025,7 @@
                 const startInput = document.getElementById('cp-start');
 
                 startInput.value = startDateStr;
-
-                // CRITICAL FIX: Set min to the CURRENT existing start date.
-                // This prevents the user from selecting any date BEFORE the original start date.
+                // Allow keeping the original start date even if it is in the past
                 startInput.setAttribute('min', startDateStr);
             }
 
@@ -965,7 +1044,6 @@
                 document.getElementById('cp-no-expiry').checked = true;
                 document.getElementById('cp-end').disabled = true;
             }
-            // -----------------------------
 
             toggleDiscountFields();
             await toggleScopeUI();
@@ -983,42 +1061,7 @@
             }
 
             document.getElementById('couponFormModal').style.display = 'flex';
-        }
-
-
-        function resetForm() {
-            document.getElementById('cp-code').value = '';
-            document.getElementById('cp-desc').value = '';
-            document.getElementById('cp-type').value = 'percentage';
-            document.getElementById('cp-value').value = '';
-            document.getElementById('cp-scope').value = 'all';
-
-            // Reset Usage Limit
-            document.getElementById('cp-usage-limit').value = '';
-
-            document.getElementById('cp-min-qty').value = 0;
-            document.getElementById('cp-min-val').value = 0;
-            document.getElementById('cp-status').value = 'true';
-
-            // --- DATE FIX START ---
-            const today = new Date().toISOString().split('T')[0];
-            const startInput = document.getElementById('cp-start');
-            const endInput = document.getElementById('cp-end');
-
-            // Set Min Date to Today (Prevent past dates)
-            startInput.setAttribute('min', today);
-            endInput.setAttribute('min', today);
-
-            // Default Start Date to Today
-            startInput.value = today;
-            endInput.value = ''; // Clear End Date
-            // --- DATE FIX END ---
-
-            document.getElementById('cp-no-expiry').checked = false;
-            document.getElementById('cp-end').disabled = false;
-
-            toggleDiscountFields();
-            toggleScopeUI();
+            document.body.classList.add('body-no-scroll');
         }
 
         function toggleDiscountFields() {
@@ -1087,10 +1130,7 @@
         }
 
         async function saveCoupon() {
-            // 1. Get Values
-            // Clean input: Force Uppercase, allow A-Z and 0-9
             let code = document.getElementById('cp-code').value.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
-
             const start = document.getElementById('cp-start').value;
             let end = document.getElementById('cp-end').value;
             const noExpiry = document.getElementById('cp-no-expiry').checked;
@@ -1099,48 +1139,23 @@
             const discountType = document.getElementById('cp-type').value;
 
             // --- VALIDATION START ---
-
-            // A. CODE VALIDATION
-            if (!code) {
-                return Swal.fire('Error', 'Coupon Code is required', 'error');
-            }
-
-            if (code.length < 4) {
-                return Swal.fire('Invalid Code', 'Code must be at least 4 characters long.', 'warning');
-            }
-
-            // CRITICAL CHECK: Must contain at least one letter (A-Z)
-            // This allows "SALE123" and "SHIPOFF", but blocks "12345"
+            if (!code) return Swal.fire('Error', 'Coupon Code is required', 'error');
+            if (code.length < 4) return Swal.fire('Invalid Code', 'Code must be at least 4 characters long.', 'warning');
             const hasLetter = /[A-Z]/.test(code);
+            if (!hasLetter) return Swal.fire('Invalid Code', 'Coupon code must contain at least one letter.', 'warning');
 
-            if (!hasLetter) {
-                return Swal.fire('Invalid Code', 'Coupon code must contain at least one letter. (Cannot be numbers only)', 'warning');
-            }
-
-            // B. VALUE VALIDATION
             if (discountType !== 'free_shipping') {
-                if (!discountValue || parseFloat(discountValue) <= 0) {
-                    return Swal.fire('Invalid Value', 'Please enter a valid discount value greater than 0.', 'warning');
-                }
-                if (discountType === 'percentage' && parseFloat(discountValue) > 100) {
-                    return Swal.fire('Invalid Percentage', 'Percentage discount cannot exceed 100%.', 'warning');
-                }
+                if (!discountValue || parseFloat(discountValue) <= 0) return Swal.fire('Invalid Value', 'Please enter a valid discount value greater than 0.', 'warning');
+                if (discountType === 'percentage' && parseFloat(discountValue) > 100) return Swal.fire('Invalid Percentage', 'Percentage discount cannot exceed 100%.', 'warning');
             }
 
-            // C. DATE VALIDATION
-            if (!start) {
-                return Swal.fire('Error', 'Start Date is required', 'warning');
-            }
+            if (!start) return Swal.fire('Error', 'Start Date is required', 'warning');
 
             if (noExpiry) {
                 end = null;
             } else {
-                if (!end) {
-                    return Swal.fire('Error', 'Please select End Date or check "No Expiration"', 'warning');
-                }
-                if (new Date(start) > new Date(end)) {
-                    return Swal.fire('Invalid Date', 'Start Date cannot be after End Date', 'warning');
-                }
+                if (!end) return Swal.fire('Error', 'Please select End Date or check "No Expiration"', 'warning');
+                if (new Date(start) > new Date(end)) return Swal.fire('Invalid Date', 'Start Date cannot be after End Date', 'warning');
             }
             // --- VALIDATION END ---
 
@@ -1223,8 +1238,6 @@
             const content = document.getElementById('detailsContent');
 
             const expiryDisplay = cp.expirationDate ? new Date(cp.expirationDate).toDateString() : 'No Expiry (Forever)';
-
-            // Logic for Usage Display
             const limitDisplay = cp.usageLimit ? cp.usageLimit : '∞';
             const usageText = `${cp.usedCount || 0} / ${limitDisplay}`;
 
@@ -1234,22 +1247,31 @@
                     <span class="coupon-type-display">${formatType(cp.discountType)}</span>
                 </div>
                 <div class="detail-row"><span class="detail-label">Value</span><span class="detail-val" style="color:var(--primary);">${cp.discountValue}</span></div>
-                
                 <div class="detail-row">
                     <span class="detail-label">Usage (Used / Limit)</span>
                     <span class="detail-val">${usageText}</span>
                 </div>
-
                 <div class="detail-row"><span class="detail-label">Applies To</span><span class="detail-val" style="text-transform:capitalize">${cp.appliesTo}</span></div>
                 <div class="detail-row"><span class="detail-label">Start</span><span class="detail-val">${new Date(cp.startDate).toDateString()}</span></div>
                 <div class="detail-row"><span class="detail-label">End</span><span class="detail-val">${expiryDisplay}</span></div>
             `;
             document.getElementById('detailsModal').style.display = 'flex';
+            document.body.classList.add('body-no-scroll');
         }
 
         function formatType(t) { return t.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()); }
-        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-        window.onclick = function (e) { if (e.target.classList.contains('modal-overlay')) e.target.style.display = "none"; }
+
+        function closeModal(id) {
+            document.getElementById(id).style.display = 'none';
+            document.body.classList.remove('body-no-scroll');
+        }
+
+        window.onclick = function (e) {
+            if (e.target.classList.contains('modal-overlay')) {
+                e.target.style.display = "none";
+                document.body.classList.remove('body-no-scroll');
+            }
+        }
 
         async function logoutUser() {
             try {

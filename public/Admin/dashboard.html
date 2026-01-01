@@ -9,7 +9,6 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        /* (Your Styles Remain Unchanged) */
         :root {
             --primary: #4880FF;
             --primary-light: #E8F0FE;
@@ -30,6 +29,16 @@
             font-family: 'Inter', sans-serif;
         }
 
+        /* --- IOS ZOOM FIX --- */
+        @media screen and (max-width: 768px) {
+
+            input,
+            select,
+            textarea {
+                font-size: 16px !important;
+            }
+        }
+
         body {
             background: var(--bg);
             display: flex;
@@ -41,6 +50,7 @@
             text-decoration: none;
         }
 
+        /* Sidebar Styles */
         .sidebar {
             width: 260px;
             background: var(--white);
@@ -106,6 +116,7 @@
             color: #ffffff;
         }
 
+        /* Main Content */
         .main-content {
             margin-left: 260px;
             flex: 1;
@@ -143,6 +154,7 @@
             margin-left: auto;
         }
 
+        /* Inputs & Selects */
         .download-wrapper {
             position: relative;
             display: flex;
@@ -165,14 +177,6 @@
             min-width: 160px;
         }
 
-        .download-icon {
-            position: absolute;
-            right: 30px;
-            color: var(--primary);
-            font-size: 18px;
-            pointer-events: none;
-        }
-
         .download-arrow {
             position: absolute;
             right: 10px;
@@ -181,6 +185,7 @@
             pointer-events: none;
         }
 
+        /* Cards Grid */
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -188,6 +193,7 @@
             margin-bottom: 30px;
         }
 
+        /* --- ORIGINAL CARD STYLES --- */
         .card {
             background: var(--white);
             padding: 25px;
@@ -246,6 +252,7 @@
             color: var(--white);
         }
 
+        /* Chart Section */
         .chart-sec {
             background: var(--white);
             padding: 25px;
@@ -268,6 +275,7 @@
             position: relative;
         }
 
+        /* --- MOBILE RESPONSIVENESS --- */
         @media (max-width: 991px) {
             .sidebar {
                 transform: translateX(-100%);
@@ -287,11 +295,12 @@
                 display: block;
             }
 
+            /* Horizontal Scroll for Cards */
             .stats-grid {
                 display: flex;
                 overflow-x: auto;
                 padding-bottom: 15px;
-                gap: 20px;
+                gap: 15px;
                 -ms-overflow-style: none;
                 scrollbar-width: none;
             }
@@ -310,7 +319,22 @@
                 width: auto;
                 justify-content: flex-end;
                 margin-top: 0;
-                gap: 15px;
+                gap: 10px;
+            }
+
+            /* Chart Mobile Fixes */
+            .chart-sec {
+                padding: 15px;
+            }
+
+            .chart-head {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 5px;
+            }
+
+            .chart-box {
+                height: 300px;
             }
         }
     </style>
@@ -375,8 +399,8 @@
             </div>
 
             <div class="card">
-                <div class="card-head">Total Orders <span id="periodLabel2" style="font-weight:400; font-size:11px;">(All
-                        Time)</span></div>
+                <div class="card-head">Total Orders <span id="periodLabel2"
+                        style="font-weight:400; font-size:11px;">(All Time)</span></div>
                 <div class="card-val" id="totalItems">...</div>
                 <div class="trend up"><i class='bx bx-shopping-bag'></i> Recieved</div>
                 <a href="orders.html" class="details-btn">View Orders</a>
@@ -419,10 +443,24 @@
             }
         });
 
-        function toggleSidebar() { document.getElementById('sidebar').classList.toggle('active'); }
+        // --- 3. SIDEBAR LOGIC (CLICK OUTSIDE TO CLOSE) ---
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('active');
+        }
 
-        // --- 3. CHART INSTANCE ---
+        document.addEventListener('click', function (event) {
+            const sidebar = document.getElementById('sidebar');
+            const toggleBtn = document.querySelector('.menu-toggle');
+            if (sidebar.classList.contains('active') && !sidebar.contains(event.target) && !toggleBtn.contains(event.target)) {
+                sidebar.classList.remove('active');
+            }
+        });
+
+        // --- 4. CHART INSTANCE (Restored Legend Style) ---
         const ctx = document.getElementById('ordersChart').getContext('2d');
+        const isMobile = () => window.innerWidth < 768;
+
         let myChart = new Chart(ctx, {
             type: 'line',
             data: {
@@ -456,22 +494,58 @@
                 responsive: true,
                 maintainAspectRatio: false,
                 scales: {
-                    y: { beginAtZero: true, grid: { borderDash: [2, 4], color: '#f0f0f0' }, ticks: { color: '#9ca3af', stepSize: 1 } },
-                    x: { grid: { display: false }, ticks: { color: '#9ca3af' } }
+                    y: {
+                        beginAtZero: true,
+                        grid: { borderDash: [2, 4], color: '#f0f0f0' },
+                        ticks: { color: '#9ca3af', stepSize: 1 }
+                    },
+                    x: {
+                        grid: { display: false },
+                        ticks: { color: '#9ca3af', maxRotation: 45, minRotation: 0 }
+                    }
                 },
                 plugins: {
-                    legend: { position: 'top', align: 'end', labels: { usePointStyle: true, boxWidth: 8, padding: 20, color: '#6A7178' } }
+                    legend: {
+                        // Position: Bottom on Mobile, Top on Desktop
+                        position: isMobile() ? 'bottom' : 'top',
+
+                        // --- CHANGE HERE: Align 'start' means LEFT ---
+                        align: 'start',
+
+                        labels: {
+                            usePointStyle: true,
+                            boxWidth: 8,
+                            padding: 20,
+                            color: '#6A7178'
+                        }
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false,
+                    }
                 }
             }
         });
 
-        // Current Data Holder for Report Download
+        // Resize Listener
+        window.addEventListener('resize', () => {
+            if (myChart) {
+                myChart.options.plugins.legend.position = isMobile() ? 'bottom' : 'top';
+
+                // --- CHANGE HERE: Force 'start' (Left) on resize ---
+                myChart.options.plugins.legend.align = 'start';
+
+                myChart.update();
+            }
+        });
+
+        // Current Data Holder
         let currentChartData = { labels: [], success: [], canceled: [] };
 
-        // --- 4. LOAD DATA ---
+        // --- 5. LOAD DATA ---
         document.addEventListener('DOMContentLoaded', async () => {
             await checkAuth();
-            loadDashboard('all_time'); // Default load
+            loadDashboard('all_time');
         });
 
         async function checkAuth() {
@@ -484,7 +558,6 @@
 
         async function loadDashboard(period) {
             try {
-                // Update Label Text
                 const periodText = document.querySelector('#statsFilter option:checked').text;
                 document.querySelectorAll('#periodLabel1, #periodLabel2, #periodLabel3').forEach(el => el.innerText = `(${periodText})`);
 
@@ -499,10 +572,7 @@
 
                 if (json.success) {
                     document.getElementById('totalSales').innerText = '₹' + json.stats.sales.toLocaleString('en-IN');
-
-                    // UPDATED: Now showing total ITEMS instead of total Orders
                     document.getElementById('totalItems').innerText = json.stats.items.toLocaleString();
-
                     document.getElementById('totalCustomers').innerText = json.stats.customers.toLocaleString();
 
                     currentChartData = json.chart;
@@ -517,27 +587,20 @@
             }
         }
 
-        // --- 5. DOWNLOAD COMPREHENSIVE REPORT (Fixed Encoding & Currency) ---
+        // --- 6. DOWNLOAD REPORT ---
         async function downloadReport() {
             const period = document.getElementById('statsFilter').value;
             const btn = document.querySelector('button[onclick="downloadReport()"]');
-
             const originalText = btn.innerHTML;
             btn.innerHTML = `<i class='bx bx-loader-alt bx-spin'></i> Generating...`;
             btn.disabled = true;
 
             try {
-                const res = await fetch(`/api/admin/report-data?period=${period}`, {
-                    headers: { 'Cache-Control': 'no-cache' }
-                });
+                const res = await fetch(`/api/admin/report-data?period=${period}`, { headers: { 'Cache-Control': 'no-cache' } });
                 const json = await res.json();
-
                 if (!json.success) throw new Error(json.message);
 
-                // --- BUILD CSV CONTENT ---
                 let csv = "\uFEFF";
-
-                // 1. FINANCIAL SUMMARY
                 csv += "--- FINANCIAL SUMMARY ---\n";
                 csv += `Period,${period}\n`;
                 csv += `Total Revenue,Rs. ${json.paymentStats.totalRevenue}\n`;
@@ -545,42 +608,33 @@
                 csv += `Total Items Sold,${json.paymentStats.totalItemsSold}\n`;
                 csv += `Online Sales,Rs. ${json.paymentStats.onlineTotal}\n`;
                 csv += `Wallet Sales,Rs. ${json.paymentStats.walletTotal}\n`;
-                csv += `COD Sales,Rs. ${json.paymentStats.codTotal}\n`;
-                csv += "\n\n";
+                csv += `COD Sales,Rs. ${json.paymentStats.codTotal}\n\n`;
 
-                // 2. ORDER DETAILS (ITEM WISE)
                 csv += "--- ITEM WISE SALES REPORT ---\n";
                 csv += "Order ID,Date,Customer Name,Item Name,Size,Quantity,Unit Price,Item Status,Payment Method\n";
-
                 json.orders.forEach(order => {
                     const date = `\t${new Date(order.createdAt).toLocaleDateString()}`;
                     const customerName = order.user ? order.user.name : "Guest";
-
                     order.items.forEach(item => {
                         const orderId = `\t${order._id.slice(-6).toUpperCase()}`;
                         const itemName = item.name.replace(/,/g, ' ');
                         const itemStatus = item.status || order.orderStatus;
-
                         const row = `"${orderId}","${date}","${customerName}","${itemName}","${item.size || 'N/A'}",${item.quantity},${item.price},"${itemStatus}","${order.paymentMethod}"`;
                         csv += row + "\n";
                     });
                 });
                 csv += "\n\n";
 
-                // 3. NEW CUSTOMERS
                 csv += "--- NEW CUSTOMERS REGISTERED ---\n";
                 csv += "Name,Email,Join Date,Verified\n";
-
                 json.customers.forEach(user => {
                     const joinDate = `\t${new Date(user.createdAt).toLocaleDateString()}`;
                     const row = `"${user.name}","${user.email}","${joinDate}",${user.isVerified}`;
                     csv += row + "\n";
                 });
 
-                // --- TRIGGER DOWNLOAD ---
                 const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
                 const url = URL.createObjectURL(blob);
-
                 const link = document.createElement("a");
                 link.setAttribute("href", url);
                 link.setAttribute("download", `Tokyo_Report_${period}.csv`);
