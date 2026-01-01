@@ -732,6 +732,7 @@
         }
 
         // --- 9. VIEW MODAL ---
+        // --- 9. VIEW MODAL ---
         function viewOrder(id) {
             const order = allOrders.find(o => o._id === id);
             if (!order) return;
@@ -742,13 +743,7 @@
             const totalDiscount = order.discountAmount || 0;
             let originalSubtotal = order.subtotal;
 
-            let daysPassed = 0;
-            if (order.deliveredAt) {
-                const deliveryDate = new Date(order.deliveredAt);
-                const today = new Date();
-                const timeDiff = Math.abs(today - deliveryDate);
-                daysPassed = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
-            }
+            // REMOVED: 7-day restriction logic (daysPassed)
 
             const reasonMap = {
                 'defective': 'Defective Product',
@@ -792,16 +787,12 @@
                             }
                         });
 
+                        // CHANGED: Always show Manual Return option if Delivered
                         if (currentStatus === 'Delivered') {
-                            if (daysPassed > 7) {
-                                isDropdownDisabled = true;
-                            } else {
-                                optionsHtml += `<option value="Returned">Manual Return (Refund)</option>`;
-                            }
+                            optionsHtml += `<option value="Returned">Manual Return (Refund)</option>`;
                         }
                     }
 
-                    // --- REPLACEMENT CODE START ---
                     let statusControl = '';
                     if (currentUserRole !== 'viewer') {
                         let statusColor = '#333';
@@ -809,12 +800,9 @@
                         if (currentStatus === 'Returned' || currentStatus === 'Delivered') statusColor = '#00B69B';
                         if (currentStatus === 'Return Requested') statusColor = '#FFB536';
 
+                        // REMOVED: Extra styles for disabled state
                         let extraStyle = '';
                         let title = '';
-                        if (currentStatus === 'Delivered' && daysPassed > 7) {
-                            extraStyle = 'opacity:0.6; cursor:not-allowed; background:#f0f0f0;';
-                            title = 'Return window closed (7 days exceeded)';
-                        }
 
                         statusControl = `
                         <select onchange="updateItemStatus('${order._id}', '${item._id}', this.value)" 
@@ -842,7 +830,6 @@
                     } else {
                         statusControl = `<span style="font-size:12px; font-weight:bold; color:#666">${currentStatus}</span>`;
                     }
-                    // --- REPLACEMENT CODE END ---
 
                     let rejectionHtml = '';
                     if (item.status === 'Return Rejected' && item.rejectionReason) {
@@ -1009,6 +996,7 @@
             document.body.classList.add('body-no-scroll');
         }
 
+        
         function closeModal() {
             document.getElementById('orderModal').style.display = 'none';
             // UNLOCK BODY SCROLL

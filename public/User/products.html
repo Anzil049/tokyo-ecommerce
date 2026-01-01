@@ -1001,22 +1001,18 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-
         // --- 0. AUTH INITIALIZATION (Global) ---
-        window.userIsLoggedIn = false; // Default state
+        window.userIsLoggedIn = false;
 
         // 1. Define Check Auth Globally
         window.checkAuth = async function (targetPage) {
             if (!window.userIsLoggedIn) {
-                // Double check server status (in case of refresh)
                 const stillLoggedIn = await checkLoginStatus();
                 if (stillLoggedIn) {
                     window.userIsLoggedIn = true;
                     if (targetPage) window.location.href = targetPage;
                     return true;
                 }
-
-                // Show Alert
                 Swal.fire({
                     icon: 'info', title: 'Login Required', text: 'You need to be logged in.',
                     showCancelButton: true, confirmButtonText: 'Go to Login', confirmButtonColor: '#DB4444'
@@ -1035,10 +1031,11 @@
             try { const res = await fetch('/api/auth/verify-user'); return res.ok; }
             catch (err) { return false; }
         }
+
         // --- 1. GLOBAL VARIABLES ---
         let allProducts = [];
-        let allCategories = []; // Global store for search
-        let allTeams = [];      // Global store for search
+        let allCategories = [];
+        let allTeams = [];
         let filteredProducts = [];
         let activeSaleFilter = null;
         let currentPage = 1;
@@ -1058,8 +1055,8 @@
         const modalSizeOptions = document.getElementById('modalSizeOptions');
         const modalError = document.getElementById('modalError');
         const productGrid = document.getElementById('productGrid');
-        const searchInput = document.getElementById('searchInput'); // New
-        const suggestionsBox = document.getElementById('searchSuggestions'); // New
+        const searchInput = document.getElementById('searchInput');
+        const suggestionsBox = document.getElementById('searchSuggestions');
 
         // --- 2. INITIALIZATION ---
         window.onpageshow = function (event) {
@@ -1074,7 +1071,7 @@
             if (isLoggedIn) await fetchUserWishlist();
 
             await Promise.all([
-                fetchFilterData(), // Now populates globals
+                fetchFilterData(),
                 fetchActiveSales(),
                 fetchProducts()
             ]);
@@ -1096,34 +1093,25 @@
         });
 
         // ==========================================
-        //  SEARCH SUGGESTION LOGIC (NEW FEATURE)
+        //  SEARCH SUGGESTION LOGIC
         // ==========================================
-
         searchInput.addEventListener('keyup', function (e) {
             const query = e.target.value.toLowerCase().trim();
             if (e.key === 'Enter') { performSearch(); return; }
 
             if (query.length > 0) {
-                // 1. Filter Categories
                 const catMatches = allCategories.filter(c => c.name.toLowerCase().includes(query))
-                    .slice(0, 2)
-                    .map(c => ({ name: c.name, type: 'category' }));
+                    .slice(0, 2).map(c => ({ name: c.name, type: 'category' }));
 
-                // 2. Filter Teams
                 const teamMatches = allTeams.filter(t => t.name.toLowerCase().includes(query))
-                    .slice(0, 2)
-                    .map(t => ({ name: t.name, type: 'team' }));
+                    .slice(0, 2).map(t => ({ name: t.name, type: 'team' }));
 
-                // 3. Filter Products
                 const prodMatches = allProducts.filter(p => p.name.toLowerCase().includes(query))
-                    .slice(0, 5)
-                    .map(p => ({ ...p, type: 'product' }));
+                    .slice(0, 5).map(p => ({ ...p, type: 'product' }));
 
-                // Combine results
                 const combinedResults = [...catMatches, ...teamMatches, ...prodMatches];
                 showSuggestions(combinedResults);
             } else {
-                // If empty, reset grid filters
                 applyFilters();
                 suggestionsBox.style.display = 'none';
             }
@@ -1143,7 +1131,6 @@
                     const labelText = isTeam ? 'Team' : 'Category';
                     const urlParam = isTeam ? 'team' : 'category';
 
-                    // On products page, clicking this simply reloads page with new filter
                     div.onclick = () => { window.location.href = `products.html?${urlParam}=${encodeURIComponent(item.name)}`; };
 
                     div.innerHTML = `
@@ -1155,7 +1142,6 @@
                             <span class="badge bg-light text-secondary border" style="font-size: 0.65rem; font-weight: 500;">${labelText}</span>
                         </div>`;
                 } else {
-                    // Product
                     const img = (item.images && item.images.length > 0) ? item.images[0] : 'https://placehold.co/50x50';
                     div.onclick = () => { window.location.href = `product-details.html?id=${item._id}`; };
                     div.innerHTML = `
@@ -1170,13 +1156,11 @@
             suggestionsBox.style.display = 'block';
         }
 
-        // Perform Search (Hide suggestions, run grid filter)
         function performSearch() {
             suggestionsBox.style.display = 'none';
             applyFilters();
         }
 
-        // Close suggestions on outside click
         document.addEventListener('click', function (e) {
             if (suggestionsBox && !searchInput.contains(e.target) && !suggestionsBox.contains(e.target)) {
                 suggestionsBox.style.display = 'none';
@@ -1184,10 +1168,8 @@
         });
 
         // ==========================================
-        //  DATA LOADING (MODIFIED to Store Globals)
+        //  DATA LOADING
         // ==========================================
-
-        // MODIFIED: Includes "Show More" Logic
         async function fetchFilterData() {
             try {
                 // 1. Fetch Teams
@@ -1197,10 +1179,7 @@
 
                 if (teamData.success) {
                     allTeams = teamData.data.filter(t => t.status === 'Active');
-                    // Sort teams
                     allTeams.sort((a, b) => a.name.localeCompare(b.name));
-
-                    // Render with "Show More" limit of 5
                     renderListWithLimit(allTeams, 'team', teamList, 5);
                 }
 
@@ -1213,68 +1192,41 @@
                 if (catData.success) {
                     allCategories = catData.data.filter(c => c.status === 'Published');
                     allCategories.sort((a, b) => a.name.localeCompare(b.name));
-
                     allCategories.forEach(c => publishedCategoryNames.push(c.name));
-
-                    // Render with "Show More" limit of 5
                     renderListWithLimit(allCategories, 'category', catList, 5);
                 }
             } catch (err) { console.error(err); }
         }
 
-        // UPDATED HELPER FUNCTION FOR "SHOW MORE"
         function renderListWithLimit(data, type, container, limit) {
-            container.innerHTML = ''; // Clear existing content
-
-            // 1. Loop through ALL items
+            container.innerHTML = '';
             data.forEach((item, index) => {
                 const li = document.createElement('li');
-
-                // Add the checkbox HTML
                 li.innerHTML = `<label class="filter-checkbox-label"><input type="checkbox" onchange="toggleFilter('${type}', '${item.name}')"> ${item.name}</label>`;
-
-                // 2. If the item index is greater than or equal to the limit, hide it initially
                 if (index >= limit) {
-                    li.style.display = 'none'; // Hide via CSS
-                    li.classList.add(`hidden-item-${type}`); // Add a specific class so we can find it later
+                    li.style.display = 'none';
+                    li.classList.add(`hidden-item-${type}`);
                 }
-
                 container.appendChild(li);
             });
 
-            // 3. If there are hidden items, add the "+ n more" button
             if (data.length > limit) {
-                // Create a list item to hold the button (keeps HTML valid inside UL)
                 const btnLi = document.createElement('li');
-
                 const btn = document.createElement('button');
                 btn.className = 'show-more-btn';
                 btn.innerText = `+ ${data.length - limit} more`;
-
-                // Click Handler
                 btn.onclick = function (e) {
                     e.preventDefault();
-
-                    // Find all hidden items for this specific type using the class we added
-                    const hiddenItems = container.querySelectorAll(`.hidden-item-${type}`);
-
-                    // Loop through and show them
-                    hiddenItems.forEach(item => {
-                        item.style.display = 'block'; // Or 'list-item'
-                        // Optional: Add a small animation class here if you want
-                    });
-
-                    // Remove the "+ n more" button container
+                    container.querySelectorAll(`.hidden-item-${type}`).forEach(item => item.style.display = 'block');
                     btnLi.remove();
                 };
-
                 btnLi.appendChild(btn);
                 container.appendChild(btnLi);
             }
         }
 
         // ==========================================
-        //  STANDARD LOGIC (UNCHANGED)
+        //  MAIN LOGIC
         // ==========================================
 
         function setupGridEventListeners() {
@@ -1300,7 +1252,6 @@
             });
         }
 
-        // MODIFIED: Auto-applies on Desktop, Waits for button on Mobile
         function toggleFilter(type, value) {
             if (type === 'team') toggleArray(selectedTeams, value);
             else if (type === 'category') toggleArray(selectedCategories, value);
@@ -1310,12 +1261,8 @@
             else if (type === 'offer' && value === 'all') showAllOffers = !showAllOffers;
             else if (type === 'sale') toggleArray(selectedSaleIds, value);
 
-            // Sync UI checkmarks immediately
             if (type !== 'offer' && type !== 'sale') syncFilterUI(type, value);
 
-            // LOGIC CHANGE: 
-            // If screen is Desktop (> 992px), Apply Immediately.
-            // If screen is Mobile (< 992px), Wait for user to click "Apply Filters" button.
             if (window.innerWidth >= 992) {
                 applyFilters();
             }
@@ -1336,34 +1283,62 @@
             });
         }
 
+        // --- CORE FILTERING LOGIC (FIXED) ---
         function applyFilters() {
             const searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
             const sortType = document.getElementById('sortDropdown').value;
 
             filteredProducts = allProducts.filter(p => {
-                if (publishedCategoryNames.length > 0 && !publishedCategoryNames.includes(p.category)) return false;
 
-                // --- SEARCH LOGIC (Used for Grid Filtering) ---
-                // Does not use 'type' because we are checking the product properties directly
-                const matchesSearch = p.name.toLowerCase().includes(searchTerm) ||
-                    (p.category && p.category.toLowerCase().includes(searchTerm)) ||
-                    (p.team && p.team.toLowerCase().includes(searchTerm));
+                // 1. HELPER: Normalize Data to Arrays
+                // Because Product Category/Team can be a String or Array/JSON String
+                let productCats = [];
+                if (Array.isArray(p.category)) productCats = p.category;
+                else if (typeof p.category === 'string') {
+                    if (p.category.startsWith('[')) { try { productCats = JSON.parse(p.category); } catch (e) { productCats = [p.category]; } }
+                    else { productCats = [p.category]; }
+                }
 
-                const matchesTeam = selectedTeams.length === 0 || selectedTeams.includes(p.team);
-                const matchesCat = selectedCategories.length === 0 || selectedCategories.includes(p.category);
+                let productTeams = [];
+                if (Array.isArray(p.team)) productTeams = p.team;
+                else if (typeof p.team === 'string') {
+                    if (p.team.startsWith('[')) { try { productTeams = JSON.parse(p.team); } catch (e) { productTeams = [p.team]; } }
+                    else { productTeams = [p.team]; }
+                }
+
+                // 2. CHECK: Published Category
+                // Ensure at least one of the product's categories is published
+                if (publishedCategoryNames.length > 0) {
+                    const hasPublishedCat = productCats.some(c => publishedCategoryNames.includes(c));
+                    // If strict mode required (must belong to a published cat):
+                    if (!hasPublishedCat && productCats.length > 0) return false;
+                }
+
+                // 3. SEARCH LOGIC
+                // Check name, OR if any category/team matches
+                const catMatchSearch = productCats.some(c => c.toLowerCase().includes(searchTerm));
+                const teamMatchSearch = productTeams.some(t => t.toLowerCase().includes(searchTerm));
+                const matchesSearch = p.name.toLowerCase().includes(searchTerm) || catMatchSearch || teamMatchSearch;
+
+                // 4. TEAM FILTER
+                // If user selected teams, product must match at least one
+                const matchesTeam = selectedTeams.length === 0 || productTeams.some(t => selectedTeams.includes(t));
+
+                // 5. CATEGORY FILTER
+                const matchesCat = selectedCategories.length === 0 || productCats.some(c => selectedCategories.includes(c));
+
+                // 6. SIZE FILTER
                 const matchesSize = selectedSizes.length === 0 || (p.sizes && p.sizes.some(s => selectedSizes.includes(s.size) && s.stock > 0));
 
+                // 7. PRICE FILTER
                 let matchesPrice = true;
                 if (selectedPrices.length > 0) matchesPrice = selectedPrices.some(range => {
-                    // Handle "Above 500" case
-                    if (range === '500-above') {
-                        return parseFloat(p.price) > 500;
-                    }
-                    // Handle standard ranges "min-max"
+                    if (range === '500-above') return parseFloat(p.price) > 500;
                     const [min, max] = range.split('-').map(Number);
                     return parseFloat(p.price) >= min && parseFloat(p.price) <= max;
                 });
 
+                // 8. STOCK FILTER
                 let matchesStock = true;
                 if (selectedStockStatus.length > 0) {
                     const stockQty = Number(p.stockQuantity);
@@ -1375,25 +1350,28 @@
                     else if (wantOutOfStock) matchesStock = isOutOfStock;
                 }
 
+                // 9. OFFER FILTER
                 let matchesOffer = true;
                 if (showAllOffers || selectedSaleIds.length > 0 || activeSaleFilter) {
                     matchesOffer = false;
                     if (showAllOffers && p.basePrice && Number(p.basePrice) > Number(p.price)) matchesOffer = true;
 
+                    // Active Sale Filter (From URL)
                     if (!matchesOffer && activeSaleFilter) {
                         if (activeSaleFilter.appliesTo === 'all') matchesOffer = true;
-                        else if (activeSaleFilter.appliesTo === 'category') matchesOffer = activeSaleFilter.targetIds.includes(p.category);
-                        else if (activeSaleFilter.appliesTo === 'team') matchesOffer = activeSaleFilter.targetIds.includes(p.team);
+                        else if (activeSaleFilter.appliesTo === 'category') matchesOffer = productCats.some(c => activeSaleFilter.targetIds.includes(c));
+                        else if (activeSaleFilter.appliesTo === 'team') matchesOffer = productTeams.some(t => activeSaleFilter.targetIds.includes(t));
                         else if (activeSaleFilter.appliesTo === 'product') matchesOffer = activeSaleFilter.targetIds.includes(p._id);
                     }
 
+                    // Checkbox Sale Filters
                     if (!matchesOffer && selectedSaleIds.length > 0) {
                         const inSelectedSale = selectedSaleIds.some(saleId => {
                             const sale = activeSalesList.find(s => s._id === saleId);
                             if (!sale) return false;
                             if (sale.appliesTo === 'all') return true;
-                            if (sale.appliesTo === 'category') return sale.targetIds.includes(p.category);
-                            if (sale.appliesTo === 'team') return sale.targetIds.includes(p.team);
+                            if (sale.appliesTo === 'category') return productCats.some(c => sale.targetIds.includes(c));
+                            if (sale.appliesTo === 'team') return productTeams.some(t => sale.targetIds.includes(t));
                             if (sale.appliesTo === 'product') return sale.targetIds.includes(p._id);
                             return false;
                         });
@@ -1495,19 +1473,15 @@
             if (params.get('team')) toggleFilter('team', decodeURIComponent(params.get('team')));
             if (params.get('filter') === 'offers') { document.getElementById('offerFilterCheckbox').checked = true; showAllOffers = true; }
             if (params.get('sale_id')) fetchSaleDetails(params.get('sale_id'));
-
-            // NEW: Manually trigger apply once on load
-            applyFilters();
         }
 
-        // ==========================================
-        //  REMAINING FETCHERS
-        // ==========================================
+        // --- FETCHERS ---
         async function fetchProducts() {
             try {
                 const res = await fetch(`/api/products?_t=${Date.now()}`);
                 const json = await res.json();
-                if (json.success) allProducts = json.data.filter(p => p.status === 'Active');
+                // FIX: Case insensitive status check to capture 'active', 'Active', 'ACTIVE'
+                if (json.success) allProducts = json.data.filter(p => p.status && p.status.toLowerCase() === 'active');
             } catch (err) { console.error(err); }
         }
         async function fetchUserWishlist() {
@@ -1531,38 +1505,21 @@
                         li.innerHTML = `<label class="filter-checkbox-label"><input type="checkbox" id="sale-cb-${sale._id}" onchange="toggleFilter('sale', '${sale._id}')"> <span class="ms-1">${sale.name}</span></label>`;
                         list.appendChild(li);
                     });
-
-                    // --- SYNC TO MOBILE ---
                     setTimeout(() => {
                         const desktopContent = document.getElementById('desktopFilters').innerHTML;
-
-                        // Create IDs for mobile uniqueness
                         let mobileHTML = desktopContent
                             .replace(/id="categoryList"/g, 'id="mCat"')
                             .replace(/id="teamList"/g, 'id="mTeam"')
                             .replace(/id="offersFilterList"/g, 'id="mOff"')
-                            .replace(/id="sale-cb-/g, 'id="mSale-')
-                        // Remove the desktop "Show More" buttons logic from the string copy so they don't break ID refs, 
-                        // or just let them copy (they might not work perfectly in mobile clone without re-binding events, 
-                        // but for simple display it's usually fine. Ideally, mobile should show all).
-
+                            .replace(/id="sale-cb-/g, 'id="mSale-');
                         const mobileBody = document.getElementById('mobileFilterBody');
-
-                        // IMPORTANT: Here is the Mobile Button Container
                         mobileBody.innerHTML = `
-                    <div id="mobileFilterContent">
-                        ${mobileHTML}
-                    </div>
-                    <div class="mobile-sticky-btn">
-                        <button class="btn btn-dark" data-bs-dismiss="offcanvas" onclick="applyFilters()">Apply Filters</button>
-                    </div>
-                `;
-
-                        // Remove the "Apply" button that might have been copied from desktop HTML
-                        // (Though our CSS hides .filter-apply-btn-container on desktop, the clone might bring it)
+                        <div id="mobileFilterContent">${mobileHTML}</div>
+                        <div class="mobile-sticky-btn">
+                            <button class="btn btn-dark" data-bs-dismiss="offcanvas" onclick="applyFilters()">Apply Filters</button>
+                        </div>`;
                         const copiedBtnContainer = mobileBody.querySelector('#mobileFilterContent .filter-apply-btn-container');
                         if (copiedBtnContainer) copiedBtnContainer.remove();
-
                     }, 500);
                 }
             } catch (e) { console.error(e); }
@@ -1574,13 +1531,11 @@
                 const cb = document.getElementById(`sale-cb-${saleId}`);
                 if (cb) cb.checked = true;
                 toggleFilter('sale', saleId);
-                applyFilters(); // Trigger for direct URL access
+                applyFilters();
             }
         }
 
-        // ==========================================
-        //  AUTH & MODAL UTILS
-        // ==========================================
+        // --- AUTH & MODAL UTILS ---
         function updateNavbar(isLoggedIn) {
             const signupNavItem = document.getElementById('signupNavItem');
             const iconContainer = document.querySelector('.d-flex.align-items-center.gap-3');

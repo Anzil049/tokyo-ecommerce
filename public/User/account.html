@@ -429,16 +429,30 @@
         }
 
         /* --- Sticky Sidebar for Desktop Only --- */
+        /* --- Sticky Sidebar for Desktop Only --- */
         @media (min-width: 992px) {
+
+            /* 1. The Column containing the sidebar needs to be a relative parent */
+            .col-lg-3 {
+                position: relative;
+            }
+
             .account-sidebar-wrapper {
+                /* This makes it stick */
                 position: -webkit-sticky;
-                /* For Safari */
                 position: sticky;
-                top: 110px;
-                /* Distance from top of screen (adjusts for your sticky navbar) */
-                z-index: 10;
-                height: fit-content;
-                /* Ensures it doesn't stretch weirdly */
+
+                /* Distance from top: Navbar Height (~90px) + Gap (30px) */
+                top: 120px;
+
+                z-index: 5;
+
+                /* Optional: If sidebar is tall, allow it to scroll internally */
+                max-height: calc(100vh - 140px);
+                overflow-y: auto;
+
+                /* Clean up scrollbar for internal sidebar scroll */
+                scrollbar-width: thin;
             }
         }
 
@@ -1101,6 +1115,7 @@
 
         // --- DETAILS MODAL (Individual Items) ---
         // Make function globally available
+        // --- DETAILS MODAL (Individual Items) ---
         window.showOrderDetails = function (order) {
             let itemsHtml = '';
 
@@ -1119,7 +1134,7 @@
                 let actionButtons = '';
                 let invoiceBtn = '';
 
-                // Invoice Button: Only if Delivered or Completed, and NOT Cancelled/Returned
+                // Invoice Button
                 if (['Delivered', 'Completed'].includes(item.status)) {
                     invoiceBtn = `
                         <button class="btn btn-sm btn-outline-dark flex-fill" 
@@ -1140,6 +1155,7 @@
                     const diffDays = Math.ceil(Math.abs(new Date() - deliveryDate) / (1000 * 60 * 60 * 24));
 
                     let returnBtn = '';
+                    // Return allowed if within 7 days
                     if (diffDays <= 7) {
                         returnBtn = `<button class="btn btn-sm btn-outline-secondary flex-fill" onclick="returnUserItem('${order._id}', '${item._id}')">Return</button>`;
                     }
@@ -1152,7 +1168,6 @@
                         </div>`;
                 }
                 else if (['Completed'].includes(item.status)) {
-                    // For generic completed status (older orders)
                     actionButtons = `
                         <div class="d-flex gap-2 mt-2">
                             ${invoiceBtn}
@@ -1160,15 +1175,27 @@
                                 onclick="openReviewModal('${productId}', '${item.name}', '${order._id}', '${itemSize}')">Review</button>
                         </div>`;
                 }
-                else if (['Cancelled', 'Returned', 'Return Requested'].includes(item.status)) {
-                    // No invoice for cancelled items usually
-                    actionButtons = `<div class="mt-2 text-muted small text-center"><i class="fas fa-info-circle"></i> ${item.status}</div>`;
+                else if (['Cancelled', 'Returned', 'Return Requested', 'Return Rejected'].includes(item.status)) {
+                    // Just status text for these states
+                    let statusIcon = 'info-circle';
+                    if (item.status === 'Return Rejected') statusIcon = 'times-circle';
+
+                    actionButtons = `<div class="mt-2 text-muted small text-center"><i class="fas fa-${statusIcon}"></i> ${item.status}</div>`;
+                }
+
+                // --- NEW: REJECTION REASON LOGIC ---
+                let rejectionReasonHtml = '';
+                if (item.status === 'Return Rejected' && item.rejectionReason) {
+                    rejectionReasonHtml = `
+                    <div class="mt-2 p-2 rounded" style="background-color: #FEECEB; border: 1px solid #EF3826; color: #EF3826; font-size: 0.75rem;">
+                        <i class="fas fa-exclamation-circle me-1"></i> <strong>Reason:</strong> ${item.rejectionReason}
+                    </div>`;
                 }
 
                 // --- 2. HTML GENERATION ---
                 itemsHtml += `
                 <div class="d-flex align-items-start gap-3 border-bottom pb-3 mb-3">
-                    <img src="${img}" style="width:60px; height:60px; object-fit:contain; border:1px solid #eee; border-radius:4px;">
+                    <img src="${img}" style="width:70px; height:70px; object-fit:contain; border:1px solid #eee; border-radius:4px; padding:5px;">
                     <div class="flex-grow-1">
                         <h6 class="mb-1" style="font-size: 0.95rem;">${item.name}</h6>
                         <div class="d-flex justify-content-between align-items-center">
@@ -1178,12 +1205,13 @@
                         <div class="d-flex justify-content-between align-items-center mt-2">
                             <span class="status-badge ${statusClass}" style="font-size:0.7rem;">${item.status}</span>
                         </div>
-                        ${actionButtons}
+                        
+                        ${rejectionReasonHtml} ${actionButtons}
                     </div>
                 </div>`;
             });
 
-            // Address & Payment HTML (Kept Same)
+            // Address & Payment HTML (Unchanged)
             const addr = order.shippingAddress;
             const addressHtml = `
             <div class="bg-light p-3 rounded mb-3">
@@ -1215,7 +1243,10 @@
                        </div>`,
                 width: '600px',
                 showCloseButton: true,
-                showConfirmButton: false
+                showConfirmButton: false,
+                customClass: {
+                    popup: 'order-detail-popup' // Optional: for custom CSS targeting if needed
+                }
             });
         }
 
