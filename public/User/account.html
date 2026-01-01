@@ -544,6 +544,63 @@
                 margin-right: 5px;
             }
         }
+
+        /* --- MOBILE FIXES FOR ACCOUNT PAGE --- */
+        @media (max-width: 768px) {
+
+            /* 1. Fix Input Width: Reduce the huge padding on the card */
+            .profile-card {
+                padding: 25px 15px !important;
+                /* Was 40px 60px - this gives inputs much more space */
+                min-height: auto;
+                /* Remove fixed height on mobile */
+            }
+
+            /* 2. Input Field Adjustments */
+            .custom-input {
+                font-size: 16px;
+                /* Prevents auto-zoom on iPhone */
+                height: 45px;
+                /* Better touch target */
+            }
+
+            /* 3. Fix Transaction List Size */
+            .table-responsive {
+                border: none;
+            }
+
+            #walletTransactionTable td {
+                padding: 10px 5px;
+                /* Tighter padding */
+                font-size: 0.85rem;
+                /* Slightly smaller text to fit */
+            }
+
+            /* Date Column: Keep small and on one line */
+            #walletTransactionTable td:first-child {
+                white-space: nowrap;
+                font-size: 0.75rem;
+                color: #888;
+                width: 80px;
+            }
+
+            /* Description Column: Allow wrapping */
+            #walletTransactionTable td:nth-child(2) span {
+                display: -webkit-box;
+                -webkit-line-clamp: 2;
+                line-clamp: 2;
+                /* Limit to 2 lines */
+                -webkit-box-orient: vertical;
+                overflow: hidden;
+                line-height: 1.2;
+            }
+
+            /* Amount Column: Keep bold */
+            #walletTransactionTable td:last-child {
+                font-weight: 700;
+                white-space: nowrap;
+            }
+        }
     </style>
 </head>
 
@@ -1753,7 +1810,7 @@
                     // Try to load logo, but continue if it fails
                     const logoData = await getBase64ImageFromURL('../Images/Logo white.png');
                     if (logoData) {
-                    doc.addImage(logoData, 'PNG', 15, 13, 37, 28); // x, y, width, height
+                        doc.addImage(logoData, 'PNG', 15, 13, 37, 28); // x, y, width, height
                     } else {
                         // Fallback text if logo fails
                         doc.setFontSize(18);

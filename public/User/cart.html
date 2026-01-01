@@ -419,19 +419,34 @@
                 padding: 10px;
             }
 
-            /* COUPON FIX */
+            /* --- Find this section inside @media (max-width: 768px) --- */
+
+            /* COUPON FIX - Stack Input and Button Vertically */
             .coupon-group {
-                flex-wrap: nowrap !important;
+                flex-wrap: wrap !important;
+                /* Allow items to move to next line */
+                gap: 10px !important;
+                /* Space between input and button */
             }
 
             .coupon-input {
-                width: auto !important;
+                width: 100% !important;
+                /* Force input to full width */
                 flex-grow: 1;
                 max-width: none;
+                height: 45px;
+                /* Better touch target height */
             }
 
             .btn-coupon {
+                width: 100%;
+                /* Force button to full width */
                 padding: 10px 15px;
+                height: 45px;
+                /* Match input height */
+                display: flex;
+                align-items: center;
+                justify-content: center;
             }
         }
     </style>
