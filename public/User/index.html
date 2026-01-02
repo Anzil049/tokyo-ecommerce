@@ -100,7 +100,7 @@
             border: none;
             background: transparent;
             width: 100%;
-            font-size: 0.85rem;
+            font-size: 16px;
             outline: none;
         }
 
@@ -1470,7 +1470,7 @@
                     sales.length > 1 ? arrows.forEach(btn => btn.style.display = 'flex') : arrows.forEach(btn => btn.style.display = 'none');
 
                     sales.forEach((sale, index) => {
-                        let discountText = sale.discountUnit === 'percent' ? `${sale.offerType === 'upto' ? 'Up To' : 'Flat'} ${sale.discountValue}% OFF` : `${sale.offerType === 'upto' ? 'Up To' : 'Flat'} ₹${sale.discountValue} OFF`;
+                        let discountText = sale.discountUnit === 'percent' ? `${sale.offerType === 'upto' ? 'Min' : 'Flat'} ${sale.discountValue}% OFF` : `${sale.offerType === 'upto' ? 'Min' : 'Flat'} ₹${sale.discountValue} OFF`;
                         let targetText = "";
                         if (sale.appliesTo === 'all') targetText = "On All Items";
                         else if (sale.appliesTo === 'product') targetText = "On Selected Items";
