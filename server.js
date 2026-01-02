@@ -80,18 +80,18 @@ app.use('/api/sales', saleRoutes);
 //---User Pages---
 
 app.get('/', (req, res) => {
-    res.redirect('/user');
+    res.redirect('/User');
 });
 
-app.get("/user", (req, res) => {
+app.get("/User", (req, res) => {
     res.sendFile(path.join(__dirname, "public", "User", "index.html"))
 });
 
-app.get("user/products", (req, res) => {
+app.get("User/products", (req, res) => {
     res.sendFile(path.join(__dirname, "public", "User", "products.html"))
 })
 
-app.get("user/cart", (req, res) => {
+app.get("User/cart", (req, res) => {
     res.sendFile(path.join(__dirname, "public", "User", "cart.html"))
 })
 
