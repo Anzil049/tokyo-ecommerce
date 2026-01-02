@@ -30,9 +30,11 @@ const storage = multer.diskStorage({
             cb(null, "public/uploads/products");
         }
     },
+    // ✅ NEW (Fixes the bug)
     filename: (req, file, cb) => {
-        // Create unique filename: fieldname-timestamp.ext
-        cb(null, file.fieldname + "-" + Date.now() + path.extname(file.originalname));
+        // Add a random number (1-10000) to ensure uniqueness
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 10000);
+        cb(null, file.fieldname + "-" + uniqueSuffix + path.extname(file.originalname));
     }
 });
 
