@@ -116,6 +116,6 @@ startScheduler();
 app.listen(PORT, () => {
     console.log(
         `server running at http://localhost:${PORT}
-User side running at http://localhost:${PORT}/User
+User side running at http://localhost:${PORT}/
 Admin side running at http://localhost:${PORT}/Admin`);
 });         
