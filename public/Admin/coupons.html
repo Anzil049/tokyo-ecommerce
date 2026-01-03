@@ -1019,14 +1019,23 @@
             document.getElementById('cp-min-val').value = cp.minOrderValue || 0;
             document.getElementById('cp-status').value = cp.isActive ? 'true' : 'false';
 
-            // --- DATE FIX FOR EDITING ---
+            // --- DATE FIX FOR EDITING (CORRECTED) ---
             if (cp.startDate) {
                 const startDateStr = new Date(cp.startDate).toISOString().split('T')[0];
+                const todayStr = new Date().toISOString().split('T')[0]; // Get Today's Date
                 const startInput = document.getElementById('cp-start');
 
                 startInput.value = startDateStr;
-                // Allow keeping the original start date even if it is in the past
-                startInput.setAttribute('min', startDateStr);
+
+                // LOGIC FIX: 
+                // We set the 'min' attribute to the EARLIER of the two dates:
+                // 1. The original start date (so you can keep a past date if needed)
+                // 2. Today (so if the original date is in the future, you can still pull it back to today)
+                if (startDateStr < todayStr) {
+                    startInput.setAttribute('min', startDateStr);
+                } else {
+                    startInput.setAttribute('min', todayStr);
+                }
             }
 
             if (cp.expirationDate) {
