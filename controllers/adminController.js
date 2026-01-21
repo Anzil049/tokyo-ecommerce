@@ -6,9 +6,99 @@ const bcrypt = require('bcryptjs');
 // --- 1. Get All Users ---
 exports.getAllUsers = async (req, res) => {
     try {
-        const users = await User.find().select('-password').sort({ createdAt: -1 });
-        res.json(users);
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 20;
+        const skip = (page - 1) * limit;
+        const roleFilter = req.query.role ? { role: req.query.role } : {};
+
+        // We use aggregation to join with Orders and get stats
+        const aggregationPipeline = [
+            { $match: roleFilter },
+            {
+                $lookup: {
+                    from: 'orders',
+                    localField: '_id',
+                    foreignField: 'user',
+                    as: 'orders'
+                }
+            },
+            {
+                $project: {
+                    name: 1,
+                    email: 1,
+                    role: 1,
+                    isVerified: 1,
+                    isBlocked: 1,
+                    createdAt: 1,
+                    totalOrders: { $size: "$orders" },
+                    totalSpent: {
+                        $sum: {
+                            $map: {
+                                input: "$orders",
+                                as: "order",
+                                in: {
+                                    $sum: {
+                                        $map: {
+                                            input: "$$order.items",
+                                            as: "item",
+                                            in: {
+                                                $cond: [
+                                                    {
+                                                        $or: [
+                                                            // COD: Count only if Delivered
+                                                            {
+                                                                $and: [
+                                                                    { $eq: ["$$order.paymentMethod", "COD"] },
+                                                                    { $eq: ["$$item.status", "Delivered"] }
+                                                                ]
+                                                            },
+                                                            // Online/Wallet: Count if NOT Cancelled or Returned
+                                                            {
+                                                                $and: [
+                                                                    { $in: ["$$order.paymentMethod", ["Online", "Wallet", "Razorpay"]] },
+                                                                    { $not: { $in: ["$$item.status", ["Cancelled", "Returned"]] } }
+                                                                ]
+                                                            }
+                                                        ]
+                                                    },
+                                                    { $multiply: ["$$item.price", "$$item.quantity"] },
+                                                    0
+                                                ]
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            { $sort: { createdAt: -1 } },
+            {
+                $facet: {
+                    metadata: [{ $count: "total" }],
+                    data: [{ $skip: skip }, { $limit: limit }]
+                }
+            }
+        ];
+
+        const result = await User.aggregate(aggregationPipeline);
+
+        const totalDocs = result[0].metadata[0] ? result[0].metadata[0].total : 0;
+        const users = result[0].data;
+
+        res.json({
+            success: true,
+            data: users,
+            pagination: {
+                totalDocs,
+                totalPages: Math.ceil(totalDocs / limit),
+                currentPage: page,
+                limit
+            }
+        });
     } catch (err) {
+        console.error("Fetch Users Error:", err);
         res.status(500).json({ message: 'Failed to fetch users', error: err.message });
     }
 };
@@ -391,5 +481,140 @@ exports.getReportData = async (req, res) => {
     } catch (err) {
         console.error("Report Error:", err);
         res.status(500).json({ success: false, message: "Failed to generate report" });
+    }
+};
+// --- 8. GET TRANSACTIONS (Strict Pagination) ---
+exports.getTransactions = async (req, res) => {
+    try {
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 20;
+        const skip = (page - 1) * limit;
+
+        const aggregationPipeline = [
+            // 1. Unwind items to process each item as potential transaction
+            { $unwind: "$items" },
+            // 2. Lookup User for Name
+            {
+                $lookup: {
+                    from: 'users',
+                    localField: 'user',
+                    foreignField: '_id',
+                    as: 'userInfo'
+                }
+            },
+            { $unwind: { path: "$userInfo", preserveNullAndEmptyArrays: true } }, // Keep order even if user deleted?
+            // 3. Project Potential Transactions (Credit & Debit)
+            {
+                $project: {
+                    _id: 0,
+                    orderId: "$_id",
+                    trxIdBase: {
+                        $concat: [
+                            { $toUpper: { $substr: [{ $toString: "$_id" }, 18, 6] } },
+                            "-",
+                            { $toUpper: { $substr: [{ $toString: "$items._id" }, 22, 2] } }
+                        ]
+                    },
+                    date: "$createdAt",
+                    customer: { $ifNull: ["$userInfo.name", "$shippingAddress.fullName"] },
+                    itemDisplay: { $concat: ["$items.name", " (x", { $toString: "$items.quantity" }, ")"] },
+                    method: "$paymentMethod",
+                    amount: { $multiply: ["$items.price", "$items.quantity"] }, // Simplification: Ignore tax/shipping split for item view
+
+                    // Conditions
+                    isPrepaid: { $in: ["$paymentMethod", ["Online", "Razorpay", "Wallet"]] },
+                    isCOD: { $eq: ["$paymentMethod", "COD"] },
+                    status: "$items.status"
+                }
+            },
+            // 4. Generate Transaction Rows
+            {
+                $project: {
+                    transactions: [
+                        // Credit Transaction (Sale)
+                        {
+                            $cond: [
+                                {
+                                    $or: [
+                                        { $eq: ["$isPrepaid", true] },
+                                        { $and: [{ $eq: ["$isCOD", true] }, { $in: ["$status", ["Delivered", "Completed", "Returned"]] }] } // Returned items were once Delivered/Paid in COD
+                                    ]
+                                },
+                                {
+                                    trxId: { $concat: ["TRX-", "$trxIdBase"] },
+                                    date: "$date",
+                                    customer: "$customer",
+                                    itemDisplay: "$itemDisplay",
+                                    method: "$method",
+                                    type: "Credit",
+                                    amount: "$amount",
+                                    status: "Success"
+                                },
+                                null
+                            ]
+                        },
+                        // Debit Transaction (Refund)
+                        {
+                            $cond: [
+                                {
+                                    $or: [
+                                        // Prepaid Refund
+                                        { $and: [{ $eq: ["$isPrepaid", true] }, { $in: ["$status", ["Cancelled", "Returned"]] }] },
+                                        // COD Refund (Only if Returned, effectively implies it was delivered first)
+                                        { $and: [{ $eq: ["$isCOD", true] }, { $eq: ["$status", "Returned"] }] }
+                                    ]
+                                },
+                                {
+                                    trxId: { $concat: ["REF-", "$trxIdBase"] },
+                                    date: "$date", // Ideally slightly later, but keeping simple
+                                    customer: "$customer",
+                                    itemDisplay: { $concat: ["Refund: ", "$itemDisplay"] },
+                                    method: "Wallet", // Refunds usually go to wallet? Or same method. Using Wallet as per frontend logic often.
+                                    type: "Debit",
+                                    amount: "$amount",
+                                    status: "Refunded"
+                                },
+                                null
+                            ]
+                        }
+                    ]
+                }
+            },
+            // 5. Unwind generated transactions
+            { $unwind: "$transactions" },
+            // 6. Filter nulls (invalid transactions)
+            { $match: { "transactions": { $ne: null } } },
+            // 7. Promote to root
+            { $replaceRoot: { newRoot: "$transactions" } },
+            // 8. Sort
+            { $sort: { date: -1 } },
+            // 9. Pagination Facet
+            {
+                $facet: {
+                    metadata: [{ $count: "total" }],
+                    data: [{ $skip: skip }, { $limit: limit }]
+                }
+            }
+        ];
+
+        const result = await Order.aggregate(aggregationPipeline);
+
+        const totalDocs = result[0].metadata[0] ? result[0].metadata[0].total : 0;
+        const transactions = result[0].data;
+
+        res.json({
+            success: true,
+            data: transactions,
+            pagination: {
+                totalDocs,
+                totalPages: Math.ceil(totalDocs / limit),
+                currentPage: page,
+                limit
+            }
+        });
+
+    } catch (err) {
+        console.error("Get Transactions Error:", err);
+        res.status(500).json({ success: false, message: "Failed to fetch transactions" });
     }
 };

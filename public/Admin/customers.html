@@ -372,6 +372,49 @@
             font-size: 14px;
         }
 
+        .modal-profile p {
+            color: var(--grey);
+            font-size: 13px;
+        }
+
+        /* Stats Grid in Modal */
+        .stat-grid-modal {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-box {
+            background: #f8f9fa;
+            /* Using a light grey direct hex as var(--bg) might be different */
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            border: 1px solid #eee;
+        }
+
+        .stat-val {
+            display: block;
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 11px;
+            color: var(--grey);
+            text-transform: uppercase;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+
+        .modal-row {
+            color: var(--dark);
+            font-weight: 600;
+        }
+
         .modal-label {
             color: var(--grey);
             font-weight: 500;
@@ -577,13 +620,15 @@
                         <th>Name</th>
                         <th>Email</th>
                         <th>Joined Date</th>
+                        <th>Orders</th>
+                        <th>Spent</th>
                         <th>Status</th>
                         <th>Action</th>
                     </tr>
                 </thead>
                 <tbody id="customerTableBody">
                     <tr>
-                        <td colspan="5" style="text-align:center;">Loading customers...</td>
+                        <td colspan="7" style="text-align:center;">Loading customers...</td>
                     </tr>
                 </tbody>
             </table>
@@ -650,11 +695,20 @@
         }
 
         // --- 4. FETCH CUSTOMERS ---
-        async function loadCustomers() {
+        // --- 4. FETCH CUSTOMERS ---
+        let currentPage = 1;
+        const limit = 20;
+
+        async function loadCustomers(page = 1) {
             try {
-                // Use the existing admin/users endpoint which returns ALL users
-                // We will filter it on the frontend to show only 'user' role
-                const response = await fetch('/api/admin/users');
+                currentPage = page;
+                const tbody = document.getElementById('customerTableBody');
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Loading customers...</td></tr>';
+
+                // Fetch with pagination and role filter
+                // Note: The previous logic filtered results AFTER fetching all users.
+                // Now we ask backend to filter by 'user' role and paginate.
+                const response = await fetch(`/api/admin/users?role=user&page=${page}&limit=${limit}`);
 
                 if (response.status === 401 || response.status === 403) {
                     window.location.replace('admin-login.html');
@@ -663,14 +717,110 @@
 
                 const result = await response.json();
 
-                // FILTER: Only show users with role 'user' (Customers)
-                allCustomers = result.filter(u => u.role === 'user');
-
-                renderCustomers(allCustomers);
+                if (result.success && result.data) {
+                    allCustomers = result.data;
+                    renderCustomers(allCustomers);
+                    renderPagination(result.pagination);
+                } else {
+                    // Fallback for legacy response or empty
+                    if (Array.isArray(result)) {
+                        allCustomers = result.filter(u => u.role === 'user'); // Fallback client-side filter
+                        renderCustomers(allCustomers);
+                    } else {
+                        allCustomers = [];
+                        renderCustomers([]);
+                    }
+                }
 
             } catch (err) {
                 console.error("Fetch error:", err);
+                const tbody = document.getElementById('customerTableBody');
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:red;">Failed to load customers</td></tr>';
             }
+        }
+
+        // --- NEW: PAGINATION CONTROLS (NUMBERED) ---
+        function renderPagination(pagination) {
+            const existingNav = document.querySelector('.pagination-nav');
+            if (existingNav) existingNav.remove();
+
+            if (!pagination || pagination.totalDocs === 0) return;
+
+            const tableBox = document.querySelector('.table-box');
+
+            // Calculate range
+            const start = (pagination.currentPage - 1) * pagination.limit + 1;
+            const end = Math.min(pagination.currentPage * pagination.limit, pagination.totalDocs);
+
+            const nav = document.createElement('div');
+            nav.className = 'pagination-nav';
+            nav.style.cssText = 'display: flex; justify-content: space-between; align-items: center; margin-top: 20px; padding-top: 20px; border-top: 1px solid #eee; flex-wrap: wrap; gap: 10px;';
+
+            // 1. Info Text
+            const info = document.createElement('div');
+            info.style.cssText = 'color: var(--grey); font-size: 13px; font-weight: 500;';
+            info.innerText = `Showing ${start}-${end} from ${pagination.totalDocs}`;
+
+            // 2. Page Buttons Container
+            const btnContainer = document.createElement('div');
+            btnContainer.style.cssText = 'display: flex; gap: 5px;';
+
+            // Helper to create button
+            const createBtn = (label, page, isActive = false, isDisabled = false) => {
+                const btn = document.createElement('button');
+                btn.innerText = label;
+                btn.style.cssText = `
+                    min-width: 32px; height: 32px; padding: 0 6px; border-radius: 6px; border: 1px solid #ddd; 
+                    background: ${isActive ? 'var(--primary)' : 'white'}; 
+                    color: ${isActive ? 'white' : (isDisabled ? '#ccc' : 'var(--dark)')}; 
+                    cursor: ${isDisabled || isActive ? 'default' : 'pointer'}; 
+                    font-size: 13px; display: flex; align-items: center; justify-content: center;
+                    transition: all 0.2s;
+                `;
+                if (!isDisabled && !isActive) {
+                    btn.onclick = () => loadCustomers(page);
+                    btn.onmouseover = () => { if (!isActive) btn.style.borderColor = 'var(--primary)'; };
+                    btn.onmouseout = () => { if (!isActive) btn.style.borderColor = '#ddd'; };
+                }
+                return btn;
+            };
+
+            // Previous
+            btnContainer.appendChild(createBtn('<', pagination.currentPage - 1, false, pagination.currentPage === 1));
+
+            // Valid Page Numbers logic
+            const totalPages = pagination.totalPages;
+            let pages = [];
+
+            if (totalPages <= 7) {
+                for (let i = 1; i <= totalPages; i++) pages.push(i);
+            } else {
+                if (pagination.currentPage <= 4) {
+                    pages = [1, 2, 3, 4, 5, '...', totalPages];
+                } else if (pagination.currentPage >= totalPages - 3) {
+                    pages = [1, '...', totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
+                } else {
+                    pages = [1, '...', pagination.currentPage - 1, pagination.currentPage, pagination.currentPage + 1, '...', totalPages];
+                }
+            }
+
+            pages.forEach(p => {
+                if (p === '...') {
+                    const span = document.createElement('span');
+                    span.innerText = '...';
+                    span.style.cssText = 'padding: 0 4px; color: #888; display: flex; align-items: center;';
+                    btnContainer.appendChild(span);
+                } else {
+                    btnContainer.appendChild(createBtn(p, p, p === pagination.currentPage));
+                }
+            });
+
+            // Next
+            btnContainer.appendChild(createBtn('>', pagination.currentPage + 1, false, pagination.currentPage === totalPages));
+
+            nav.appendChild(info);
+            nav.appendChild(btnContainer);
+            tableBox.appendChild(nav);
         }
 
         // --- 5. RENDER TABLE ---
@@ -679,7 +829,7 @@
             tbody.innerHTML = '';
 
             if (customers.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">No customers found</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">No customers found</td></tr>';
                 return;
             }
 
@@ -687,11 +837,21 @@
                 const tr = document.createElement('tr');
                 const dateJoined = new Date(cust.createdAt).toLocaleDateString();
 
+                // Stats
+                const ordersCount = cust.totalOrders || 0;
+                const spentAmount = cust.totalSpent ? `₹${cust.totalSpent.toLocaleString()}` : '₹0';
+
                 // Status
                 let statusClass = 'st-inactive';
                 let statusText = 'Unverified';
-                if (cust.isBlocked) { statusClass = 'st-blocked'; statusText = 'Blocked'; }
-                else if (cust.isVerified) { statusClass = 'st-active'; statusText = 'Active'; }
+
+                if (cust.isBlocked) {
+                    statusClass = 'st-blocked';
+                    statusText = 'Blocked';
+                } else if (cust.isVerified) {
+                    statusClass = 'st-active';
+                    statusText = 'Active';
+                }
 
                 const statusHTML = `<span class="status-badge ${statusClass}">${statusText}</span>`;
 
@@ -716,12 +876,14 @@
                     `;
                 }
 
-                tr.onclick = () => openCustomerDetails(cust._id, cust.name, cust.email, dateJoined, statusText);
+                tr.onclick = () => openCustomerDetails(cust._id, cust.name, cust.email, dateJoined, statusText, ordersCount, cust.totalSpent || 0);
 
                 tr.innerHTML = `
                     <td data-label="Name" style="font-weight:600; color:var(--dark);">${cust.name}</td>
                     <td data-label="Email">${cust.email}</td>
-                    <td data-label="Joined Date">${dateJoined}</td>
+                    <td data-label="Joined">${dateJoined}</td>
+                    <td data-label="Orders" style="font-weight:600;">${ordersCount}</td>
+                    <td data-label="Spent" style="color:var(--primary); font-weight:600;">${spentAmount}</td>
                     <td data-label="Status">${statusHTML}</td>
                     <td data-label="Action">${actionHTML}</td>
                 `;
@@ -808,10 +970,12 @@
         }
 
         // --- 8. DETAILS MODAL ---
-        function openCustomerDetails(id, name, email, joined, status) {
+        function openCustomerDetails(id, name, email, joined, status, orders, spent) {
             const modal = document.getElementById('customerModal');
             const content = document.getElementById('modalContent');
             const avatarUrl = `https://ui-avatars.com/api/?name=${name}&background=E8F0FE&color=4880FF&size=128`;
+
+            const spentFormatted = spent.toLocaleString('en-IN', { style: 'currency', currency: 'INR' });
 
             // Set Color based on status text
             let statusColor = '#999';
@@ -824,13 +988,23 @@
                     <h3 style="color:var(--dark);">${name}</h3>
                     <p style="color:var(--grey); font-size:13px;">${id}</p>
                 </div>
+
+                <div class="stat-grid-modal">
+                    <div class="stat-box">
+                        <span class="stat-val">${orders}</span>
+                        <span class="stat-label">Total Orders</span>
+                    </div>
+                    <div class="stat-box">
+                        <span class="stat-val">${spentFormatted}</span>
+                        <span class="stat-label">Total Spent</span>
+                    </div>
+                </div>
+
                 <div class="modal-row"><span class="modal-label">Email</span><span class="modal-val" style="text-transform:lowercase;">${email}</span></div>
                 <div class="modal-row"><span class="modal-label">Joined On</span><span class="modal-val">${joined}</span></div>
                 <div class="modal-row"><span class="modal-label">Status</span><span class="modal-val" style="color:${statusColor}">${status}</span></div>
             `;
             modal.style.display = 'flex';
-
-            // LOCK BODY SCROLL
             document.body.classList.add('body-no-scroll');
         }
 

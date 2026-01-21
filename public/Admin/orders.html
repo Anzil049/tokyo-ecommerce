@@ -636,22 +636,118 @@
             }
         }
 
+        let currentPage = 1;
+        const limit = 20;
+
         // --- 4. LOAD ORDERS ---
-        async function loadOrders() {
+        async function loadOrders(page = 1) {
             try {
-                const res = await fetch('/api/orders/admin/all');
+                currentPage = page;
+                const tbody = document.getElementById('ordersTable');
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Loading orders...</td></tr>';
+
+                const res = await fetch(`/api/orders/admin/all?page=${page}&limit=${limit}`);
+                if (res.status === 401) {
+                    window.location.replace('admin-login.html');
+                    return;
+                }
+
                 const json = await res.json();
                 if (json.success) {
-                    // Safety check if data is null
                     allOrders = json.data || [];
                     handleDateFilter();
+                    if (json.pagination) renderPagination(json.pagination);
                 } else {
-                    document.getElementById('ordersTable').innerHTML = `<tr><td colspan="7" style="text-align:center;">${json.message || 'Failed to load'}</td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;">${json.message || 'Failed to load'}</td></tr>`;
                 }
             } catch (err) {
                 console.error(err);
                 document.getElementById('ordersTable').innerHTML = `<tr><td colspan="7" style="text-align:center;">Connection Error</td></tr>`;
             }
+        }
+
+        // --- PAGINATION RENDERER (NUMBERED) ---
+        function renderPagination(pagination) {
+            const existingNav = document.querySelector('.pagination-nav');
+            if (existingNav) existingNav.remove();
+
+            if (!pagination || pagination.totalDocs === 0) return;
+
+            const tableBox = document.querySelector('.table-box');
+
+            // Calculate range
+            const start = (pagination.currentPage - 1) * pagination.limit + 1;
+            const end = Math.min(pagination.currentPage * pagination.limit, pagination.totalDocs);
+
+            const nav = document.createElement('div');
+            nav.className = 'pagination-nav';
+            nav.style.cssText = 'display: flex; justify-content: space-between; align-items: center; margin-top: 20px; padding-top: 20px; border-top: 1px solid #eee; flex-wrap: wrap; gap: 10px;';
+
+            // 1. Info Text
+            const info = document.createElement('div');
+            info.style.cssText = 'color: var(--grey); font-size: 13px; font-weight: 500;';
+            info.innerText = `Showing ${start}-${end} from ${pagination.totalDocs}`;
+
+            // 2. Page Buttons Container
+            const btnContainer = document.createElement('div');
+            btnContainer.style.cssText = 'display: flex; gap: 5px;';
+
+            // Helper to create button
+            const createBtn = (label, page, isActive = false, isDisabled = false) => {
+                const btn = document.createElement('button');
+                btn.innerText = label;
+                btn.style.cssText = `
+                    min-width: 32px; height: 32px; padding: 0 6px; border-radius: 6px; border: 1px solid #ddd; 
+                    background: ${isActive ? 'var(--primary)' : 'white'}; 
+                    color: ${isActive ? 'white' : (isDisabled ? '#ccc' : 'var(--dark)')}; 
+                    cursor: ${isDisabled || isActive ? 'default' : 'pointer'}; 
+                    font-size: 13px; display: flex; align-items: center; justify-content: center;
+                    transition: all 0.2s;
+                `;
+                if (!isDisabled && !isActive) {
+                    btn.onclick = () => loadOrders(page);
+                    btn.onmouseover = () => { if (!isActive) btn.style.borderColor = 'var(--primary)'; };
+                    btn.onmouseout = () => { if (!isActive) btn.style.borderColor = '#ddd'; };
+                }
+                return btn;
+            };
+
+            // Previous
+            btnContainer.appendChild(createBtn('<', pagination.currentPage - 1, false, pagination.currentPage === 1));
+
+            // Valid Page Numbers logic
+            const totalPages = pagination.totalPages;
+            let pages = [];
+
+            if (totalPages <= 7) {
+                for (let i = 1; i <= totalPages; i++) pages.push(i);
+            } else {
+                if (pagination.currentPage <= 4) {
+                    pages = [1, 2, 3, 4, 5, '...', totalPages];
+                } else if (pagination.currentPage >= totalPages - 3) {
+                    pages = [1, '...', totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
+                } else {
+                    pages = [1, '...', pagination.currentPage - 1, pagination.currentPage, pagination.currentPage + 1, '...', totalPages];
+                }
+            }
+
+            pages.forEach(p => {
+                if (p === '...') {
+                    const span = document.createElement('span');
+                    span.innerText = '...';
+                    span.style.cssText = 'padding: 0 4px; color: #888; display: flex; align-items: center;';
+                    btnContainer.appendChild(span);
+                } else {
+                    btnContainer.appendChild(createBtn(p, p, p === pagination.currentPage));
+                }
+            });
+
+            // Next
+            btnContainer.appendChild(createBtn('>', pagination.currentPage + 1, false, pagination.currentPage === totalPages));
+
+            nav.appendChild(info);
+            nav.appendChild(btnContainer);
+            tableBox.appendChild(nav);
         }
 
         // --- 5. RENDER TABLE ---

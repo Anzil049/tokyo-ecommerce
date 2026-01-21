@@ -10,7 +10,8 @@ const {
     updateUserRole,
     toggleBlockStatus,
     getDashboardStats,
-    getReportData
+    getReportData,
+    getTransactions
 } = require('../controllers/adminController');
 
 // --- MANAGE ADMINS (Super Admin Only) ---
@@ -45,8 +46,10 @@ router.put('/user/block/:id',
 
 
 // Allow all admin types to view stats
-router.get('/dashboard-stats',protectAdmin, authorizeRoles('superadmin', 'editor', 'viewer'), getDashboardStats);
+router.get('/dashboard-stats', protectAdmin, authorizeRoles('superadmin', 'editor', 'viewer'), getDashboardStats);
 
 router.get('/report-data', protectAdmin, authorizeRoles('superadmin', 'editor', 'viewer'), getReportData);
+
+router.get('/transactions', protectAdmin, authorizeRoles('superadmin', 'editor', 'viewer'), getTransactions);
 
 module.exports = router;

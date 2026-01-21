@@ -822,9 +822,14 @@
         }
 
         // --- 4. FETCH PRODUCTS ---
-        async function loadProducts() {
+        // --- 4. FETCH PRODUCTS ---
+        let currentPage = 1;
+        const limit = 20;
+
+        async function loadProducts(page = 1) {
             try {
-                const response = await fetch('/api/products');
+                currentPage = page;
+                const response = await fetch(`/api/products?page=${page}&limit=${limit}`);
 
                 if (response.status === 401 || response.status === 403) {
                     window.location.replace('admin-login.html');
@@ -836,9 +841,52 @@
                 if (result.success) {
                     allProducts = result.data;
                     applyFilters();
+                    if (result.pagination) renderPagination(result.pagination);
                 }
             } catch (err) {
                 console.error("Error loading products:", err);
+            }
+        }
+
+        // --- NEW: PAGINATION RENDERER ---
+        function renderPagination(pagination) {
+            const existingNav = document.querySelector('.pagination-nav');
+            if (existingNav) existingNav.remove();
+
+            if (!pagination || pagination.totalPages <= 1) return;
+
+            const tableWrapper = document.querySelector('.table-box') || document.querySelector('main');
+            // In product-list, table is directly in table-box usually.
+            const nav = document.createElement('div');
+            nav.className = 'pagination-nav';
+            nav.style.cssText = 'display: flex; justify-content: flex-end; align-items: center; gap: 10px; margin-top: 20px; padding-top: 20px; border-top: 1px solid #eee;';
+
+            const info = document.createElement('span');
+            info.style.cssText = 'color: var(--grey); font-size: 13px; margin-right: auto;';
+            info.innerText = `Page ${pagination.currentPage} of ${pagination.totalPages} (${pagination.totalDocs} Products)`;
+
+            const prevBtn = document.createElement('button');
+            prevBtn.innerText = 'Previous';
+            prevBtn.disabled = pagination.currentPage === 1;
+            prevBtn.style.cssText = `padding: 8px 16px; border-radius: 6px; border: 1px solid #ddd; background: ${prevBtn.disabled ? '#f5f5f5' : 'white'}; color: ${prevBtn.disabled ? '#aaa' : 'var(--dark)'}; cursor: ${prevBtn.disabled ? 'default' : 'pointer'}; font-size: 13px;`;
+            prevBtn.onclick = () => loadProducts(pagination.currentPage - 1);
+
+            const nextBtn = document.createElement('button');
+            nextBtn.innerText = 'Next';
+            nextBtn.disabled = pagination.currentPage === pagination.totalPages;
+            nextBtn.style.cssText = `padding: 8px 16px; border-radius: 6px; border: 1px solid #ddd; background: ${nextBtn.disabled ? '#f5f5f5' : 'white'}; color: ${nextBtn.disabled ? '#aaa' : 'var(--dark)'}; cursor: ${nextBtn.disabled ? 'default' : 'pointer'}; font-size: 13px;`;
+            nextBtn.onclick = () => loadProducts(pagination.currentPage + 1);
+
+            nav.appendChild(info);
+            nav.appendChild(prevBtn);
+            nav.appendChild(nextBtn);
+
+            // Append to table-box if exists, or after table
+            const tableBox = document.querySelector('.table-box');
+            if (tableBox) {
+                tableBox.appendChild(nav);
+            } else {
+                document.querySelector('table').after(nav);
             }
         }
 

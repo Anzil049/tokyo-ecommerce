@@ -684,207 +684,117 @@
             }
         }
 
-        // --- 4. LOAD DATA (BATCH-AWARE LOGIC) ---
-        async function loadTransactions() {
+        // --- 4. LOAD DATA (STRICT PAGINATION) ---
+        let currentPage = 1;
+        const limit = 20;
+
+        async function loadTransactions(page = 1) {
+            const tbody = document.getElementById('transactionTable');
             try {
-                const res = await fetch('/api/orders/admin/all');
+                currentPage = page;
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;">Loading transactions...</td></tr>';
+
+                // New Endpoint
+                const res = await fetch(`/api/admin/transactions?page=${page}&limit=${limit}`);
                 const json = await res.json();
 
                 if (json.success) {
-                    const generatedTrx = [];
+                    allTransactions = json.data;
+                    filteredTransactions = [...allTransactions]; // Important for export/filter
+                    renderTable(allTransactions);
 
-                    json.data.forEach(order => {
-                        const isPrepaid = ['Razorpay', 'Wallet', 'Online'].includes(order.paymentMethod);
-                        const isCOD = order.paymentMethod === 'COD';
-
-                        // 1. RECONSTRUCT SHIPPING COST
-                        let historicShipping = order.shippingCost;
-                        if (order.totalAmount === 0 && historicShipping === 0) {
-                            const rawSubtotal = order.items.reduce((sum, i) => sum + ((i.originalPrice || i.price) * i.quantity), 0);
-                            if (rawSubtotal < 600) {
-                                const isFreeShipCoupon = (order.couponCode && order.discountAmount === 0);
-                                if (!isFreeShipCoupon) historicShipping = 50;
-                            }
-                        }
-
-                        const hasShipping = historicShipping > 0;
-                        const allItemsDead = order.items.every(i => ['Cancelled', 'Returned'].includes(i.status));
-
-                        let shippingAddedToCredit = false;
-                        let shippingAddedToDebit = false;
-
-                        // --- COUPON STATUS CHECK (Per Order) ---
-                        // We need to know if coupon is revoked to adjust refund amounts.
-                        // Logic mirrors backend:
-                        let isCouponRevokedGlobal = false;
-                        let totalRefunded = 0;
-                        if (order.couponCode) {
-                            // Can't check minQuantity directly as we don't have coupon rules here.
-                            // Heuristic: If Total Refunded < Sum of Dead Items (Original Price), then revoked.
-                            // Better: Calculate active items and infer based on typical rules? 
-                            // SAFEST: Re-implement the simplified check from account.html
-
-                            const originalSubtotal = order.items.reduce((acc, i) => acc + ((i.originalPrice || i.price) * i.quantity), 0);
-                            let standardShip = (originalSubtotal > 600) ? 0 : 50;
-                            if (order.couponCode && order.discountAmount === 0 && originalSubtotal < 600) standardShip = 0;
-
-                            let expectedTotal = (originalSubtotal - (order.discountAmount || 0));
-                            if (standardShip > 0) expectedTotal += standardShip;
-
-                            totalRefunded = expectedTotal - order.totalAmount;
-                            totalRefunded = Math.round(totalRefunded * 100) / 100;
-                            if (totalRefunded < 0) totalRefunded = 0;
-
-                            let deadItemsValue = 0;
-                            order.items.forEach(i => {
-                                if (['Cancelled', 'Returned', 'Return Rejected'].includes(i.status)) {
-                                    deadItemsValue += ((i.originalPrice || i.price) * i.quantity);
-                                }
-                            });
-
-                            if (totalRefunded > 0 && deadItemsValue > 0 && totalRefunded < deadItemsValue) {
-                                isCouponRevokedGlobal = true;
-                            }
-                        }
-
-
-                        order.items.forEach((item, index) => {
-                            const itemPrice = (item.originalPrice || item.price);
-                            const itemTotal = itemPrice * item.quantity;
-                            const itemStatus = item.status || 'Pending';
-                            const idSuffix = `-${(index + 1).toString().padStart(2, '0')}`;
-
-                            // A. CREDIT LOGIC
-                            let showCredit = false;
-                            let creditStatus = 'Pending';
-                            let creditAmount = itemTotal;
-                            let creditLabel = `${item.name} (x${item.quantity})`;
-
-                            const isItemPaidCOD = isCOD && ['Delivered', 'Return Requested', 'Return Rejected', 'Returned', 'Completed'].includes(itemStatus);
-
-                            if (isPrepaid || isItemPaidCOD) {
-                                showCredit = true;
-                                creditStatus = 'Success';
-                            }
-
-                            if (showCredit && hasShipping && !shippingAddedToCredit) {
-                                creditAmount += historicShipping;
-                                creditLabel += ` (+ Shipping)`;
-                                shippingAddedToCredit = true;
-                            }
-
-                            if (showCredit) {
-                                generatedTrx.push({
-                                    trxId: `TRX-${order._id.slice(-6).toUpperCase()}${idSuffix}`,
-                                    type: 'Credit',
-                                    date: new Date(order.createdAt),
-                                    customer: order.shippingAddress.fullName,
-                                    itemDisplay: creditLabel,
-                                    method: order.paymentMethod,
-                                    amount: creditAmount,
-                                    status: creditStatus
-                                });
-                            }
-
-                            // B. DEBIT LOGIC
-                            let showDebit = false;
-                            let debitDate = new Date(order.updatedAt);
-
-                            // Calculate Correct Debit Amount
-                            let debitAmount = itemTotal; // Default to full price
-                            let debitLabel = `${item.name} (x${item.quantity})`;
-
-                            if (isCouponRevokedGlobal) {
-                                // If revoked, we can't easily attribute the exact reversal per item in this view 
-                                // without complex re-simulation.
-                                // simpler: If this item is dead, its "Refund Value" is somewhat ambiguous in a batch view.
-                                // BUT, we know the TotalRefunded. 
-                                // Best approximation for row-by-row: 
-                                // If multiple items refunded, how to split the "reversal"?
-                                // Pro-rate? Or just show one "Adjustment" row? 
-
-                                // Alternative: Since we don't have per-item refund logs from backend in this API,
-                                // we display the 'Standard' amount but append a warning or try to adjust if it's the only one.
-
-                                // LET'S FOLLOW BACKEND LOGIC:
-                                // Refund = Standard - Reversal.
-                                // Reversal = DeadItemsValue - TotalRefunded.
-                                // We can deduct the *entire* reversal from the *first* refunded item found? Or distribute?
-                                // Distributing is safer visually.
-
-                                // Actually, let's look at the heuristic again.
-                                // Reversal = (Sum of Dead Items Original Price) - TotalRefunded.
-                                // We can subtract a share of Reversal from each Item's debitAmount.
-
-                                // Simple calc for this view:
-                                // We will just use the "TotalRefunded" and try to attribute it to items.
-                                // But `transactions.html` splits by item.
-
-                                // REFINED STRATEGY: 
-                                // 1. Identify all debitable items for this order.
-                                // 2. Calculate their total 'face value' (original price).
-                                // 3. Calculate total actual refund given (TotalRefunded).
-                                // 4. Ratio = TotalRefunded / TotalFaceValue.
-                                // 5. Apply Ratio to each item.
-
-                                // This works perfectly for partial refunds too.
-                            }
-
-                            if (isPrepaid && itemStatus === 'Cancelled') showDebit = true;
-                            if (itemStatus === 'Returned') {
-                                if (isPrepaid || isItemPaidCOD) showDebit = true;
-                            }
-
-                            if (showDebit) {
-                                // REFINED CALCULATION
-                                if (isCouponRevokedGlobal) {
-                                    // Get all debit items to find proportion
-                                    const allDebitItems = order.items.filter(i =>
-                                        ['Cancelled', 'Returned'].includes(i.status) &&
-                                        (isPrepaid || (isCOD && ['Delivered', 'Returned', 'Completed'].includes(i.status))) // Approximation for paid-for items
-                                    );
-
-                                    // Total Face Value of all refunded things
-                                    const totalFaceValue = allDebitItems.reduce((sum, i) => sum + ((i.originalPrice || i.price) * i.quantity), 0);
-
-                                    // Actual Refund (calculated earlier)
-                                    // We use 'totalRefunded' var.
-
-                                    if (totalFaceValue > 0) {
-                                        const ratio = totalRefunded / totalFaceValue;
-                                        debitAmount = itemTotal * ratio;
-                                        debitLabel += ` (Adjusted)`;
-                                    }
-                                }
-
-                                if (allItemsDead && hasShipping && !shippingAddedToDebit) {
-                                    // Shipping is typically fully refunded if all items dead.
-                                    // Add it to the first item found.
-                                    debitAmount += historicShipping;
-                                    debitLabel += ` (+ Shipping Refund)`;
-                                    shippingAddedToDebit = true;
-                                }
-
-                                generatedTrx.push({
-                                    trxId: `REF-${order._id.slice(-6).toUpperCase()}${idSuffix}`,
-                                    type: 'Debit',
-                                    date: debitDate,
-                                    customer: order.shippingAddress.fullName,
-                                    itemDisplay: debitLabel,
-                                    method: 'Wallet',
-                                    amount: debitAmount,
-                                    status: 'Refunded'
-                                });
-                            }
-                        });
-                    });
-
-                    generatedTrx.sort((a, b) => b.date - a.date);
-                    allTransactions = generatedTrx;
-                    filteredTransactions = [...allTransactions];
-                    renderTable(filteredTransactions);
+                    if (json.pagination) renderPagination(json.pagination);
+                } else {
+                    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;">${json.message || 'Failed to load'}</td></tr>`;
                 }
-            } catch (err) { console.error("Failed to load transactions", err); }
+            } catch (err) {
+                console.error("Failed to load transactions", err);
+                tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;">Connection Error</td></tr>`;
+            }
+        }
+
+        // --- NEW: PAGINATION RENDERER (NUMBERED) ---
+        function renderPagination(pagination) {
+            const existingNav = document.querySelector('.pagination-nav');
+            if (existingNav) existingNav.remove();
+
+            if (!pagination || pagination.totalDocs === 0) return;
+
+            const tableBox = document.querySelector('.table-box');
+
+            // Calculate range
+            const start = (pagination.currentPage - 1) * pagination.limit + 1;
+            const end = Math.min(pagination.currentPage * pagination.limit, pagination.totalDocs);
+
+            const nav = document.createElement('div');
+            nav.className = 'pagination-nav';
+            nav.style.cssText = 'display: flex; justify-content: space-between; align-items: center; margin-top: 20px; padding-top: 20px; border-top: 1px solid #eee; flex-wrap: wrap; gap: 10px;';
+
+            // 1. Info Text
+            const info = document.createElement('div');
+            info.style.cssText = 'color: var(--grey); font-size: 13px; font-weight: 500;';
+            info.innerText = `Showing ${start}-${end} from ${pagination.totalDocs}`;
+
+            // 2. Page Buttons Container
+            const btnContainer = document.createElement('div');
+            btnContainer.style.cssText = 'display: flex; gap: 5px;';
+
+            // Helper to create button
+            const createBtn = (label, page, isActive = false, isDisabled = false) => {
+                const btn = document.createElement('button');
+                btn.innerText = label;
+                btn.style.cssText = `
+                    min-width: 32px; height: 32px; padding: 0 6px; border-radius: 6px; border: 1px solid #ddd; 
+                    background: ${isActive ? 'var(--primary)' : 'white'}; 
+                    color: ${isActive ? 'white' : (isDisabled ? '#ccc' : 'var(--dark)')}; 
+                    cursor: ${isDisabled || isActive ? 'default' : 'pointer'}; 
+                    font-size: 13px; display: flex; align-items: center; justify-content: center;
+                    transition: all 0.2s;
+                `;
+                if (!isDisabled && !isActive) {
+                    btn.onclick = () => loadTransactions(page);
+                    btn.onmouseover = () => { if (!isActive) btn.style.borderColor = 'var(--primary)'; };
+                    btn.onmouseout = () => { if (!isActive) btn.style.borderColor = '#ddd'; };
+                }
+                return btn;
+            };
+
+            // Previous
+            btnContainer.appendChild(createBtn('<', pagination.currentPage - 1, false, pagination.currentPage === 1));
+
+            // Valid Page Numbers logic
+            const totalPages = pagination.totalPages;
+            let pages = [];
+
+            if (totalPages <= 7) {
+                for (let i = 1; i <= totalPages; i++) pages.push(i);
+            } else {
+                if (pagination.currentPage <= 4) {
+                    pages = [1, 2, 3, 4, 5, '...', totalPages];
+                } else if (pagination.currentPage >= totalPages - 3) {
+                    pages = [1, '...', totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
+                } else {
+                    pages = [1, '...', pagination.currentPage - 1, pagination.currentPage, pagination.currentPage + 1, '...', totalPages];
+                }
+            }
+
+            pages.forEach(p => {
+                if (p === '...') {
+                    const span = document.createElement('span');
+                    span.innerText = '...';
+                    span.style.cssText = 'padding: 0 4px; color: #888; display: flex; align-items: center;';
+                    btnContainer.appendChild(span);
+                } else {
+                    btnContainer.appendChild(createBtn(p, p, p === pagination.currentPage));
+                }
+            });
+
+            // Next
+            btnContainer.appendChild(createBtn('>', pagination.currentPage + 1, false, pagination.currentPage === totalPages));
+
+            nav.appendChild(info);
+            nav.appendChild(btnContainer);
+            tableBox.appendChild(nav);
         }
 
         // --- 5. RENDER TABLE ---
@@ -898,8 +808,8 @@
             }
 
             data.forEach(trx => {
-                const dateStr = trx.date.toLocaleDateString();
-                const timeStr = trx.date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                const dateStr = trx.date ? new Date(trx.date).toLocaleDateString() : 'N/A';
+                const timeStr = trx.date ? new Date(trx.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
                 const amountClass = trx.type === 'Credit' ? 'amount-credit' : 'amount-debit';
                 const typeClass = trx.type === 'Credit' ? 'type-credit' : 'type-debit';
 
@@ -938,6 +848,9 @@
         }
 
         function applyFilters() {
+            // NOTE: With server-side pagination, this filters ONLY the current page's 20 items.
+            // For full search, value should be sent to backend. Keeping simple for now as requested.
+
             const dateVal = document.getElementById('dateFilter').value;
             const typeVal = document.getElementById('typeFilter').value;
             const searchVal = document.getElementById('searchInput').value.toLowerCase();
@@ -949,17 +862,18 @@
             else if (dateVal === 'month') limitDate = new Date(now.setMonth(now.getMonth() - 1));
             else if (dateVal === 'year') limitDate = new Date(now.setFullYear(now.getFullYear() - 1));
 
-            filteredTransactions = allTransactions.filter(trx => {
-                const dateMatch = (dateVal === 'all' || trx.date >= limitDate);
+            const filtered = allTransactions.filter(trx => {
+                const trxDate = new Date(trx.date);
+                const dateMatch = (dateVal === 'all' || trxDate >= limitDate);
                 const typeMatch = (typeVal === 'all' || trx.type === typeVal);
                 const searchMatch = (
-                    trx.trxId.toLowerCase().includes(searchVal) ||
-                    trx.customer.toLowerCase().includes(searchVal) ||
+                    (trx.trxId && trx.trxId.toLowerCase().includes(searchVal)) ||
+                    (trx.customer && trx.customer.toLowerCase().includes(searchVal)) ||
                     (trx.itemDisplay && trx.itemDisplay.toLowerCase().includes(searchVal))
                 );
                 return dateMatch && typeMatch && searchMatch;
             });
-            renderTable(filteredTransactions);
+            renderTable(filtered);
         }
 
         // --- 8. EXPORT CSV ---
@@ -1009,13 +923,17 @@
             let color = trx.type === 'Credit' ? '#00B69B' : '#EF3826';
             let sign = trx.type === 'Credit' ? '+' : '-';
 
+            // Safe date handling
+            const d = new Date(trx.date);
+            const dateStr = !isNaN(d) ? d.toLocaleString() : 'N/A';
+
             content.innerHTML = `
                 <div class="receipt-header">
                     <span class="receipt-amount" style="color:${color}">${sign} ₹${trx.amount.toFixed(2)}</span>
                     <span class="receipt-status">${trx.status}</span>
                 </div>
                 <div class="detail-row"><span class="detail-label">Transaction ID</span><span class="detail-val">${trx.trxId}</span></div>
-                <div class="detail-row"><span class="detail-label">Date</span><span class="detail-val">${trx.date.toLocaleString()}</span></div>
+                <div class="detail-row"><span class="detail-label">Date</span><span class="detail-val">${dateStr}</span></div>
                 <div class="detail-row"><span class="detail-label">Customer</span><span class="detail-val">${trx.customer}</span></div>
                 <div class="detail-row"><span class="detail-label">Item / Details</span><span class="detail-val">${trx.itemDisplay}</span></div>
                 <div class="detail-row"><span class="detail-label">Payment Method</span><span class="detail-val">${trx.method}</span></div>
@@ -1064,6 +982,8 @@
                 const trx = currentTrxData;
                 let startY = 45;
                 const lineHeight = 10;
+                const d = new Date(trx.date);
+                const dateStr = !isNaN(d) ? d.toLocaleString() : 'N/A';
 
                 doc.setFont("helvetica", "normal");
                 doc.setFontSize(12);
@@ -1077,7 +997,7 @@
                 };
 
                 addRow("Transaction ID:", trx.trxId);
-                addRow("Date:", trx.date.toLocaleString());
+                addRow("Date:", dateStr);
                 addRow("Customer Name:", trx.customer);
                 addRow("Payment Method:", trx.method);
                 addRow("Transaction Type:", trx.type);
