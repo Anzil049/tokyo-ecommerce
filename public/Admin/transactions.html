@@ -700,7 +700,7 @@
                         // 1. RECONSTRUCT SHIPPING COST
                         let historicShipping = order.shippingCost;
                         if (order.totalAmount === 0 && historicShipping === 0) {
-                            const rawSubtotal = order.items.reduce((sum, i) => sum + (i.price * i.quantity), 0);
+                            const rawSubtotal = order.items.reduce((sum, i) => sum + ((i.originalPrice || i.price) * i.quantity), 0);
                             if (rawSubtotal < 600) {
                                 const isFreeShipCoupon = (order.couponCode && order.discountAmount === 0);
                                 if (!isFreeShipCoupon) historicShipping = 50;
@@ -713,8 +713,44 @@
                         let shippingAddedToCredit = false;
                         let shippingAddedToDebit = false;
 
+                        // --- COUPON STATUS CHECK (Per Order) ---
+                        // We need to know if coupon is revoked to adjust refund amounts.
+                        // Logic mirrors backend:
+                        let isCouponRevokedGlobal = false;
+                        let totalRefunded = 0;
+                        if (order.couponCode) {
+                            // Can't check minQuantity directly as we don't have coupon rules here.
+                            // Heuristic: If Total Refunded < Sum of Dead Items (Original Price), then revoked.
+                            // Better: Calculate active items and infer based on typical rules? 
+                            // SAFEST: Re-implement the simplified check from account.html
+
+                            const originalSubtotal = order.items.reduce((acc, i) => acc + ((i.originalPrice || i.price) * i.quantity), 0);
+                            let standardShip = (originalSubtotal > 600) ? 0 : 50;
+                            if (order.couponCode && order.discountAmount === 0 && originalSubtotal < 600) standardShip = 0;
+
+                            let expectedTotal = (originalSubtotal - (order.discountAmount || 0));
+                            if (standardShip > 0) expectedTotal += standardShip;
+
+                            totalRefunded = expectedTotal - order.totalAmount;
+                            totalRefunded = Math.round(totalRefunded * 100) / 100;
+                            if (totalRefunded < 0) totalRefunded = 0;
+
+                            let deadItemsValue = 0;
+                            order.items.forEach(i => {
+                                if (['Cancelled', 'Returned', 'Return Rejected'].includes(i.status)) {
+                                    deadItemsValue += ((i.originalPrice || i.price) * i.quantity);
+                                }
+                            });
+
+                            if (totalRefunded > 0 && deadItemsValue > 0 && totalRefunded < deadItemsValue) {
+                                isCouponRevokedGlobal = true;
+                            }
+                        }
+
+
                         order.items.forEach((item, index) => {
-                            const itemTotal = item.price * item.quantity;
+                            const itemPrice = (item.originalPrice || item.price);
+                            const itemTotal = itemPrice * item.quantity;
                             const itemStatus = item.status || 'Pending';
                             const idSuffix = `-${(index + 1).toString().padStart(2, '0')}`;
 
@@ -753,21 +789,82 @@
                             // B. DEBIT LOGIC
                             let showDebit = false;
                             let debitDate = new Date(order.updatedAt);
-                            let debitAmount = itemTotal;
+
+                            // Calculate Correct Debit Amount
+                            let debitAmount = itemTotal; // Default to full price
                             let debitLabel = `${item.name} (x${item.quantity})`;
+
+                            if (isCouponRevokedGlobal) {
+                                // If revoked, we can't easily attribute the exact reversal per item in this view 
+                                // without complex re-simulation.
+                                // simpler: If this item is dead, its "Refund Value" is somewhat ambiguous in a batch view.
+                                // BUT, we know the TotalRefunded. 
+                                // Best approximation for row-by-row: 
+                                // If multiple items refunded, how to split the "reversal"?
+                                // Pro-rate? Or just show one "Adjustment" row? 
+
+                                // Alternative: Since we don't have per-item refund logs from backend in this API,
+                                // we display the 'Standard' amount but append a warning or try to adjust if it's the only one.
+
+                                // LET'S FOLLOW BACKEND LOGIC:
+                                // Refund = Standard - Reversal.
+                                // Reversal = DeadItemsValue - TotalRefunded.
+                                // We can deduct the *entire* reversal from the *first* refunded item found? Or distribute?
+                                // Distributing is safer visually.
+
+                                // Actually, let's look at the heuristic again.
+                                // Reversal = (Sum of Dead Items Original Price) - TotalRefunded.
+                                // We can subtract a share of Reversal from each Item's debitAmount.
+
+                                // Simple calc for this view:
+                                // We will just use the "TotalRefunded" and try to attribute it to items.
+                                // But `transactions.html` splits by item.
+
+                                // REFINED STRATEGY: 
+                                // 1. Identify all debitable items for this order.
+                                // 2. Calculate their total 'face value' (original price).
+                                // 3. Calculate total actual refund given (TotalRefunded).
+                                // 4. Ratio = TotalRefunded / TotalFaceValue.
+                                // 5. Apply Ratio to each item.
+
+                                // This works perfectly for partial refunds too.
+                            }
 
                             if (isPrepaid && itemStatus === 'Cancelled') showDebit = true;
                             if (itemStatus === 'Returned') {
                                 if (isPrepaid || isItemPaidCOD) showDebit = true;
                             }
 
-                            if (showDebit && allItemsDead && hasShipping && !shippingAddedToDebit) {
-                                debitAmount += historicShipping;
-                                debitLabel += ` (+ Shipping Refund)`;
-                                shippingAddedToDebit = true;
-                            }
-
                             if (showDebit) {
+                                // REFINED CALCULATION
+                                if (isCouponRevokedGlobal) {
+                                    // Get all debit items to find proportion
+                                    const allDebitItems = order.items.filter(i =>
+                                        ['Cancelled', 'Returned'].includes(i.status) &&
+                                        (isPrepaid || (isCOD && ['Delivered', 'Returned', 'Completed'].includes(i.status))) // Approximation for paid-for items
+                                    );
+
+                                    // Total Face Value of all refunded things
+                                    const totalFaceValue = allDebitItems.reduce((sum, i) => sum + ((i.originalPrice || i.price) * i.quantity), 0);
+
+                                    // Actual Refund (calculated earlier)
+                                    // We use 'totalRefunded' var.
+
+                                    if (totalFaceValue > 0) {
+                                        const ratio = totalRefunded / totalFaceValue;
+                                        debitAmount = itemTotal * ratio;
+                                        debitLabel += ` (Adjusted)`;
+                                    }
+                                }
+
+                                if (allItemsDead && hasShipping && !shippingAddedToDebit) {
+                                    // Shipping is typically fully refunded if all items dead.
+                                    // Add it to the first item found.
+                                    debitAmount += historicShipping;
+                                    debitLabel += ` (+ Shipping Refund)`;
+                                    shippingAddedToDebit = true;
+                                }
+
                                 generatedTrx.push({
                                     trxId: `REF-${order._id.slice(-6).toUpperCase()}${idSuffix}`,
                                     type: 'Debit',

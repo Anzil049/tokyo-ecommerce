@@ -839,7 +839,7 @@
                         </div>`;
                     }
 
-                    let priceDisplay = `₹${item.price}`;
+                    let priceDisplay = `₹${item.originalPrice || item.price}`;
 
                     itemsHtml += `
                     <div style="display:flex; align-items:center; justify-content:space-between; gap:15px; margin-bottom:15px; border-bottom:1px solid #f9f9f9; padding-bottom:10px;">
@@ -880,13 +880,22 @@
             }
 
             let couponHtml = '';
+            // CHECK IF COUPON MIGHT BE REVOKED
+            // Simple heuristic: If (Subtotal - Discount + Shipping) is significantly LESS than TotalPaid + RefundedAmount?
+            // Actually simpler: We just show what happened.
+
             if (order.couponCode) {
                 let discountText = '';
                 if (order.discountAmount > 0) {
                     discountText = `- ₹${order.discountAmount}`;
                 } else {
-                    discountText = '<span style="color:#00B69B">Free Shipping Applied</span>';
+                    discountText = '<span style="color:#00B69B">Free Shipping</span>';
                 }
+
+                // Check for potential revocation
+                // We don't have a boolean, but we can add a warning if TotalAmount implies full price paid.
+                // Let's just calculate "Expected Total with Coupon" vs "Total Amount + Refunds".
+
                 couponHtml = `
                 <div style="display:flex; justify-content:space-between; font-size:13px; color:#00B69B; font-weight:600; margin-bottom:5px;">
                     <span>Coupon (${order.couponCode}):</span>
@@ -900,6 +909,35 @@
             let totalRefunded = expectedTotal - order.totalAmount;
             totalRefunded = Math.round(totalRefunded * 100) / 100;
             if (totalRefunded < 0) totalRefunded = 0;
+
+            // WARNING HEURISTIC & CALCULATION:
+            let deadItemsValue = 0;
+            order.items.forEach(i => {
+                if (['Cancelled', 'Returned', 'Return Rejected'].includes(i.status)) {
+                    // We need the original non-discounted price.
+                    // If originalPrice exists, use it. Else fallback to price (which might be discounted in legacy orders).
+                    let val = (i.originalPrice || i.price);
+                    deadItemsValue += (val * i.quantity);
+                }
+            });
+
+            // Calculate "Coupon Revocation Adjustment"
+            // If TotalRefunded < DeadItemsValue, the difference is the Coupon Reversal.
+            let couponReversal = 0;
+            if (totalRefunded > 0 && deadItemsValue > 0) {
+                if (totalRefunded < deadItemsValue) {
+                    couponReversal = deadItemsValue - totalRefunded;
+                }
+            }
+            couponReversal = Math.round(couponReversal * 100) / 100;
+
+            let warningHtml = '';
+            if (couponReversal > 1) { // Threshold > 1 to ignore rounding noise
+                warningHtml = `
+                <div style="font-size:11px; color:#EF3826; background:#FEECEB; padding:5px; margin-bottom:8px; border-radius:4px;">
+                    <i class='bx bxs-error-circle'></i> <strong>Coupon Limit Breached:</strong> Discount of ₹${couponReversal} reclaimed from refund.
+                </div>`;
+            }
 
             let returnReasonHtml = '';
             const returnedItems = order.items.filter(i => ['Return Requested', 'Returned', 'Return Rejected'].includes(i.status));
@@ -967,7 +1005,7 @@
                 <div style="background:#fcfcfc; padding:15px; border-radius:8px; border:1px solid #f0f0f0;">
                     
                     <div style="display:flex; justify-content:space-between; font-size:13px; color:#777; margin-bottom:5px;">
-                        <span>Subtotal:</span>
+                        <span>Subtotal (Original):</span>
                         <span>₹${originalSubtotal.toFixed(2)}</span>
                     </div>
                     
@@ -978,11 +1016,21 @@
                         ${shippingHtml}
                     </div>
 
+                    <div style="border-top: 1px dashed #ddd; margin: 10px 0;"></div>
+
                     ${totalRefunded > 0 ? `
-                    <div style="display:flex; justify-content:space-between; font-size:13px; color:#EF3826; margin-top:5px;">
-                        <span>Refunded/Cancelled:</span>
-                        <span>- ₹${totalRefunded}</span>
+                    <div style="display:flex; justify-content:space-between; font-size:13px; color:#EF3826; margin-bottom:5px;">
+                         <span>Refund Issued:</span>
+                         <span>- ₹${totalRefunded}</span>
                     </div>` : ''}
+
+                    ${couponReversal > 0 ? `
+                    <div style="display:flex; justify-content:space-between; font-size:13px; color:#d63384; margin-bottom:5px;">
+                         <span>Coupon Reversal (Deducted):</span>
+                         <span>+ ₹${couponReversal}</span>
+                    </div>` : ''}
+                    
+                    ${warningHtml}
 
                     <div style="display:flex; justify-content:space-between; font-size:16px; font-weight:800; color:#333; margin-top:10px; border-top:1px dashed #ddd; padding-top:10px;">
                         <span>Net Payable:</span>
@@ -996,7 +1044,7 @@
             document.body.classList.add('body-no-scroll');
         }
 
-        
+
         function closeModal() {
             document.getElementById('orderModal').style.display = 'none';
             // UNLOCK BODY SCROLL

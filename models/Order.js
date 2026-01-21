@@ -9,6 +9,7 @@ const orderSchema = new mongoose.Schema({
         name: { type: String, required: true },
         quantity: { type: Number, required: true },
         price: { type: Number, required: true },
+        originalPrice: { type: Number, required: true }, // [NEW] Track true price for refund calcs
         image: { type: String },
         size: { type: String },
 

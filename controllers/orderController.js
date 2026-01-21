@@ -130,6 +130,7 @@ exports.placeOrder = async (req, res) => {
                 name: product.name,
                 quantity: item.quantity,
                 price: parseFloat(finalPrice.toFixed(2)), // Ensure 2 decimal places
+                originalPrice: item.price, // [NEW] Save original price for refund calcs
                 image: product.images?.[0] || null,
                 size: item.size,
                 status: 'Pending'
@@ -336,12 +337,71 @@ exports.cancelOrderItem = async (req, res) => {
         if (item.size) await Product.updateOne({ _id: item.product, "sizes.size": item.size }, { $inc: { "sizes.$.stock": item.quantity, stockQuantity: item.quantity } });
         else await Product.findByIdAndUpdate(item.product, { $inc: { stockQuantity: item.quantity } });
 
-        // Refund
-        let refundAmount = item.price * item.quantity;
-        const otherValid = order.items.filter(i => i._id.toString() !== itemId && !['Cancelled', 'Returned'].includes(i.status));
-        if (otherValid.length === 0 && order.shippingCost > 0) refundAmount += order.shippingCost;
+        // --- NEW REFUND LOGIC START ---
 
-        if (order.paymentStatus === 'Paid') await processRefund(order.user, refundAmount, `Refund Item: ${item.name}`);
+        let refundAmount = 0;
+
+        // 1. Calculate Standard Refund (Amount USER PAID for this item)
+        // If no coupon, item.price == item.originalPrice.
+        const standardRefund = item.price * item.quantity;
+
+        // 2. Check Coupon Revalidation
+        let couponRevoked = false;
+
+        if (order.couponCode) {
+            const coupon = await Coupon.findOne({ code: order.couponCode });
+            if (coupon && coupon.minQuantity > 0) {
+                // Count remaining active items (excluding the one being cancelled)
+                const activeItems = order.items.filter(i =>
+                    i._id.toString() !== itemId &&
+                    !['Cancelled', 'Returned', 'Return Rejected'].includes(i.status)
+                );
+
+                // If remaining items fall below required min items -> REVOKE COUPON
+                if (activeItems.length < coupon.minQuantity) {
+                    couponRevoked = true;
+
+                    // Logic: User must pay FULL ORIGINAL PRICE for kept items.
+                    // Refund = TotalPaid - (OriginalCostOfKeptItems + Shipping)
+
+                    let originalCostOfKeptItems = 0;
+                    activeItems.forEach(i => {
+                        // Fallback to price if originalPrice missing (legacy orders)
+                        originalCostOfKeptItems += ((i.originalPrice || i.price) * i.quantity);
+                    });
+
+                    // We must ensure we don't refund more than what remains valid
+                    const maxRefundable = order.totalAmount - (originalCostOfKeptItems + order.shippingCost);
+
+                    // Detailed calculation for description
+                    const deduction = standardRefund - Math.max(0, maxRefundable);
+                    refundAmount = Math.max(0, maxRefundable);
+                }
+            }
+        }
+
+        // 3. Fallback to Standard Refund if Coupon validity not broken
+        if (!couponRevoked) {
+            refundAmount = standardRefund;
+            // Edge Case: If this is the last item, include shipping (if policy allows)
+            const otherValid = order.items.filter(i => i._id.toString() !== itemId && !['Cancelled', 'Returned', 'Return Rejected'].includes(i.status));
+
+            if (otherValid.length === 0 && order.shippingCost > 0) {
+                refundAmount += order.shippingCost;
+            }
+        }
+
+        // --- NEW REFUND LOGIC END ---
+
+        let description = `Refund Item: ${item.name}`;
+        if (couponRevoked) {
+            const lostVal = standardRefund - refundAmount;
+            description += ` (Price: ₹${standardRefund} - Coupon Reversal: ₹${lostVal.toFixed(2)})`;
+        } else {
+            description += ` (Qty: ${item.quantity})`;
+        }
+
+        if (order.paymentStatus === 'Paid') await processRefund(order.user, refundAmount, description);
 
         item.status = 'Cancelled';
         order.totalAmount = Math.max(0, order.totalAmount - refundAmount);
@@ -359,6 +419,7 @@ exports.cancelOrderItem = async (req, res) => {
         res.json({ success: true, message: "Item cancelled", newTotal: order.totalAmount });
 
     } catch (err) {
+        console.error(err);
         res.status(500).json({ success: false, message: "Error" });
     }
 };
@@ -384,22 +445,67 @@ exports.updateOrderItemStatus = async (req, res) => {
         // 2. Handle Financials (Returns/Cancellations)
         if (['Cancelled', 'Returned'].includes(status) && !['Cancelled', 'Returned'].includes(item.status)) {
             // Restock
+            // Restock
             if (item.size) await Product.updateOne({ _id: item.product, "sizes.size": item.size }, { $inc: { "sizes.$.stock": item.quantity, stockQuantity: item.quantity } });
             else await Product.findByIdAndUpdate(item.product, { $inc: { stockQuantity: item.quantity } });
 
-            // Refund
-            let refundValue = item.price * item.quantity;
-            const otherValid = order.items.filter(i => i._id.toString() !== itemId && !['Cancelled', 'Returned'].includes(i.status));
-            if (otherValid.length === 0 && order.shippingCost > 0) refundValue += order.shippingCost;
+            // --- NEW REFUND LOGIC START ---
+            let refundValue = 0;
+            const standardRefund = item.price * item.quantity;
+            let couponRevoked = false;
+
+            if (order.couponCode) {
+                const coupon = await Coupon.findOne({ code: order.couponCode });
+                if (coupon && coupon.minQuantity > 0) {
+                    const activeItems = order.items.filter(i =>
+                        i._id.toString() !== itemId &&
+                        !['Cancelled', 'Returned', 'Return Rejected'].includes(i.status)
+                    );
+
+                    if (activeItems.length < coupon.minQuantity) {
+                        couponRevoked = true;
+                        let originalCostOfKeptItems = 0;
+                        activeItems.forEach(i => {
+                            // Fallback to price if originalPrice missing (legacy orders)
+                            originalCostOfKeptItems += ((i.originalPrice || i.price) * i.quantity);
+                        });
+
+                        const maxRefundable = order.totalAmount - (originalCostOfKeptItems + order.shippingCost);
+                        refundValue = Math.max(0, maxRefundable);
+                    }
+                }
+            }
+
+            if (!couponRevoked) {
+                refundValue = standardRefund;
+                const otherValid = order.items.filter(i =>
+                    i._id.toString() !== itemId &&
+                    !['Cancelled', 'Returned', 'Return Rejected'].includes(i.status)
+                );
+                if (otherValid.length === 0 && order.shippingCost > 0) refundValue += order.shippingCost;
+            }
+            // --- NEW REFUND LOGIC END ---
 
             const isPrePaid = order.paymentStatus === 'Paid';
             const isCodDelivered = order.paymentMethod === 'COD' && order.orderStatus === 'Completed';
 
             if (isPrePaid || (status === 'Returned' && (isCodDelivered || order.paymentStatus === 'Paid'))) {
-                await processRefund(order.user, refundValue, `Refund (${status}): ${item.name}`);
+                let description = `Refund (${status}): ${item.name}`;
+                if (couponRevoked) {
+                    const lostVal = standardRefund - refundValue;
+                    description += ` (Price: ₹${standardRefund} - Coupon Reversal: ₹${lostVal.toFixed(2)})`;
+                }
+                await processRefund(order.user, refundValue, description);
             }
             order.totalAmount = Math.max(0, order.totalAmount - refundValue);
-            if (otherValid.length === 0) order.shippingCost = 0;
+
+            // Check if all items are gone, ensuring shipping cost is removed
+            const activeItemsRemaining = order.items.filter(i =>
+                i._id.toString() !== itemId &&
+                !['Cancelled', 'Returned', 'Return Rejected'].includes(i.status)
+            );
+
+            if (activeItemsRemaining.length === 0) order.shippingCost = 0;
         }
 
         item.status = status;

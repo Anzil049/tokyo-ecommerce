@@ -372,14 +372,22 @@
             <div class="header-actions">
                 <div class="download-wrapper">
                     <select class="download-select" id="statsFilter" onchange="loadDashboard(this.value)">
-                        <option value="all_time" selected>All Time</option>
+                        <option value="all_time">All Time</option>
                         <option value="today">Today</option>
-                        <option value="last7days">Last 7 Days</option>
+                        <option value="last7days" selected>Last 7 Days</option>
                         <option value="last1month">Last 1 Month</option>
                         <option value="last6months">Last 6 Months</option>
                         <option value="last1year">Last 1 Year</option>
+                        <option value="specific_date">Specific Date</option>
+                        <option value="custom_range">Custom Range</option>
                     </select>
                     <i class='bx bx-chevron-down download-arrow'></i>
+                    <input type="date" id="statsDate"
+                        style="display:none; margin-left:10px; padding:7px; border:1px solid #e0e0e0; border-radius:8px; outline:none;"
+                        onchange="loadDashboard('specific_date')">
+                    <input type="date" id="statsDateEnd"
+                        style="display:none; margin-left:10px; padding:7px; border:1px solid #e0e0e0; border-radius:8px; outline:none;"
+                        onchange="loadDashboard('custom_range')">
                 </div>
 
                 <button onclick="downloadReport()"
@@ -539,13 +547,64 @@
             }
         });
 
+        const statsFilter = document.getElementById('statsFilter');
+        const statsDate = document.getElementById('statsDate');
+        const statsDateEnd = document.getElementById('statsDateEnd');
+
+        // Set Max Date to Today initially
+        const todayStr = new Date().toISOString().split('T')[0];
+        statsDate.max = todayStr;
+        statsDateEnd.max = todayStr;
+
+        statsFilter.addEventListener('change', () => {
+            // Reset values on mode switch for clarity
+            if (statsFilter.value !== 'custom_range' && statsFilter.value !== 'specific_date') {
+                statsDate.value = '';
+                statsDateEnd.value = '';
+            }
+            loadDashboard(statsFilter.value);
+        });
+
+        // Listen to date changes
+        statsDate.addEventListener('change', () => {
+            // Constraint: End Date must be after Start Date
+            if (statsDate.value) {
+                statsDateEnd.min = statsDate.value;
+
+                // If End Date is selected and is BEFORE the new Start Date, clear it
+                if (statsDateEnd.value && statsDateEnd.value < statsDate.value) {
+                    statsDateEnd.value = '';
+                    // We don't trigger loadDashboard here because we need a valid End Date first
+                    // But if 'custom_range' requires both, clearing one means we wait.
+                }
+            }
+
+            if (statsFilter.value === 'specific_date') loadDashboard('specific_date');
+
+            // Only load custom range if both are valid (which we might have just cleared)
+            if (statsFilter.value === 'custom_range' && statsDate.value && statsDateEnd.value) {
+                loadDashboard('custom_range');
+            }
+        });
+
+        statsDateEnd.addEventListener('change', () => {
+            if (statsFilter.value === 'custom_range') loadDashboard('custom_range');
+        });
+
+        // Safety: Ensure constraints are fresh when user tries to pick end date
+        statsDateEnd.addEventListener('click', () => {
+            if (statsDate.value) statsDateEnd.min = statsDate.value;
+            const today = new Date().toISOString().split('T')[0];
+            statsDateEnd.max = today;
+        });
+
         // Current Data Holder
         let currentChartData = { labels: [], success: [], canceled: [] };
 
         // --- 5. LOAD DATA ---
         document.addEventListener('DOMContentLoaded', async () => {
             await checkAuth();
-            loadDashboard('all_time');
+            loadDashboard('last7days');
         });
 
         async function checkAuth() {
@@ -558,22 +617,56 @@
 
         async function loadDashboard(period) {
             try {
-                const periodText = document.querySelector('#statsFilter option:checked').text;
+                const selectBoxValue = document.getElementById('statsFilter').value;
+                const statsDate = document.getElementById('statsDate');
+                const statsDateEnd = document.getElementById('statsDateEnd');
+
+                let actualPeriod = period;
+
+                // UI VISIBILITY LOGIC BASED ON SELECT BOX, NOT PERIOD ARGUMENT
+                // This ensures inputs stay visible even if 'period' arg is different
+                if (selectBoxValue === 'specific_date') {
+                    statsDate.style.display = 'inline-block';
+                    statsDateEnd.style.display = 'none';
+
+                    if (!statsDate.value) return;
+                    actualPeriod = statsDate.value;
+                } else if (selectBoxValue === 'custom_range') {
+                    statsDate.style.display = 'inline-block';
+                    statsDateEnd.style.display = 'inline-block';
+
+                    if (!statsDate.value || !statsDateEnd.value) return;
+                    actualPeriod = `${statsDate.value}_${statsDateEnd.value}`; // SEPARATOR CHANGED
+                } else {
+                    statsDate.style.display = 'none';
+                    statsDateEnd.style.display = 'none';
+                }
+
+                let periodText;
+                if (selectBoxValue === 'specific_date') {
+                    periodText = `Date: ${statsDate.value}`;
+                } else if (selectBoxValue === 'custom_range') {
+                    periodText = `Range: ${statsDate.value} to ${statsDateEnd.value}`;
+                } else {
+                    periodText = statsFilter.options[statsFilter.selectedIndex].text;
+                }
                 document.querySelectorAll('#periodLabel1, #periodLabel2, #periodLabel3').forEach(el => el.innerText = `(${periodText})`);
 
-                const res = await fetch(`/api/admin/dashboard-stats?period=${period}`, { headers: { 'Cache-Control': 'no-cache' } });
+                const res = await fetch(`/api/admin/dashboard-stats?period=${actualPeriod}`, { headers: { 'Cache-Control': 'no-cache' } });
+
+                const json = await res.json();
 
                 if (res.status === 404) {
                     alert("Error: API Route not found. Please check app.js mounting.");
                     return;
                 }
 
-                const json = await res.json();
+
 
                 if (json.success) {
                     document.getElementById('totalSales').innerText = '₹' + json.stats.sales.toLocaleString('en-IN');
-                    document.getElementById('totalItems').innerText = json.stats.items.toLocaleString();
-                    document.getElementById('totalCustomers').innerText = json.stats.customers.toLocaleString();
+                    document.getElementById('totalItems').innerText = json.stats.items.toLocaleString(); // Kept original ID
+                    document.getElementById('totalCustomers').innerText = json.stats.customers.toLocaleString(); // Kept original ID
 
                     currentChartData = json.chart;
 
@@ -589,7 +682,18 @@
 
         // --- 6. DOWNLOAD REPORT ---
         async function downloadReport() {
-            const period = document.getElementById('statsFilter').value;
+            let period = document.getElementById('statsFilter').value;
+            if (period === 'specific_date') {
+                const dateVal = document.getElementById('statsDate').value;
+                if (!dateVal) { alert("Please select a date first."); return; }
+                period = dateVal;
+            } else if (period === 'custom_range') {
+                const sDate = document.getElementById('statsDate').value;
+                const eDate = document.getElementById('statsDateEnd').value;
+                if (!sDate || !eDate) { alert("Please select both start and end dates."); return; }
+                period = `${sDate}|${eDate}`;
+            }
+
             const btn = document.querySelector('button[onclick="downloadReport()"]');
             const originalText = btn.innerHTML;
             btn.innerHTML = `<i class='bx bx-loader-alt bx-spin'></i> Generating...`;

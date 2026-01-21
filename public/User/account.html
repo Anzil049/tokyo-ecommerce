@@ -1119,8 +1119,42 @@
         window.showOrderDetails = function (order) {
             let itemsHtml = '';
 
-            // Safe copy of order for the invoice function
+            // Safe copy for invoice
             const safeOrder = JSON.stringify(order).replace(/'/g, "&#39;").replace(/"/g, "&quot;");
+
+            // --- PRE-CALCULATE REFUNDS & COUPON STATUS ---
+            const originalSubtotal = order.subtotal;
+            let standardShipping = (order.subtotal > 600) ? 0 : 50;
+            const isFreeShippingCoupon = (order.couponCode && order.discountAmount === 0 && order.subtotal < 600);
+            if (isFreeShippingCoupon) standardShipping = 0;
+
+            let expectedTotal = (originalSubtotal - (order.discountAmount || 0));
+            if (standardShipping > 0) expectedTotal += standardShipping;
+
+            let totalRefunded = expectedTotal - order.totalAmount;
+            totalRefunded = Math.round(totalRefunded * 100) / 100;
+            if (totalRefunded < 0) totalRefunded = 0;
+
+            // CHECK REVOCATION FOR UI
+            let deadItemsValue = 0;
+            order.items.forEach(i => {
+                if (['Cancelled', 'Returned', 'Return Rejected'].includes(i.status)) {
+                    // Use originalPrice if available, else price
+                    let val = (i.originalPrice || i.price);
+                    deadItemsValue += (val * i.quantity);
+                }
+            });
+
+            // If TotalRefunded < DeadItemsValue, we have a reversal
+            let couponReversal = 0;
+            if (totalRefunded > 0 && deadItemsValue > 0) {
+                if (totalRefunded < deadItemsValue) {
+                    couponReversal = deadItemsValue - totalRefunded;
+                }
+            }
+            couponReversal = Math.round(couponReversal * 100) / 100;
+
+            const isCouponRevoked = (couponReversal > 1); // Threshold
 
             order.items.forEach(item => {
                 let statusClass = 'st-' + item.status.replace(/\s/g, '');
@@ -1200,7 +1234,7 @@
                         <h6 class="mb-1" style="font-size: 0.95rem;">${item.name}</h6>
                         <div class="d-flex justify-content-between align-items-center">
                             <small class="text-muted">Qty: ${item.quantity} | Size: ${item.size || 'N/A'}</small>
-                            <span class="fw-bold">₹${item.price}</span>
+                            <span class="fw-bold">₹${item.originalPrice || item.price}</span>
                         </div>
                         <div class="d-flex justify-content-between align-items-center mt-2">
                             <span class="status-badge ${statusClass}" style="font-size:0.7rem;">${item.status}</span>
@@ -1211,7 +1245,52 @@
                 </div>`;
             });
 
-            // Address & Payment HTML (Unchanged)
+            // --- GENERATE HTML SNIPPETS (Using pre-calculated values) ---
+
+            let shippingHtml = '';
+            if (standardShipping === 0) {
+                shippingHtml = '<span class="text-success fw-bold">Free</span>';
+            } else if (order.shippingCost === 0 && standardShipping > 0) {
+                shippingHtml = `<span class="text-danger fw-bold">Refunded <span class="text-muted fw-normal" style="font-size:0.8em">(₹${standardShipping})</span></span>`;
+            } else {
+                shippingHtml = `<span>₹${order.shippingCost}</span>`;
+            }
+
+            let couponHtml = '';
+            let couponRevoked = false; // Legacy var, safe to ignore or remove if unused
+
+            if (order.couponCode) {
+                let discountText = '';
+                if (order.discountAmount > 0) {
+                    discountText = `- ₹${order.discountAmount}`;
+                } else {
+                    discountText = '<span class="text-success">Free Shipping Applied</span>';
+                }
+
+                couponHtml = `
+                 <div class="d-flex justify-content-between align-items-center mb-1 text-success fw-bold small">
+                    <span>Coupon (${order.couponCode})</span>
+                    <span>${discountText}</span>
+                 </div>`;
+            }
+
+            let warningHtml = '';
+            if (isCouponRevoked) {
+                warningHtml = `
+                <div class="mt-2 text-danger small bg-light-danger p-2 border border-danger rounded" style="background:#fff5f5;">
+                    <i class="fas fa-exclamation-circle me-1"></i> 
+                    <strong>Coupon Limit Breached:</strong> Discount of ₹${couponReversal} reclaimed from refund.
+                </div>`;
+            }
+            if (couponReversal > 1) { // Threshold > 1 to ignore rounding noise
+                warningHtml = `
+                <div class="mt-2 text-danger small bg-light-danger p-2 border border-danger rounded" style="background:#fff5f5;">
+                    <i class="fas fa-exclamation-circle me-1"></i> 
+                    <strong>Coupon Limit Breached:</strong> Discount of ₹${couponReversal} reclaimed from refund.
+                </div>`;
+            }
+
+            // Address & Payment HTML 
             const addr = order.shippingAddress;
             const addressHtml = `
             <div class="bg-light p-3 rounded mb-3">
@@ -1223,23 +1302,53 @@
             </div>`;
 
             const paymentHtml = `
-             <div class="d-flex justify-content-between align-items-center bg-light p-3 rounded mb-3">
-                <div>
-                    <h6 class="fw-bold small text-uppercase mb-1 text-muted">Payment</h6>
-                    <span class="badge bg-dark">${order.paymentMethod}</span>
+             <div class="bg-light p-3 rounded mb-3">
+                <h6 class="fw-bold small text-uppercase mb-3 text-muted">Payment Summary</h6>
+                
+                <div class="d-flex justify-content-between align-items-center mb-1 small text-muted">
+                    <span>Subtotal (Original)</span>
+                    <span>₹${originalSubtotal.toFixed(2)}</span>
                 </div>
-                <div class="text-end">
-                    <h6 class="fw-bold small text-uppercase mb-1 text-muted">Total</h6>
-                    <span class="fw-bold text-primary">₹${order.totalAmount}</span>
+
+                ${couponHtml}
+
+                <div class="d-flex justify-content-between align-items-center mb-1 small text-muted">
+                    <span>Shipping</span>
+                    ${shippingHtml}
+                </div>
+                
+                <div style="border-top: 1px dashed #ddd; margin: 10px 0;"></div>
+
+                ${totalRefunded > 0 ? `
+                <div class="d-flex justify-content-between align-items-center mb-1 text-danger small">
+                    <span>Refund Issued</span>
+                    <span>- ₹${totalRefunded}</span>
+                </div>` : ''}
+
+                ${couponReversal > 0 ? `
+                <div class="d-flex justify-content-between align-items-center mb-1 small" style="color:#d63384;">
+                     <span>Coupon Reversal (Deducted)</span>
+                     <span>+ ₹${couponReversal}</span>
+                </div>` : ''}
+
+                ${warningHtml}
+
+                <div class="d-flex justify-content-between align-items-center mt-3 pt-2 border-top">
+                     <span class="fw-bold small text-uppercase">Net Payable</span>
+                     <span class="fw-bold text-primary fs-5">₹${order.totalAmount}</span>
+                </div>
+                
+                <div class="mt-2 text-end">
+                    <span class="badge bg-dark">${order.paymentMethod}</span>
                 </div>
             </div>`;
 
             Swal.fire({
                 title: `<strong>Order #${order._id.slice(-6).toUpperCase()}</strong>`,
                 html: `<div style="text-align: left; max-height: 60vh; overflow-y: auto;">
-                        ${addressHtml} ${paymentHtml}
-                        <h6 class="fw-bold small text-uppercase mb-3 text-muted">Items</h6>
+                        ${addressHtml} 
                         ${itemsHtml}
+                        ${paymentHtml}
                        </div>`,
                 width: '600px',
                 showCloseButton: true,
@@ -1249,6 +1358,7 @@
                 }
             });
         }
+
 
         // --- CANCEL SINGLE ITEM ---
         window.cancelUserItem = async function (orderId, itemId) {

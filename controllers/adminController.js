@@ -48,58 +48,94 @@ exports.getDashboardStats = async (req, res) => {
         let startDate = new Date();
         let endDate = new Date();
         let matchStage = {};
-        let groupFormat = "%Y-%m-%d"; 
-        let dateGeneratorType = 'daily'; 
+        let groupFormat = "%Y-%m-%d";
+        let dateGeneratorType = 'daily';
 
         // 1. Determine Date Range
         if (period && period !== 'all_time') {
-            startDate.setHours(0, 0, 0, 0);
-            
-            switch (period) {
-                case 'today':
-                    endDate.setHours(23, 59, 59, 999);
-                    groupFormat = "%H:00"; 
-                    dateGeneratorType = 'hourly';
-                    break;
-                case 'last1month':
-                    startDate.setDate(startDate.getDate() - 30);
-                    break;
-                case 'last6months':
-                    startDate.setMonth(startDate.getMonth() - 6);
-                    groupFormat = "%Y-%m"; 
-                    dateGeneratorType = 'monthly';
-                    break;
-                case 'last1year':
-                    startDate.setFullYear(startDate.getFullYear() - 1);
-                    groupFormat = "%Y-%m";
-                    dateGeneratorType = 'monthly';
-                    break;
-                default: 
-                    startDate.setDate(startDate.getDate() - 6); 
+            const cleanPeriod = period.trim();
+            const keywords = ['today', 'last7days', 'last1month', 'last6months', 'last1year'];
+
+            if (keywords.includes(cleanPeriod)) {
+                startDate.setHours(0, 0, 0, 0);
+                switch (cleanPeriod) {
+                    case 'today':
+                        endDate.setHours(23, 59, 59, 999);
+                        groupFormat = "%H:00";
+                        dateGeneratorType = 'hourly';
+                        break;
+                    case 'last1month':
+                        startDate.setDate(startDate.getDate() - 30);
+                        break;
+                    case 'last6months':
+                        startDate.setMonth(startDate.getMonth() - 6);
+                        groupFormat = "%Y-%m";
+                        dateGeneratorType = 'monthly';
+                        break;
+                    case 'last1year':
+                        startDate.setFullYear(startDate.getFullYear() - 1);
+                        groupFormat = "%Y-%m";
+                        dateGeneratorType = 'monthly';
+                        break;
+                    default:
+                        startDate.setDate(startDate.getDate() - 6);
+                }
+            } else if (cleanPeriod.includes('_')) {
+                // CUSTOM RANGE LOGIC (Start_End)
+                const parts = cleanPeriod.split('_');
+                if (parts.length === 2) {
+                    const [sY, sM, sD] = parts[0].split('-').map(Number);
+                    const [eY, eM, eD] = parts[1].split('-').map(Number);
+
+                    startDate = new Date(Date.UTC(sY, sM - 1, sD, 0, 0, 0, 0));
+                    endDate = new Date(Date.UTC(eY, eM - 1, eD, 23, 59, 59, 999));
+
+                    groupFormat = "%Y-%m-%d";
+                    dateGeneratorType = 'utc_daily';
+                } else {
+                    startDate.setDate(startDate.getDate() - 6);
+                }
+            } else {
+                // SPECIFIC DATE LOGIC
+                const parsedDate = new Date(cleanPeriod);
+                if (!isNaN(parsedDate.getTime())) {
+                    const parts = cleanPeriod.split('-');
+                    if (parts.length === 3) {
+                        const y = parseInt(parts[0]);
+                        const m = parseInt(parts[1]);
+                        const d = parseInt(parts[2]);
+                        startDate = new Date(Date.UTC(y, m - 1, d, 0, 0, 0, 0));
+                        endDate = new Date(Date.UTC(y, m - 1, d, 23, 59, 59, 999));
+
+                        groupFormat = "%H:00";
+                        dateGeneratorType = 'hourly';
+                    } else {
+                        startDate.setDate(startDate.getDate() - 6);
+                    }
+                } else {
+                    startDate.setDate(startDate.getDate() - 6);
+                }
             }
             matchStage = { createdAt: { $gte: startDate, $lte: endDate } };
         }
 
-        // 2. CARD STATS (Aggregated)
-        // We aggregate to get both Sales and Total Items in one query
+        // 2. CARD STATS (Aggregated) (Unchanged)
         const statsAgg = await Order.aggregate([
             { $match: { ...matchStage, orderStatus: { $ne: 'Cancelled' } } },
-            { 
-                $group: { 
-                    _id: null, 
-                    totalSales: { $sum: "$totalAmount" },
-                    // Sum the quantity of all items within the items array
-                    totalItems: { $sum: { $sum: "$items.quantity" } } 
-                } 
+            {
+                $group: {
+                    _id: null,
+                    totalSales: { $sum: { $add: ["$totalAmount", { $ifNull: ["$discountAmount", 0] }] } },
+                    totalItems: { $sum: { $sum: "$items.quantity" } }
+                }
             }
         ]);
 
         const totalSales = statsAgg.length > 0 ? statsAgg[0].totalSales : 0;
-        const totalItems = statsAgg.length > 0 ? statsAgg[0].totalItems : 0; // Item-wise count
-        
+        const totalItems = statsAgg.length > 0 ? statsAgg[0].totalItems : 0;
         const newCustomers = await User.countDocuments({ role: 'user', ...matchStage });
 
-        // 3. CHART DATA 
+        // 3. CHART DATA
         const dbData = await Order.aggregate([
             { $match: matchStage },
             { $unwind: "$items" },
@@ -121,9 +157,9 @@ exports.getDashboardStats = async (req, res) => {
         const successData = [];
         const canceledData = [];
         let currentIterDate = new Date(startDate);
-        
+
         if (period === 'all_time') {
-             dbData.forEach(doc => {
+            dbData.forEach(doc => {
                 labels.push(doc._id);
                 successData.push(doc.success);
                 canceledData.push(doc.cancelled);
@@ -132,9 +168,15 @@ exports.getDashboardStats = async (req, res) => {
             while (currentIterDate <= endDate) {
                 let label;
                 if (dateGeneratorType === 'hourly') {
-                    const hour = String(currentIterDate.getHours()).padStart(2, '0');
+                    const hour = String(currentIterDate.getUTCHours()).padStart(2, '0');
                     label = `${hour}:00`;
-                    currentIterDate.setHours(currentIterDate.getHours() + 1);
+                    currentIterDate.setUTCHours(currentIterDate.getUTCHours() + 1);
+                } else if (dateGeneratorType === 'utc_daily') {
+                    // NEW: UTC Daily Loop
+                    const month = String(currentIterDate.getUTCMonth() + 1).padStart(2, '0');
+                    const day = String(currentIterDate.getUTCDate()).padStart(2, '0');
+                    label = `${currentIterDate.getUTCFullYear()}-${month}-${day}`;
+                    currentIterDate.setUTCDate(currentIterDate.getUTCDate() + 1);
                 } else if (dateGeneratorType === 'monthly') {
                     const month = String(currentIterDate.getMonth() + 1).padStart(2, '0');
                     label = `${currentIterDate.getFullYear()}-${month}`;
@@ -160,10 +202,10 @@ exports.getDashboardStats = async (req, res) => {
 
         res.json({
             success: true,
-            stats: { 
-                sales: totalSales, 
-                items: totalItems, // Sending 'items' instead of 'orders'
-                customers: newCustomers 
+            stats: {
+                sales: totalSales,
+                items: totalItems,
+                customers: newCustomers
             },
             chart: { labels, success: successData, canceled: canceledData }
         });
@@ -248,22 +290,55 @@ exports.getReportData = async (req, res) => {
 
         // 1. Determine Date Range
         if (period && period !== 'all_time') {
-            startDate.setHours(0, 0, 0, 0);
-            switch (period) {
-                case 'today':
-                    endDate.setHours(23, 59, 59, 999);
-                    break;
-                case 'last1month':
-                    startDate.setDate(startDate.getDate() - 30);
-                    break;
-                case 'last6months':
-                    startDate.setMonth(startDate.getMonth() - 6);
-                    break;
-                case 'last1year':
-                    startDate.setFullYear(startDate.getFullYear() - 1);
-                    break;
-                default: // 'last7days'
+            const cleanPeriod = period.trim();
+            const keywords = ['today', 'last7days', 'last1month', 'last6months', 'last1year'];
+
+            if (keywords.includes(cleanPeriod)) {
+                startDate.setHours(0, 0, 0, 0);
+                switch (cleanPeriod) {
+                    case 'today':
+                        endDate.setHours(23, 59, 59, 999);
+                        break;
+                    case 'last1month':
+                        startDate.setDate(startDate.getDate() - 30);
+                        break;
+                    case 'last6months':
+                        startDate.setMonth(startDate.getMonth() - 6);
+                        break;
+                    case 'last1year':
+                        startDate.setFullYear(startDate.getFullYear() - 1);
+                        break;
+                    default:
+                        startDate.setDate(startDate.getDate() - 6);
+                }
+            } else if (cleanPeriod.includes('|')) {
+                // CUSTOM RANGE LOGIC
+                const parts = cleanPeriod.split('|');
+                if (parts.length === 2) {
+                    const [sY, sM, sD] = parts[0].split('-').map(Number);
+                    const [eY, eM, eD] = parts[1].split('-').map(Number);
+                    startDate = new Date(Date.UTC(sY, sM - 1, sD, 0, 0, 0, 0));
+                    endDate = new Date(Date.UTC(eY, eM - 1, eD, 23, 59, 59, 999));
+                } else {
                     startDate.setDate(startDate.getDate() - 6);
+                }
+            } else {
+                // SPECIFIC DATE LOGIC
+                const parsedDate = new Date(cleanPeriod);
+                if (!isNaN(parsedDate.getTime())) {
+                    const parts = cleanPeriod.split('-');
+                    if (parts.length === 3) {
+                        const y = parseInt(parts[0]);
+                        const m = parseInt(parts[1]);
+                        const d = parseInt(parts[2]);
+                        startDate = new Date(Date.UTC(y, m - 1, d, 0, 0, 0, 0));
+                        endDate = new Date(Date.UTC(y, m - 1, d, 23, 59, 59, 999));
+                    } else {
+                        startDate.setDate(startDate.getDate() - 6);
+                    }
+                } else {
+                    startDate.setDate(startDate.getDate() - 6);
+                }
             }
             matchStage = { createdAt: { $gte: startDate, $lte: endDate } };
         }
@@ -280,25 +355,25 @@ exports.getReportData = async (req, res) => {
         // 3. AGGREGATE STATS (Wallet & Items)
         const paymentStats = await Order.aggregate([
             { $match: matchStage },
-            { 
-                $group: { 
-                    _id: null, 
+            {
+                $group: {
+                    _id: null,
                     totalRevenue: { $sum: "$totalAmount" },
                     totalOrders: { $sum: 1 },
                     // Sum of all item quantities across all orders
                     totalItemsSold: { $sum: { $sum: "$items.quantity" } },
-                    
+
                     // Payment Method Breakdowns
-                    codTotal: { 
-                        $sum: { $cond: [{ $eq: ["$paymentMethod", "COD"] }, "$totalAmount", 0] } 
+                    codTotal: {
+                        $sum: { $cond: [{ $eq: ["$paymentMethod", "COD"] }, "$totalAmount", 0] }
                     },
-                    onlineTotal: { 
-                        $sum: { $cond: [{ $in: ["$paymentMethod", ["Online", "Razorpay"]] }, "$totalAmount", 0] } 
+                    onlineTotal: {
+                        $sum: { $cond: [{ $in: ["$paymentMethod", ["Online", "Razorpay"]] }, "$totalAmount", 0] }
                     },
-                    walletTotal: { 
-                        $sum: { $cond: [{ $eq: ["$paymentMethod", "Wallet"] }, "$totalAmount", 0] } 
+                    walletTotal: {
+                        $sum: { $cond: [{ $eq: ["$paymentMethod", "Wallet"] }, "$totalAmount", 0] }
                     }
-                } 
+                }
             }
         ]);
 
@@ -307,9 +382,9 @@ exports.getReportData = async (req, res) => {
             orders,
             customers: newCustomers,
             // Default to 0 if no stats found
-            paymentStats: paymentStats[0] || { 
-                totalRevenue: 0, totalOrders: 0, totalItemsSold: 0, 
-                codTotal: 0, onlineTotal: 0, walletTotal: 0 
+            paymentStats: paymentStats[0] || {
+                totalRevenue: 0, totalOrders: 0, totalItemsSold: 0,
+                codTotal: 0, onlineTotal: 0, walletTotal: 0
             }
         });
 
