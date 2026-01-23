@@ -814,10 +814,14 @@
                     Swal.fire('Error', 'Permission Denied', 'error');
                     return;
                 }
-                const data = await res.json();
+                const json = await res.json();
                 if (res.ok) {
-                    allUsers = data.filter(u => u.role !== 'user');
+                    // Fix: Backend returns { success: true, data: [...] }
+                    const users = Array.isArray(json) ? json : (json.data || []);
+                    allUsers = users.filter(u => u.role !== 'user');
                     renderTable(allUsers);
+                } else {
+                    Swal.fire('Error', json.message || 'Failed to load admins', 'error');
                 }
             } catch (err) { console.error("Error loading users", err); }
         }
