@@ -1285,6 +1285,7 @@
 
         // --- CORE FILTERING LOGIC (FIXED) ---
         function applyFilters() {
+            currentPage = 1; // Reset to first page on filter change
             const searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
             const sortType = document.getElementById('sortDropdown').value;
 
