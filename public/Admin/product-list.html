@@ -822,14 +822,16 @@
         }
 
         // --- 4. FETCH PRODUCTS ---
-        // --- 4. FETCH PRODUCTS ---
         let currentPage = 1;
         const limit = 20;
 
         async function loadProducts(page = 1) {
             try {
                 currentPage = page;
-                const response = await fetch(`/api/products?page=${page}&limit=${limit}`);
+                const tbody = document.getElementById("productTableBody");
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Loading inventory...</td></tr>';
+
+                const response = await fetch(`/api/products?page=${page}&limit=${limit}&drafts=${showingDrafts}`);
 
                 if (response.status === 401 || response.status === 403) {
                     window.location.replace('admin-login.html');
@@ -842,53 +844,100 @@
                     allProducts = result.data;
                     applyFilters();
                     if (result.pagination) renderPagination(result.pagination);
+                } else {
+                    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Failed to load products.</td></tr>';
                 }
             } catch (err) {
                 console.error("Error loading products:", err);
+                document.getElementById("productTableBody").innerHTML = '<tr><td colspan="6" style="text-align:center;">Connection Error</td></tr>';
             }
         }
 
-        // --- NEW: PAGINATION RENDERER ---
+        // --- PAGINATION RENDERER (Part of 4) ---
         function renderPagination(pagination) {
             const existingNav = document.querySelector('.pagination-nav');
             if (existingNav) existingNav.remove();
 
-            if (!pagination || pagination.totalPages <= 1) return;
+            if (!pagination || pagination.totalDocs === 0) return;
 
-            const tableWrapper = document.querySelector('.table-box') || document.querySelector('main');
-            // In product-list, table is directly in table-box usually.
+            const tableBox = document.querySelector('.table-box');
+
+            // Calculate range
+            const start = (pagination.currentPage - 1) * pagination.limit + 1;
+            const end = Math.min(pagination.currentPage * pagination.limit, pagination.totalDocs);
+
             const nav = document.createElement('div');
             nav.className = 'pagination-nav';
-            nav.style.cssText = 'display: flex; justify-content: flex-end; align-items: center; gap: 10px; margin-top: 20px; padding-top: 20px; border-top: 1px solid #eee;';
+            nav.style.cssText = 'display: flex; justify-content: space-between; align-items: center; margin-top: 20px; padding-top: 20px; border-top: 1px solid #eee; flex-wrap: wrap; gap: 10px;';
 
-            const info = document.createElement('span');
-            info.style.cssText = 'color: var(--grey); font-size: 13px; margin-right: auto;';
-            info.innerText = `Page ${pagination.currentPage} of ${pagination.totalPages} (${pagination.totalDocs} Products)`;
+            // 1. Info Text
+            const info = document.createElement('div');
+            info.style.cssText = 'color: var(--grey); font-size: 13px; font-weight: 500;';
+            info.innerText = `Showing ${start}-${end} from ${pagination.totalDocs}`;
 
-            const prevBtn = document.createElement('button');
-            prevBtn.innerText = 'Previous';
-            prevBtn.disabled = pagination.currentPage === 1;
-            prevBtn.style.cssText = `padding: 8px 16px; border-radius: 6px; border: 1px solid #ddd; background: ${prevBtn.disabled ? '#f5f5f5' : 'white'}; color: ${prevBtn.disabled ? '#aaa' : 'var(--dark)'}; cursor: ${prevBtn.disabled ? 'default' : 'pointer'}; font-size: 13px;`;
-            prevBtn.onclick = () => loadProducts(pagination.currentPage - 1);
+            // 2. Page Buttons Container
+            const btnContainer = document.createElement('div');
+            btnContainer.style.cssText = 'display: flex; gap: 5px;';
 
-            const nextBtn = document.createElement('button');
-            nextBtn.innerText = 'Next';
-            nextBtn.disabled = pagination.currentPage === pagination.totalPages;
-            nextBtn.style.cssText = `padding: 8px 16px; border-radius: 6px; border: 1px solid #ddd; background: ${nextBtn.disabled ? '#f5f5f5' : 'white'}; color: ${nextBtn.disabled ? '#aaa' : 'var(--dark)'}; cursor: ${nextBtn.disabled ? 'default' : 'pointer'}; font-size: 13px;`;
-            nextBtn.onclick = () => loadProducts(pagination.currentPage + 1);
+            // Helper to create button
+            const createBtn = (label, page, isActive = false, isDisabled = false) => {
+                const btn = document.createElement('button');
+                btn.innerText = label;
+                btn.style.cssText = `
+                    min-width: 32px; height: 32px; padding: 0 6px; border-radius: 6px; border: 1px solid #ddd; 
+                    background: ${isActive ? 'var(--primary)' : 'white'}; 
+                    color: ${isActive ? 'white' : (isDisabled ? '#ccc' : 'var(--dark)')}; 
+                    cursor: ${isDisabled || isActive ? 'default' : 'pointer'}; 
+                    font-size: 13px; display: flex; align-items: center; justify-content: center;
+                    transition: all 0.2s;
+                `;
+                if (!isDisabled && !isActive) {
+                    btn.onclick = () => loadProducts(page);
+                    btn.onmouseover = () => { if (!isActive) btn.style.borderColor = 'var(--primary)'; };
+                    btn.onmouseout = () => { if (!isActive) btn.style.borderColor = '#ddd'; };
+                }
+                return btn;
+            };
+
+            // Previous
+            btnContainer.appendChild(createBtn('<', pagination.currentPage - 1, false, pagination.currentPage === 1));
+
+            // Valid Page Numbers logic
+            const totalPages = pagination.totalPages;
+            let pages = [];
+
+            if (totalPages <= 7) {
+                for (let i = 1; i <= totalPages; i++) pages.push(i);
+            } else {
+                if (pagination.currentPage <= 4) {
+                    pages = [1, 2, 3, 4, 5, '...', totalPages];
+                } else if (pagination.currentPage >= totalPages - 3) {
+                    pages = [1, '...', totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
+                } else {
+                    pages = [1, '...', pagination.currentPage - 1, pagination.currentPage, pagination.currentPage + 1, '...', totalPages];
+                }
+            }
+
+            pages.forEach(p => {
+                if (p === '...') {
+                    const span = document.createElement('span');
+                    span.innerText = '...';
+                    span.style.cssText = 'padding: 0 4px; color: #888; display: flex; align-items: center;';
+                    btnContainer.appendChild(span);
+                } else {
+                    btnContainer.appendChild(createBtn(p, p, p === pagination.currentPage));
+                }
+            });
+
+            // Next
+            btnContainer.appendChild(createBtn('>', pagination.currentPage + 1, false, pagination.currentPage === totalPages));
 
             nav.appendChild(info);
-            nav.appendChild(prevBtn);
-            nav.appendChild(nextBtn);
-
-            // Append to table-box if exists, or after table
-            const tableBox = document.querySelector('.table-box');
-            if (tableBox) {
-                tableBox.appendChild(nav);
-            } else {
-                document.querySelector('table').after(nav);
-            }
+            nav.appendChild(btnContainer);
+            tableBox.appendChild(nav);
         }
+
+
 
         function filterTable() {
             applyFilters();
@@ -904,16 +953,12 @@
             const filtered = allProducts.filter(product => {
                 const isDraft = product.status === "Draft";
 
-                // Draft Logic
-                if (showingDrafts && !isDraft) return false;
-                if (!showingDrafts && isDraft) return false;
-
-                // Search Logic
-                if (!product.name.toLowerCase().includes(searchInput)) return false;
-
                 // Stock Logic
                 if (stockFilter === 'in' && product.stockQuantity === 0) return false;
                 if (stockFilter === 'out' && product.stockQuantity > 0) return false;
+
+                // Search Logic
+                if (!product.name.toLowerCase().includes(searchInput)) return false;
 
                 return true;
             });

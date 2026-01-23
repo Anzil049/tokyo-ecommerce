@@ -1478,7 +1478,7 @@
         // --- FETCHERS ---
         async function fetchProducts() {
             try {
-                const res = await fetch(`/api/products?_t=${Date.now()}`);
+                const res = await fetch(`/api/products?limit=1000&_t=${Date.now()}`);
                 const json = await res.json();
                 // FIX: Case insensitive status check to capture 'active', 'Active', 'ACTIVE'
                 if (json.success) allProducts = json.data.filter(p => p.status && p.status.toLowerCase() === 'active');

@@ -102,8 +102,15 @@ exports.getAllProducts = async (req, res) => {
         const limit = parseInt(req.query.limit) || 20;
         const skip = (page - 1) * limit;
 
-        const totalDocs = await Product.countDocuments();
-        const products = await Product.find()
+        // Filter: Show drafts ONLY if requested, otherwise show everything EXCEPT drafts
+        // Using Case-Insensitive Regex to catch 'Draft', 'draft', 'DRAFT'
+        const draftRegex = { $regex: /^draft$/i };
+        const filter = req.query.drafts === 'true'
+            ? { status: draftRegex }
+            : { status: { $not: draftRegex } };
+
+        const totalDocs = await Product.countDocuments(filter);
+        const products = await Product.find(filter)
             .sort({ createdAt: -1 })
             .skip(skip)
             .limit(limit);
