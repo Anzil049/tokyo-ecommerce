@@ -1331,8 +1331,7 @@
                     return;
                 }
                 sizeModal.style.display = 'none';
-                Swal.fire({ icon: 'success', title: 'Added to Cart', toast: true, position: 'top-end', showConfirmButton: false, timer: 1000 })
-                    .then(() => window.location.href = 'cart.html');
+                Swal.fire({ icon: 'success', title: 'Added to Cart', toast: true, position: 'top-end', showConfirmButton: false, timer: 1000 });
             } catch (err) {
                 sizeModal.style.display = 'none';
                 Swal.fire('Error', 'Failed to connect.', 'error');

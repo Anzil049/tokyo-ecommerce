@@ -1594,7 +1594,7 @@
                 const res = await fetch('/api/cart/add', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ productId: activeProductId, size: selectedSize, quantity: 1 }) });
                 const data = await res.json();
                 if (!res.ok) { if (res.status === 401) window.location.href = 'signup.html'; else Swal.fire({ icon: 'warning', title: 'Cannot Add', text: data.message, confirmButtonColor: '#DB4444' }); return; }
-                closeSizeModal(); Swal.fire({ icon: 'success', title: 'Added to Cart', toast: true, position: 'top-end', timer: 1000, showConfirmButton: false }).then(() => window.location.href = 'cart.html');
+                closeSizeModal(); Swal.fire({ icon: 'success', title: 'Added to Cart', toast: true, position: 'top-end', timer: 1000, showConfirmButton: false });
             } catch (err) { Swal.fire('Error', 'Server connection failed', 'error'); }
         }
         window.closeSizeModal = closeSizeModal;

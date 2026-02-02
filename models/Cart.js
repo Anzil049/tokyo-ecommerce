@@ -22,6 +22,22 @@ const cartSchema = new mongoose.Schema({
             price: Number // Store the price at time of adding
         }
     ],
+    savedItems: [
+        {
+            product: {
+                type: mongoose.Schema.Types.ObjectId,
+                ref: 'Product',
+                required: true
+            },
+            size: String,
+            quantity: {
+                type: Number,
+                required: true,
+                min: 1
+            },
+            price: Number
+        }
+    ],
     // --- COUPON & TOTAL FIELDS ---
     coupon: {
         type: mongoose.Schema.Types.ObjectId,

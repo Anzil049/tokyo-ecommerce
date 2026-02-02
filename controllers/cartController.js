@@ -52,6 +52,7 @@ exports.getCart = async (req, res) => {
   try {
     let cart = await Cart.findOne({ user: req.user })
       .populate('items.product')
+      .populate('savedItems.product')
       .populate('coupon');
 
     if (!cart) {
@@ -90,6 +91,7 @@ exports.getCart = async (req, res) => {
     res.json({
       _id: cart._id,
       items: mapCartItems(cart.items), // Uses Helper
+      savedItems: mapCartItems(cart.savedItems || []), // Include Saved Items
       totalPrice: cart.totalPrice,
       discountAmount: cart.discountAmount,
       totalAfterDiscount: cart.totalAfterDiscount,
@@ -205,6 +207,7 @@ exports.updateCart = async (req, res) => {
 
     res.json({
       items: mapCartItems(cart.items), // Uses Helper
+      savedItems: mapCartItems(cart.savedItems || []), // Include Saved Items
       totalPrice: cart.totalPrice,
       discountAmount: cart.discountAmount,
       totalAfterDiscount: cart.totalAfterDiscount,
@@ -259,6 +262,7 @@ exports.removeCoupon = async (req, res) => {
     // 2. Fetch fresh data
     const updatedCart = await Cart.findById(cart._id).populate('items.product');
 
+
     res.json({
       _id: updatedCart._id,
       items: mapCartItems(updatedCart.items), // Uses Helper
@@ -271,5 +275,125 @@ exports.removeCoupon = async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Failed to remove coupon' });
+  }
+};
+
+// ==========================================
+//  SAVE FOR LATER LOGIC
+// ==========================================
+
+exports.saveForLater = async (req, res) => {
+  const { cartItemId } = req.body;
+
+  try {
+    const cart = await Cart.findOne({ user: req.user });
+    if (!cart) return res.status(404).json({ message: 'Cart not found' });
+
+    // Find item in main cart
+    const itemIndex = cart.items.findIndex(p => p._id.toString() === cartItemId);
+    if (itemIndex === -1) return res.status(404).json({ message: 'Item not found in cart' });
+
+    // Perform the Move
+    const itemToSave = cart.items[itemIndex];
+
+    // Explicitly create object to avoid Mongoose subdocument issues
+    cart.savedItems.push({
+      product: itemToSave.product._id, // Use ID
+      size: itemToSave.size,
+      quantity: itemToSave.quantity,
+      price: itemToSave.price
+    });
+
+    cart.items.splice(itemIndex, 1); // Remove from main cart
+
+    // Recalculate
+    recalculateCart(cart);
+    await cart.save();
+
+    res.json({ success: true, message: 'Saved for later' });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Failed to save for later' });
+  }
+};
+
+exports.moveToCart = async (req, res) => {
+  const { savedItemId } = req.body;
+
+  try {
+    const cart = await Cart.findOne({ user: req.user }).populate('savedItems.product');
+    if (!cart) return res.status(404).json({ message: 'Cart not found' });
+
+    const itemIndex = cart.savedItems.findIndex(p => p._id.toString() === savedItemId);
+    if (itemIndex === -1) return res.status(404).json({ message: 'Item not found in saved list' });
+
+    const itemToMove = cart.savedItems[itemIndex];
+    const product = itemToMove.product;
+
+    if (!product || product.status !== 'Active') {
+      return res.status(400).json({ message: 'Product is no longer available.' });
+    }
+
+    // --- CHECK STOCK BEFORE MOVING BACK ---
+    const sizeData = product.sizes.find(s => s.size === itemToMove.size);
+    if (!sizeData || sizeData.stock < itemToMove.quantity) {
+      return res.status(400).json({ message: `Not enough stock available for size ${itemToMove.size}.` });
+    }
+
+    // Check Global Limit (12)
+    // We check against existing items in the main cart to ensure we don't exceed the limit
+    const existingIndex = cart.items.findIndex(p => p.product.toString() === product._id.toString() && p.size === itemToMove.size);
+    let currentQty = 0;
+    if (existingIndex > -1) {
+      currentQty = cart.items[existingIndex].quantity;
+    }
+
+    if (currentQty + itemToMove.quantity > 12) {
+      return res.status(400).json({ message: 'Cannot move. Exceeds limit of 12 items.' });
+    }
+
+    // Perform Move
+    if (existingIndex > -1) {
+      cart.items[existingIndex].quantity += itemToMove.quantity;
+    } else {
+      cart.items.push({
+        product: product._id,
+        size: itemToMove.size,
+        quantity: itemToMove.quantity,
+        price: product.price // Use current product price
+      });
+    }
+
+    cart.savedItems.splice(itemIndex, 1);
+
+    recalculateCart(cart);
+    await cart.save();
+
+    res.json({ success: true, message: 'Moved to cart' });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Failed to move to cart' });
+  }
+};
+
+exports.removeSavedItem = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const cart = await Cart.findOne({ user: req.user });
+    if (!cart) return res.status(404).json({ message: 'Cart not found' });
+
+    // Filter out the item
+    cart.savedItems = cart.savedItems.filter(item => item._id.toString() !== id);
+
+    await cart.save();
+
+    res.json({ success: true, message: 'Removed' });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Failed to remove saved item' });
   }
 };
